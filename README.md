@@ -22,8 +22,7 @@ blade_agent 智能体系统的**本地/内网 GPU 集群部署方案与离线安
 llm/
 ├── kty5l/                       # 8×A100 · GLM-5.2
 │   ├── GLM-5.2-部署步骤-8xA100.md
-│   ├── docker/                  # Dockerfile(.cn)/run/recon/prepare/install + patches/(PR#38476 已预置)
-│   └── offline-glm52/           # 离线包骨架(images/models/system/scripts + 下载清单)
+│   └── offline-glm52/           # 离线包骨架(scripts/ 含 Dockerfile(.cn)/run/recon/prepare/install + patches PR#38476 已预置)
 ├── xt/                          # 2×7×A40 · 三方案
 │   ├── 大模型部署方案对比-2x7xA40.md
 │   └── offline-xt/

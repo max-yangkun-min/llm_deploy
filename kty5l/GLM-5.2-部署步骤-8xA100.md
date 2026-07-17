@@ -1,7 +1,7 @@
 # GLM-5.2 部署步骤 · 8×A100 80GB PCIe · 离线
 
 > 单一执行文档:准备 → 打包 → 进场 → 分阶段启动 → 备案 → 接入。只讲怎么做。
-> 配套脚本在 `docker/`。**明确只上 GLM-5.2,不准备任何替代模型。**
+> 配套脚本在离线包 `offline-glm52/scripts/`(包内即 `scripts/`)。**明确只上 GLM-5.2,不准备任何替代模型。**
 
 ---
 
@@ -55,10 +55,10 @@
 # ① 确认 tag 存在
 git ls-remote --tags https://github.com/vllm-project/vllm | grep 0.24
 
-# ② 生成 PR #38476 冲突 patch(只做一次,按 docker/patches/README.md)
-#    产出 docker/patches/38476-with-triton-fallback.patch
+# ② 生成 PR #38476 冲突 patch(只做一次,按 scripts/patches/README.md)
+#    产出 scripts/patches/38476-with-triton-fallback.patch
 
-cd docker
+cd scripts
 export OUT=/mnt/drive
 export VLLM_REF=v0.24.0
 export SYS_DISTRO=ubuntu              # 按"离线机"发行版填(recon 的 A1);非 deb 系走备案 C
