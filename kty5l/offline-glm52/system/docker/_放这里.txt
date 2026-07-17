@@ -1,0 +1,8 @@
+放:docker-ce deb —— 仅当离线机没装 docker 时才需要。
+先在离线机确认版本:lsb_release -cs  (jammy=22.04 / focal=20.04 / noble=24.04)
+来源:https://download.docker.com/linux/ubuntu/dists/<codename>/pool/stable/amd64/
+  docker-ce_<ver>_amd64.deb
+  docker-ce-cli_<ver>_amd64.deb
+  containerd.io_<ver>_amd64.deb
+  docker-buildx-plugin_<ver>_amd64.deb  (可选)
+若 recon 显示离线机已装 docker,本目录留空。

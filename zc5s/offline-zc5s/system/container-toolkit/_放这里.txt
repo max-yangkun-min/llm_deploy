@@ -1,0 +1,5 @@
+放:nvidia-container-toolkit —— ★按 recon 的 A2(麒麟是 deb 还是 rpm)取对应包
+  deb 系:nvidia-container-toolkit / -base / libnvidia-container1 / libnvidia-container-tools
+          源 https://nvidia.github.io/libnvidia-container/stable/deb/amd64/
+  rpm 系:同名 rpm,源 https://nvidia.github.io/libnvidia-container/stable/rpm/amd64/
+用途:docker --gpus 生效。麒麟上装不上 → 放弃容器,走裸机 pip(system/wheels/)。

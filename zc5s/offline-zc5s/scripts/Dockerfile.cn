@@ -1,0 +1,14 @@
+# syntax=docker/dockerfile:1.7
+# zc5s · 【国内源版】—— 与 Dockerfile 等价,镜像来源/pip 走国内。
+# 构建:  docker build -f Dockerfile.cn --build-arg REGISTRY=docker.m.daocloud.io/ \
+#           --build-arg VLLM_TAG=v0.24.0 -t zc5s-vllm:0.24.0 .
+# 官方镜像拉不动就别处 pull 好再 docker tag 成 vllm/vllm-openai:<tag> 用原版 Dockerfile。
+ARG REGISTRY=docker.m.daocloud.io/
+ARG VLLM_TAG=v0.24.0
+FROM ${REGISTRY}vllm/vllm-openai:${VLLM_TAG}
+
+RUN pip install --no-cache-dir -i https://pypi.tuna.tsinghua.edu.cn/simple \
+      "huggingface_hub[hf_transfer]" || true
+ENV HF_HUB_ENABLE_HF_TRANSFER=1
+ENTRYPOINT []
+CMD ["bash"]

@@ -1,0 +1,4 @@
+放:诊断小模型 Qwen/Qwen3-8B(~16GB),仅进场阶段1 验 TP=8/NCCL,不服务。
+命令(见 下载清单-FILL-ME.md · C):
+  huggingface-cli download Qwen/Qwen3-8B --local-dir .
+填完可删本文件。

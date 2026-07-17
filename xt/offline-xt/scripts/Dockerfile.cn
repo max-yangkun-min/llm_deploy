@@ -1,0 +1,20 @@
+# syntax=docker/dockerfile:1.7
+# ============================================================================
+# xt · 【国内源版】—— 与 Dockerfile 等价,只把镜像来源/pip 走国内。
+# 比 kty5l 的简单得多:无 git clone、无 patch、无 precompiled wheel,唯一大件是官方镜像本身。
+# 构建示例:
+#   docker build -f Dockerfile.cn \
+#     --build-arg REGISTRY=docker.m.daocloud.io/ \   # ← 换成当前可用的 Docker Hub 镜像;留空=直连
+#     --build-arg VLLM_TAG=v0.24.0 -t xt-vllm:0.24.0 .
+# 若官方镜像仍拉不动:在别处 docker pull 好,再 docker tag 成 vllm/vllm-openai:<tag>,用原版 Dockerfile。
+# ============================================================================
+ARG REGISTRY=docker.m.daocloud.io/
+ARG VLLM_TAG=v0.24.0
+FROM ${REGISTRY}vllm/vllm-openai:${VLLM_TAG}
+
+RUN pip install --no-cache-dir -i https://pypi.tuna.tsinghua.edu.cn/simple \
+      "huggingface_hub[hf_transfer]" || true
+
+ENV HF_HUB_ENABLE_HF_TRANSFER=1
+ENTRYPOINT []
+CMD ["bash"]

@@ -1,0 +1,7 @@
+放:xt-vllm-0.24.0.tar(~5-8GB,一个镜像跑三方案)
+来源:scripts/ 下 build + save(见 下载清单-FILL-ME.md · A):
+  cd ../scripts
+  docker build -t xt-vllm:0.24.0 .                      # 海外/带宽好
+  # 国内:docker build -f Dockerfile.cn --build-arg REGISTRY=docker.m.daocloud.io/ -t xt-vllm:0.24.0 .
+  docker save xt-vllm:0.24.0 -o ../images/xt-vllm-0.24.0.tar
+两台离线机都要 load 这一个 tar。填完可删本文件。

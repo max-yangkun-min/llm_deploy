@@ -1,0 +1,24 @@
+# 第三方仓库克隆(GLM 官方仓库,非本项目代码)
+kty5l/GLM/
+
+# 本地 Claude 配置
+.claude/
+
+# 离线包待填的大件(仓库只保留骨架 + 占位说明,不提交实际大文件)
+**/images/*.tar
+**/models/**/*.safetensors
+**/models/**/*.bin
+**/models/**/*.gguf
+**/models/**/*.pt
+**/models/**/*.h5
+**/models/**/*.msgpack
+**/system/**/*.deb
+**/system/**/*.rpm
+**/system/**/*.run
+**/wheels/*.whl
+**/hf-cache/
+
+# 现场产物 / 临时
+recon-report*.txt
+*.log
+build.log

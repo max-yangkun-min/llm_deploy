@@ -1,0 +1,11 @@
+放:glm52-vllm-0.24.0-pr38476.tar(~25GB)
+来源:scripts/ 下 docker build + docker save 产出(见 下载清单-FILL-ME.md · A)
+命令(海外/带宽好):
+  cd ../scripts
+  docker build --build-arg VLLM_REF=v0.24.0 -t glm52-vllm:0.24.0-pr38476 .
+  docker save glm52-vllm:0.24.0-pr38476 -o ../images/glm52-vllm-0.24.0-pr38476.tar
+国内网:改用 scripts/Dockerfile.cn(见 下载清单-FILL-ME.md · A):
+  docker build -f Dockerfile.cn --build-arg CUDA_REGISTRY=docker.m.daocloud.io/ \
+    --build-arg GH_PROXY=https://ghfast.top/ --build-arg VLLM_REF=v0.24.0 \
+    -t glm52-vllm:0.24.0-pr38476 .
+填完可删本文件。

@@ -1,0 +1,4 @@
+放:docker engine —— 仅当麒麟没装 docker。★按 recon 的 A2 取 deb 或 rpm。
+  麒麟 V10 多为 rpm 系:docker-ce / docker-ce-cli / containerd.io 的 rpm
+  (麒麟官方源可能自带 docker,优先 dnf/yum install docker 试)。
+装不上 → 走裸机 pip 备案(install-baremetal.sh),本目录留空。

@@ -1,0 +1,6 @@
+放:方案二 Qwen3.5-397B-A17B 权重(~200GB),QuantTrio/Qwen3.5-397B-A17B-AWQ
+命令:
+  export HF_HUB_ENABLE_HF_TRANSFER=1 HF_ENDPOINT=https://hf-mirror.com
+  huggingface-cli download QuantTrio/Qwen3.5-397B-A17B-AWQ --local-dir .
+方案二 PP 跨机(TP=4×PP=2=8卡)→ 两台离线机都要有这份权重(各加载自己那半层)。
+只部署方案三/一则本目录可留空。填完可删本文件。

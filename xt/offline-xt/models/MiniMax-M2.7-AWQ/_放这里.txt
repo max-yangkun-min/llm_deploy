@@ -1,0 +1,6 @@
+放:方案三 MiniMax-M2.7 权重(~115GB),QuantTrio/MiniMax-M2.7-AWQ
+命令:
+  export HF_HUB_ENABLE_HF_TRANSFER=1 HF_ENDPOINT=https://hf-mirror.com
+  huggingface-cli download QuantTrio/MiniMax-M2.7-AWQ --local-dir .
+方案三每台各跑一个 M2.7 副本 → 两台离线机都要有这份权重(或共享存储)。
+只部署方案二/一则本目录可留空。填完可删本文件。

@@ -1,0 +1,5 @@
+放:🥇 M2.7 INT4 权重(~115GB,稳健默认),QuantTrio/MiniMax-M2.7-AWQ
+命令:
+  export HF_HUB_ENABLE_HF_TRANSFER=1 HF_ENDPOINT=https://hf-mirror.com
+  huggingface-cli download QuantTrio/MiniMax-M2.7-AWQ --local-dir .
+用法:./run.sh m2.7(TP=4 双副本,卡0-3 + 卡4-7)+ ./run.sh lb-nginx。填完可删本文件。

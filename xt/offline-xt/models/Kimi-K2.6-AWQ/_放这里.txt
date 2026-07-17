@@ -1,0 +1,6 @@
+放:方案一 Kimi K2.6 权重(~500GB,最大),社区 AWQ INT4
+命令(★仓库名现场确认可用的社区量化,下面是占位):
+  export HF_HUB_ENABLE_HF_TRANSFER=1 HF_ENDPOINT=https://hf-mirror.com
+  huggingface-cli download <org>/Kimi-K2.6-AWQ --local-dir .
+方案一 PP 跨机(TP=2×PP=6=12卡)→ 两台离线机都要有这份权重。
+只部署方案三/二则本目录可留空。填完可删本文件。

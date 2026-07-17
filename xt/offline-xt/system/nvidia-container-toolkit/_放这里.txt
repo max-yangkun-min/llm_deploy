@@ -1,0 +1,5 @@
+放:nvidia-container-toolkit 的 4 个 deb(按离线机发行版;两台同款)
+  nvidia-container-toolkit / -base / libnvidia-container1 / libnvidia-container-tools
+来源:https://nvidia.github.io/libnvidia-container/stable/deb/amd64/
+  或联网机 apt-get download(见 下载清单-FILL-ME.md · D)
+用途:两台离线机 docker --gpus 生效。已有 nvidia runtime 则留空。

@@ -1,0 +1,6 @@
+放:vLLM 的 precompiled wheel(可选,给 Dockerfile.cn 用,避开慢下载)。
+在联网机走清华源下(快):
+  pip download vllm==0.24.0 --no-deps -d . -i https://pypi.tuna.tsinghua.edu.cn/simple
+会得到形如 vllm-0.24.0-cp38-abi3-manylinux1_x86_64.whl 的文件。
+构建时:docker build -f Dockerfile.cn --build-arg PRECOMPILED_WHEEL=<该文件名> ...
+不用则本目录留空即可(vLLM 会自行拉取,国内可能慢)。

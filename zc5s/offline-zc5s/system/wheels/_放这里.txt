@@ -1,0 +1,5 @@
+放:vLLM 及依赖的 pip 轮子(备案C:麒麟容器装不上时,裸机 pip 装 vLLM)。
+在 x86_64 Linux 联网机上下(manylinux 轮子麒麟通用):
+  pip download vllm "huggingface_hub[hf_transfer]" -d .
+离线机:./scripts/install-baremetal.sh(会 --no-index --find-links 本目录装)。
+走容器路径则本目录可留空。

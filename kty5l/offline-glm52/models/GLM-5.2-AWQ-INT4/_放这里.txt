@@ -1,0 +1,5 @@
+放:GLM-5.2 唯一权重整目录(~410GB),cyankiwi/GLM-5.2-AWQ-INT4
+命令(见 下载清单-FILL-ME.md · B):
+  export HF_HUB_ENABLE_HF_TRANSFER=1 HF_ENDPOINT=https://hf-mirror.com
+  huggingface-cli download cyankiwi/GLM-5.2-AWQ-INT4 --local-dir .
+下完本目录应含 *.safetensors / config.json 等,约 410GB。填完可删本文件。

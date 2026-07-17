@@ -1,0 +1,10 @@
+# 方案三 · M2.7 双副本负载均衡(LiteLLM 版,自带健康检查/重试,比 nginx 更懂 LLM)
+# 用法:pip install "litellm[proxy]" && litellm --config litellm.yaml --port 8000
+model_list:
+  - model_name: minimax-m2.7
+    litellm_params: {model: openai/minimax-m2.7, api_base: http://10.0.0.1:8000/v1, api_key: EMPTY}
+  - model_name: minimax-m2.7
+    litellm_params: {model: openai/minimax-m2.7, api_base: http://10.0.0.2:8000/v1, api_key: EMPTY}
+router_settings:
+  routing_strategy: least-busy      # 分给最闲的副本
+  num_retries: 2                     # 失败自动换另一台
