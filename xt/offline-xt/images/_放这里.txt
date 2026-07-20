@@ -1,7 +1,9 @@
-放:xt-vllm-0.24.0.tar(~5-8GB,一个镜像跑三方案)
+放:xt-vllm-0.24.0-cu124.tar(一个CUDA 12.4验收镜像跑全部方案)
 来源:scripts/ 下 build + save(见 下载清单-FILL-ME.md · A):
   cd ../scripts
-  docker build -t xt-vllm:0.24.0 .                      # 海外/带宽好
-  # 国内:docker build -f Dockerfile.cn --build-arg REGISTRY=docker.m.daocloud.io/ -t xt-vllm:0.24.0 .
-  docker save xt-vllm:0.24.0 -o ../images/xt-vllm-0.24.0.tar
+  docker build --build-arg CUDA_COMPAT=12.4 \
+    --build-arg VLLM_BASE_IMAGE=vllm/vllm-openai:v0.24.0 -t xt-vllm:0.24.0-cu124 .
+  # 国内改:-f Dockerfile.cn --build-arg VLLM_BASE_IMAGE=<镜像站>/vllm/vllm-openai:v0.24.0
+  IMAGE=xt-vllm:0.24.0-cu124 bash ./verify-cuda124.sh --image-only
+  docker save xt-vllm:0.24.0-cu124 -o ../images/xt-vllm-0.24.0-cu124.tar
 两台离线机都要 load 这一个 tar。填完可删本文件。

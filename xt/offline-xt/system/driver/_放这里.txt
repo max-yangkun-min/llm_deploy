@@ -1,4 +1,4 @@
-放:NVIDIA 驱动 —— 仅当 recon 显示驱动 <535 或没装。两台都要。
-  NVIDIA-Linux-x86_64-<版本>.run   (>=535,支持 A40 sm_86)
+放:NVIDIA 驱动 —— CUDA 12.4档位要求 >=550.54.15;低于此版本或没装时准备。两台都要。
+  NVIDIA-Linux-x86_64-<版本>.run   (>=550.54.15,支持 A40 sm_86)
   与离线机内核匹配的 linux-headers
-来源:nvidia.com。能看到 CUDA 的机器通常已就绪 → 多半留空,以 recon 为准。
+来源:nvidia.com。`nvidia-smi` 顶部 CUDA Version 不是宿主Toolkit版本;最终以驱动号和 verify-cuda124.sh 为准。

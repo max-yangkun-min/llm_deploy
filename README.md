@@ -11,7 +11,7 @@ blade_agent 智能体系统的**本地/内网 GPU 集群部署方案与离线安
 | 环境 | 硬件 | 选定模型 | 部署文档 | 离线包骨架 |
 | --- | --- | --- | --- | --- |
 | **kty5l** | 8×A100 80GB PCIe(sm_80) | **GLM-5.2 744B** INT4(+ vLLM PR#38476 Triton 兜底) | [`kty5l/GLM-5.2-部署步骤-8xA100.md`](kty5l/GLM-5.2-部署步骤-8xA100.md) | [`kty5l/offline-glm52/`](kty5l/offline-glm52/) |
-| **xt** | 2 台 × 7×A40 48GB(sm_86)· 跨机 10GbE | **三方案**:Kimi K2.6 · PP / Qwen3.5-397B · PP / M2.7 双副本 | [`xt/大模型部署方案对比-2x7xA40.md`](xt/大模型部署方案对比-2x7xA40.md) | [`xt/offline-xt/`](xt/offline-xt/) |
+| **xt** | 合计 14×A40 48GB(sm_86)· CUDA 12.4 · 7+7或8+6 · 跨机10GbE | **3主+1备用**:K2.6 PP / 397B PP / M2.7双副本 / 8+6双层模型 | [`xt/大模型部署方案对比-2x7xA40.md`](xt/大模型部署方案对比-2x7xA40.md) | [`xt/offline-xt/`](xt/offline-xt/) |
 | **zc5s** | 单机 8×RTX4090 48GB(Ada sm_89 · 有 FP8)· 银河麒麟 V10 | **M2.7**(INT4 双副本 / FP8)· 次选 Qwen3.5-397B | [`zc5s/大模型选型方案-8x4090-48G.md`](zc5s/大模型选型方案-8x4090-48G.md) | [`zc5s/offline-zc5s/`](zc5s/offline-zc5s/) |
 
 ---
@@ -23,7 +23,7 @@ llm/
 ├── kty5l/                       # 8×A100 · GLM-5.2
 │   ├── GLM-5.2-部署步骤-8xA100.md
 │   └── offline-glm52/           # 离线包骨架(scripts/ 含 Dockerfile(.cn)/run/recon/prepare/install + patches PR#38476 已预置)
-├── xt/                          # 2×7×A40 · 三方案
+├── xt/                          # 14×A40 · 7+7三主方案 / 8+6备用
 │   ├── 大模型部署方案对比-2x7xA40.md
 │   └── offline-xt/
 ├── zc5s/                        # 单机 8×4090 麒麟 · M2.7/397B
@@ -62,7 +62,7 @@ offline-*/
 ## 各环境要点
 
 - **kty5l · GLM-5.2**:A100(sm_80)跑不了原生 GLM-5.2 的 DSA 稀疏注意力,靠 **vLLM PR#38476** 补 `TRITON_MLA_SPARSE` 兜底(patch 已核实预置)。只 INT4(~410GB),启动必验兜底两行日志。**只上 GLM-5.2,不备替代模型/备用权重**。含主/备双机冷切、容器化抹平 CUDA 差异。
-- **xt · 三方案**:跨机 TP 不可行(10GbE),但 **PP 只传层间激活可扛**。K2.6(能力天花板,12 卡)/ 397B(★推荐,8 卡)走 Ray 跨机 PP;M2.7 双副本 + nginx/LiteLLM 负载均衡(唯一有冗余)。一个镜像通吃三方案。
+- **xt · 3主+1备用**:统一使用 `cu124` 验收镜像(驱动≥550.54.15,镜像内torch CUDA=12.4.x)。7+7 下跨机 TP 不可行(10GbE),K2.6/397B 走 Ray 跨机 PP,M2.7 走双副本。若整机支持移卡为 **8+6**,则8卡机单机 TP=4×PP=2 跑397B、6卡机 TP=4 跑M2.7。离线包固定备齐 K2.6/397B/M2.7 三个模型,两种卡布局复用同一包;每个模型目录均含独立的 `README-部署.md`。
 - **zc5s · 单机 4090**:最简(无跨机)。**有 FP8**(Ada 红利)→ M2.7 可跑 FP8 质量版;**无 NVLink** → 优先小 TP 多副本。**银河麒麟 V10** 容器栈可能装不上 → 备了裸机 pip 路径。
 
 ## 硬件红线(跨环境共性)

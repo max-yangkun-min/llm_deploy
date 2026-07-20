@@ -1,0 +1,13 @@
+# 8+6备用方案:统一入口暴露强/快两个模型名,由 blade_agent 显式选模型。
+# LiteLLM代理需单独准备;不要把两个不同模型配置成同名随机负载均衡。
+model_list:
+  - model_name: qwen3.5-397b
+    litellm_params:
+      model: openai/qwen3.5-397b
+      api_base: http://10.0.0.1:8000/v1
+      api_key: EMPTY
+  - model_name: minimax-m2.7
+    litellm_params:
+      model: openai/minimax-m2.7
+      api_base: http://10.0.0.2:8000/v1
+      api_key: EMPTY
