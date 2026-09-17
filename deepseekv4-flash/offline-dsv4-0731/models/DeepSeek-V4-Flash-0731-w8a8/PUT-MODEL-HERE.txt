@@ -1,0 +1,8 @@
+This directory is populated by:
+
+  ../../start.sh download
+
+Expected source:
+  Eco-Tech/DeepSeek-V4-Flash-0731-w8a8
+  revision 9e8679a9db7eec11efed9925f7efb96549077545
+

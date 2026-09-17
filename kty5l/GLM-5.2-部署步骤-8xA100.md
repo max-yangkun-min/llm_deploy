@@ -11,12 +11,13 @@
 | --- | --- |
 | 权重 | **只能 INT4**,唯一一个:`cyankiwi/GLM-5.2-AWQ-INT4`(~410GB)。**不带备用量化** |
 | vLLM | 锁定 tag(`VLLM_REF`,如 `v0.24.0`)+ **PR #38476**(A100 稀疏注意力 Triton 兜底) |
+| CUDA 镜像 | 默认 **原生 cu128/A100 sm80**，不使用 cuda-compat；cu129+compat 仅作备选 |
 | 后端环境变量 | `VLLM_ATTENTION_BACKEND=TRITON_MLA_SPARSE` / `VLLM_USE_DEEP_GEMM=0` / `VLLM_USE_FLASHINFER_SAMPLER=0`(已固化进镜像) |
 | KV | `--kv-cache-dtype auto`,**A100 绝不开 fp8 KV**(会崩) |
 | 并行 | **TP=8** |
 | 部署 | 离线:联网机 build → `docker save` → 离线机 `docker load` |
 | 冷启动 | ~7 分钟。健康检查超时 **>15 分钟**,**禁用自动重启** |
-| 环境 | 驱动 ≥550;磁盘 ≥500GB SSD;内存 ≥512GB;x86_64 |
+| 环境 | 驱动 ≥570;磁盘 ≥500GB SSD;内存 ≥512GB;x86_64 |
 
 **启动后日志必须出现这两行,否则停:**
 ```
@@ -31,19 +32,20 @@
 ```
 /offline-glm52/
 ├── images/
-│   └── glm52-vllm-<tag>-pr38476.tar          # docker save 产物 (~25GB)
+│   ├── glm52-vllm-<tag>-pr38476-cu128-native-r570-a100.tar # 默认兜底镜像(15.23GiB)
+│   └── glm52-vllm-<tag>-pr38476-cu129-compat570.tar        # 可选备份
 ├── models/
 │   ├── GLM-5.2-AWQ-INT4/                      # 唯一权重 ~410GB(cyankiwi)
 │   └── Qwen3-8B/                              # 阶段1 诊断小模型 ~16GB(只验 TP,不服务)
 ├── system/                                    # 按 recon 结果补,缺才备
 │   ├── docker/  nvidia-container-toolkit/     # 容器栈
 │   └── driver/                                # 驱动.run + 内核头(若驱动不达标)
-├── scripts/  (Dockerfile run.sh recon.sh install-offline.sh prepare-offline.sh patches/)
+├── scripts/  (Dockerfile.fallback-cu128 run.sh verify-cu128-native.sh patches/)
 ├── MANIFEST.sha256                            # 全量校验和
 └── *.md                                       # 本文档
 ```
 
-硬盘 **1TB** 足够(镜像 ~25GB + 唯一权重 ~410GB + 诊断小模型 ~16GB + 系统包)。
+硬盘 **1TB** 足够(默认镜像 tar 15.23GiB + 权重 ~410GB + 诊断模型 ~16GB + 系统包)。
 
 ---
 
@@ -52,12 +54,6 @@
 **前提**:x86_64 + Docker + `huggingface_hub[hf_transfer]`,硬盘已挂载。国内下不动 HF 时先 `export HF_ENDPOINT=https://hf-mirror.com`。
 
 ```bash
-# ① 确认 tag 存在
-git ls-remote --tags https://github.com/vllm-project/vllm | grep 0.24
-
-# ② 生成 PR #38476 冲突 patch(只做一次,按 scripts/patches/README.md)
-#    产出 scripts/patches/38476-with-triton-fallback.patch
-
 cd scripts
 export OUT=/mnt/drive
 export VLLM_REF=v0.24.0
@@ -68,8 +64,8 @@ export SYS_DISTRO=ubuntu              # 按"离线机"发行版填(recon 的 A1)
 ```bash
 ./prepare-offline.sh base
 ```
-> 产出:`images/*.tar`(~25GB)、`models/Qwen3-8B`(~16GB)、`system/`(toolkit/docker)、`scripts/` + 文档 + 校验和。
-> 系统依赖 deb **必须匹配离线机发行版**;驱动 `.run` 若 recon 显示驱动<550,手动放 `system/driver/`。
+> 默认镜像 tar 实测15.23GiB；PyTorch来自南京大学cu128镜像，GitHub构建依赖走已验证代理。
+> 系统依赖 deb **必须匹配离线机发行版**;驱动 `.run` 若 recon 显示驱动<570,手动放 `system/driver/`。
 > 国产 OS 容器装不上时,`./prepare-offline.sh wheels` 另备裸机 pip 轮子(备案 C)。
 
 **第二段 · 大权重就绪后再下**(~410GB,数小时):
@@ -92,7 +88,7 @@ bash scripts/recon.sh                 # 生成 recon-report.txt,逐项看
 | 项 | 达标 | 不达标 → 备案 |
 | --- | --- | --- |
 | **拓扑** `topo -m` | `NV*` / `PIX` / `PXB` | `SYS`(跨 socket)→ 备案 A |
-| **驱动** | ≥550,8×A100 80GB | <550/无 → 备案 B |
+| **驱动** | ≥570,8×A100 80GB | <570/无 → 备案 B |
 | **容器栈** | docker + nvidia runtime | 缺 → 装 `system/`;国产 OS 装不上 → 备案 C |
 
 拓扑判读:`NV*`=理想 / `PIX`/`PXB`=可上打折 / `PHB`/`NODE`=更慢 / `SYS`=会卡死。
@@ -104,7 +100,7 @@ bash scripts/recon.sh                 # 生成 recon-report.txt,逐项看
 ```bash
 cd /offline-glm52
 sha256sum -c MANIFEST.sha256          # 必须全 OK(410GB 拷贝易坏字节)
-./scripts/install-offline.sh          # 自检 + docker load
+bash ./scripts/install-offline.sh     # 优先加载原生cu128 + 8×A100/Triton JIT验收
 # 若缺容器栈:先装 system/,再:
 #   sudo nvidia-ctk runtime configure --runtime=docker && sudo systemctl restart docker
 ```
@@ -187,7 +183,7 @@ resp = client.chat.completions.create(
 
 ## 8. 主/备双机切换
 
-- 两台候选,**选一台为主、另一台冷备随时可切**(非双活)。用同一个 Docker 镜像,抹平两台 CUDA(12.8/12.2)差异,宿主只需驱动 ≥550。
+- 两台候选,**选一台为主、另一台冷备随时可切**(非双活)。宿主 CUDA toolkit 不参与容器运行,但两台驱动都必须 ≥570；低于 570 的冷备机要先升级。
 - **选主**:拓扑优先(`PIX/PXB` >> `SYS`);拓扑相当再选 CUDA 12.8 那台。
 - **权重两台都备好**(或共享存储),否则"随时切"是空话。
 - 切换非秒切:冷启动 ~7 分钟 + 首请求 JIT + prefix cache 冷,切过去 **7–10 分钟**才对外服务,期间有中断。

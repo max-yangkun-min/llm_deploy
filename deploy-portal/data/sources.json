@@ -1,0 +1,800 @@
+{
+  "schema": 1,
+  "updated": "2026-09-16",
+  "note": "抓取来源配置。organizations 决定索引广度,tracked_repos 决定抓取深度的重点仓库,doc_sources 是部署方法的权威出处。所有内容都由 tools/sync_*.py 真实抓取,失败会记录在快照的 errors 里,不会被静默丢弃。 2026-09-16 起 tracked_repos 同时登记「量化部署档实际使用的 artifact」,使核对面板比较的是同一档位的仓库。",
+  "endpoints": [
+    {
+      "id": "hf-mirror",
+      "base": "https://hf-mirror.com",
+      "kind": "domestic-mirror",
+      "note": "国内 HF 镜像,实测可直连;必须带 User-Agent,默认 Python-urllib UA 会被 403。分页 Link 头会指回 huggingface.co,需重写主机名。"
+    },
+    {
+      "id": "huggingface",
+      "base": "https://huggingface.co",
+      "kind": "official-upstream",
+      "note": "官方源。本机直连超时,仅在镜像不可用时作为回退,并在快照中标注实际使用的端点。"
+    }
+  ],
+  "organizations": [
+    {
+      "id": "deepseek-ai",
+      "name": "DeepSeek",
+      "kind": "official"
+    },
+    {
+      "id": "Qwen",
+      "name": "Qwen (Alibaba)",
+      "kind": "official"
+    },
+    {
+      "id": "zai-org",
+      "name": "Z.ai / GLM",
+      "kind": "official"
+    },
+    {
+      "id": "moonshotai",
+      "name": "Moonshot AI (Kimi)",
+      "kind": "official"
+    },
+    {
+      "id": "MiniMaxAI",
+      "name": "MiniMax",
+      "kind": "official"
+    },
+    {
+      "id": "meta-llama",
+      "name": "Meta Llama",
+      "kind": "official"
+    },
+    {
+      "id": "mistralai",
+      "name": "Mistral AI",
+      "kind": "official"
+    },
+    {
+      "id": "google",
+      "name": "Google (Gemma/Gemini)",
+      "kind": "official"
+    },
+    {
+      "id": "microsoft",
+      "name": "Microsoft (Phi)",
+      "kind": "official"
+    },
+    {
+      "id": "openai",
+      "name": "OpenAI (gpt-oss)",
+      "kind": "official"
+    },
+    {
+      "id": "nvidia",
+      "name": "NVIDIA",
+      "kind": "official"
+    },
+    {
+      "id": "ibm-granite",
+      "name": "IBM Granite",
+      "kind": "official"
+    },
+    {
+      "id": "allenai",
+      "name": "AllenAI (OLMo)",
+      "kind": "official"
+    },
+    {
+      "id": "HuggingFaceTB",
+      "name": "Hugging Face (SmolLM)",
+      "kind": "official"
+    },
+    {
+      "id": "BAAI",
+      "name": "BAAI (BGE)",
+      "kind": "official"
+    },
+    {
+      "id": "inclusionAI",
+      "name": "InclusionAI",
+      "kind": "official"
+    },
+    {
+      "id": "internlm",
+      "name": "InternLM",
+      "kind": "official"
+    },
+    {
+      "id": "baichuan-inc",
+      "name": "Baichuan",
+      "kind": "official"
+    },
+    {
+      "id": "01-ai",
+      "name": "01.AI (Yi)",
+      "kind": "official"
+    },
+    {
+      "id": "meituan-longcat",
+      "name": "Meituan LongCat",
+      "kind": "official"
+    },
+    {
+      "id": "tencent",
+      "name": "Tencent",
+      "kind": "official"
+    },
+    {
+      "id": "stepfun-ai",
+      "name": "StepFun",
+      "kind": "official"
+    },
+    {
+      "id": "XiaomiMiMo",
+      "name": "Xiaomi MiMo",
+      "kind": "official"
+    },
+    {
+      "id": "unsloth",
+      "name": "Unsloth (量化/GGUF 社区)",
+      "kind": "community-quant"
+    },
+    {
+      "id": "QuantTrio",
+      "name": "QuantTrio (AWQ 量化)",
+      "kind": "community-quant"
+    },
+    {
+      "id": "cyankiwi",
+      "name": "cyankiwi (AWQ 量化)",
+      "kind": "community-quant"
+    },
+    {
+      "id": "openbmb",
+      "name": "OpenBMB (MiniCPM)",
+      "kind": "official"
+    },
+    {
+      "id": "PaddlePaddle",
+      "name": "PaddlePaddle (ERNIE/PaddleOCR)",
+      "kind": "official"
+    },
+    {
+      "id": "CohereLabs",
+      "name": "Cohere Labs (North)",
+      "kind": "official"
+    },
+    {
+      "id": "tiiuae",
+      "name": "TII (Falcon)",
+      "kind": "official"
+    },
+    {
+      "id": "swiss-ai",
+      "name": "Swiss AI (Apertus)",
+      "kind": "official"
+    },
+    {
+      "id": "LGAI-EXAONE",
+      "name": "LG AI Research (EXAONE)",
+      "kind": "official"
+    },
+    {
+      "id": "NousResearch",
+      "name": "Nous Research",
+      "kind": "official"
+    },
+    {
+      "id": "arcee-ai",
+      "name": "Arcee AI",
+      "kind": "official"
+    },
+    {
+      "id": "PrimeIntellect",
+      "name": "Prime Intellect",
+      "kind": "official"
+    },
+    {
+      "id": "amd",
+      "name": "AMD",
+      "kind": "official"
+    },
+    {
+      "id": "OpenGVLab",
+      "name": "OpenGVLab (InternVL)",
+      "kind": "official"
+    },
+    {
+      "id": "Skywork",
+      "name": "Skywork",
+      "kind": "official"
+    },
+    {
+      "id": "bartowski",
+      "name": "bartowski (GGUF 量化)",
+      "kind": "community-quant"
+    },
+    {
+      "id": "mradermacher",
+      "name": "mradermacher (GGUF 量化)",
+      "kind": "community-quant"
+    },
+    {
+      "id": "TheBloke",
+      "name": "TheBloke (GPTQ/GGUF 量化,历史归档)",
+      "kind": "community-quant"
+    }
+  ],
+  "tracked_repos": [
+    {
+      "repo": "deepseek-ai/DeepSeek-R1",
+      "profiles": [
+        "deepseek-r1-bf16"
+      ],
+      "role": "官方 FP8 权重(非 BF16 部署档所用)",
+      "quant": "fp8"
+    },
+    {
+      "repo": "deepseek-ai/DeepSeek-V3.1",
+      "profiles": [
+        "deepseek-v31-int4"
+      ],
+      "role": "官方 FP8 权重(非 INT4 部署档所用)",
+      "quant": "fp8"
+    },
+    {
+      "repo": "deepseek-ai/DeepSeek-V4-Flash-0731",
+      "profiles": [],
+      "role": "官方权重",
+      "quant": "mxfp4"
+    },
+    {
+      "repo": "unsloth/DeepSeek-V4-Flash-0731-GGUF",
+      "profiles": [],
+      "role": "GGUF 量化(llama.cpp 方案权重,含多档)",
+      "quant": "gguf"
+    },
+    {
+      "repo": "meta-llama/Meta-Llama-3.1-405B-Instruct",
+      "profiles": [
+        "llama31-405b-bf16"
+      ],
+      "role": "官方权重",
+      "quant": "bf16"
+    },
+    {
+      "repo": "zai-org/GLM-5.2",
+      "profiles": [
+        "glm52-int4-a100"
+      ],
+      "role": "官方基座(非部署档所用)",
+      "quant": "bf16"
+    },
+    {
+      "repo": "cyankiwi/GLM-5.2-AWQ-INT4",
+      "profiles": [
+        "glm52-int4-a100"
+      ],
+      "role": "INT4 量化(kty5l 实际使用)",
+      "quant": "int4"
+    },
+    {
+      "repo": "moonshotai/Kimi-K2.6",
+      "profiles": [
+        "kimi-k26-awq"
+      ],
+      "role": "官方权重",
+      "quant": "int4"
+    },
+    {
+      "repo": "MiniMaxAI/MiniMax-M2.7",
+      "profiles": [
+        "minimax-m27-fp8"
+      ],
+      "role": "官方权重(FP8)",
+      "quant": "fp8"
+    },
+    {
+      "repo": "QuantTrio/MiniMax-M2.7-AWQ",
+      "profiles": [
+        "minimax-m27-awq",
+        "minimax-m27-awq-a40"
+      ],
+      "role": "AWQ 量化(xt/zc5s 实际使用)",
+      "quant": "int4"
+    },
+    {
+      "repo": "Qwen/Qwen3.5-397B-A17B",
+      "profiles": [
+        "qwen35-397b-awq",
+        "qwen35-397b-awq-a40"
+      ],
+      "role": "官方基座(非部署档所用)",
+      "quant": "bf16"
+    },
+    {
+      "repo": "QuantTrio/Qwen3.5-397B-A17B-AWQ",
+      "profiles": [
+        "qwen35-397b-awq",
+        "qwen35-397b-awq-a40"
+      ],
+      "role": "AWQ 量化(xt 规划使用)",
+      "quant": "int4"
+    },
+    {
+      "repo": "Qwen/Qwen3.5-122B-A10B",
+      "profiles": [
+        "qwen35-122b-fp8",
+        "qwen35-122b-awq"
+      ],
+      "role": "官方 BF16 基座(非部署档所用)",
+      "quant": "bf16"
+    },
+    {
+      "repo": "Qwen/Qwen3-235B-A22B-Instruct-2507",
+      "profiles": [
+        "qwen3-235b-awq"
+      ],
+      "role": "官方 BF16 基座(非部署档所用)",
+      "quant": "bf16"
+    },
+    {
+      "repo": "Qwen/Qwen3-Coder-30B-A3B-Instruct",
+      "profiles": [
+        "qwen3-coder-30b-awq"
+      ],
+      "role": "官方 BF16 基座(非部署档所用)",
+      "quant": "bf16"
+    },
+    {
+      "repo": "Qwen/Qwen3-32B",
+      "profiles": [
+        "qwen3-32b-awq"
+      ],
+      "role": "官方 BF16 基座(非部署档所用)",
+      "quant": "bf16"
+    },
+    {
+      "repo": "Qwen/Qwen3-14B",
+      "profiles": [
+        "qwen3-14b-awq"
+      ],
+      "role": "官方 BF16 基座(非部署档所用)",
+      "quant": "bf16"
+    },
+    {
+      "repo": "Qwen/Qwen3-8B",
+      "profiles": [
+        "qwen3-8b-bf16",
+        "qwen3-8b-awq"
+      ],
+      "role": "官方 BF16 基座(qwen3-8b-bf16 登记值来源)",
+      "quant": "bf16"
+    },
+    {
+      "repo": "Qwen/Qwen3-4B",
+      "profiles": [
+        "qwen3-4b-bf16"
+      ],
+      "role": "官方 BF16(qwen3-4b-bf16 登记值来源)",
+      "quant": "bf16"
+    },
+    {
+      "repo": "unsloth/DeepSeek-R1-BF16",
+      "profiles": [
+        "deepseek-r1-bf16"
+      ],
+      "role": "BF16 权重(deepseek-r1-bf16 登记值来源)",
+      "quant": "bf16"
+    },
+    {
+      "repo": "QuantTrio/DeepSeek-V3.1-AWQ",
+      "profiles": [
+        "deepseek-v31-int4"
+      ],
+      "role": "AWQ 量化(deepseek-v31-int4 登记值来源)",
+      "quant": "int4"
+    },
+    {
+      "repo": "QuantTrio/Qwen3-235B-A22B-Instruct-2507-AWQ",
+      "profiles": [
+        "qwen3-235b-awq"
+      ],
+      "role": "AWQ 量化(qwen3-235b-awq 登记值来源)",
+      "quant": "int4"
+    },
+    {
+      "repo": "QuantTrio/Qwen3.5-122B-A10B-AWQ",
+      "profiles": [
+        "qwen35-122b-awq"
+      ],
+      "role": "AWQ 量化(qwen35-122b-awq 登记值来源)",
+      "quant": "int4"
+    },
+    {
+      "repo": "Qwen/Qwen3.5-122B-A10B-FP8",
+      "profiles": [
+        "qwen35-122b-fp8"
+      ],
+      "role": "官方 FP8(qwen35-122b-fp8 登记值来源)",
+      "quant": "fp8"
+    },
+    {
+      "repo": "QuantTrio/Qwen3-Coder-30B-A3B-Instruct-AWQ",
+      "profiles": [
+        "qwen3-coder-30b-awq"
+      ],
+      "role": "AWQ 量化(qwen3-coder-30b-awq 登记值来源)",
+      "quant": "int4"
+    },
+    {
+      "repo": "Qwen/Qwen3-32B-AWQ",
+      "profiles": [
+        "qwen3-32b-awq"
+      ],
+      "role": "官方 AWQ(qwen3-32b-awq 登记值来源)",
+      "quant": "int4"
+    },
+    {
+      "repo": "Qwen/Qwen3-14B-AWQ",
+      "profiles": [
+        "qwen3-14b-awq"
+      ],
+      "role": "官方 AWQ(qwen3-14b-awq 登记值来源)",
+      "quant": "int4"
+    },
+    {
+      "repo": "Qwen/Qwen3-8B-AWQ",
+      "profiles": [
+        "qwen3-8b-awq"
+      ],
+      "role": "官方 AWQ(qwen3-8b-awq 登记值来源)",
+      "quant": "int4"
+    }
+  ],
+  "doc_sources": [
+    {
+      "id": "vllm-docs-home",
+      "title": "vLLM 官方文档首页",
+      "url": "https://docs.vllm.ai/en/latest/",
+      "kind": "engine-docs",
+      "profiles": []
+    },
+    {
+      "id": "vllm-supported-models",
+      "title": "vLLM 支持的模型与架构",
+      "url": "https://docs.vllm.ai/en/latest/models/supported_models/",
+      "kind": "engine-docs",
+      "profiles": []
+    },
+    {
+      "id": "vllm-parallelism",
+      "title": "并行与分布式扩展(TN/PP/DP 切分依据)",
+      "url": "https://docs.vllm.ai/en/latest/serving/parallelism_scaling/",
+      "kind": "engine-docs",
+      "profiles": [
+        "kimi-k26-awq",
+        "qwen35-397b-awq",
+        "qwen35-397b-awq-a40",
+        "glm52-int4-a100",
+        "minimax-m27-fp8"
+      ]
+    },
+    {
+      "id": "vllm-expert-parallel",
+      "title": "专家并行部署(MoE 必需)",
+      "url": "https://docs.vllm.ai/en/latest/serving/expert_parallel_deployment/",
+      "kind": "engine-docs",
+      "profiles": [
+        "kimi-k26-awq",
+        "qwen35-397b-awq",
+        "qwen35-397b-awq-a40",
+        "minimax-m27-awq",
+        "minimax-m27-awq-a40"
+      ]
+    },
+    {
+      "id": "vllm-dist-troubleshooting",
+      "title": "分布式部署排错",
+      "url": "https://docs.vllm.ai/en/latest/serving/distributed_troubleshooting/",
+      "kind": "engine-docs",
+      "profiles": [
+        "kimi-k26-awq",
+        "qwen35-397b-awq-a40"
+      ]
+    },
+    {
+      "id": "vllm-quantization",
+      "title": "量化总览",
+      "url": "https://docs.vllm.ai/en/latest/features/quantization/",
+      "kind": "engine-docs",
+      "profiles": []
+    },
+    {
+      "id": "vllm-awq",
+      "title": "AWQ 量化支持",
+      "url": "https://docs.vllm.ai/en/latest/features/quantization/auto_awq/",
+      "kind": "engine-docs",
+      "profiles": [
+        "kimi-k26-awq",
+        "qwen35-397b-awq",
+        "qwen35-397b-awq-a40",
+        "minimax-m27-awq",
+        "minimax-m27-awq-a40",
+        "glm52-int4-a100"
+      ]
+    },
+    {
+      "id": "vllm-kv-quant",
+      "title": "KV Cache 量化(判断能否开 fp8 KV)",
+      "url": "https://docs.vllm.ai/en/latest/features/quantization/quantized_kvcache/",
+      "kind": "engine-docs",
+      "profiles": [
+        "glm52-int4-a100",
+        "minimax-m27-awq",
+        "minimax-m27-awq-a40"
+      ]
+    },
+    {
+      "id": "vllm-gguf",
+      "title": "GGUF 量化支持",
+      "url": "https://docs.vllm.ai/en/latest/features/quantization/gguf/",
+      "kind": "engine-docs",
+      "profiles": []
+    },
+    {
+      "id": "vllm-tool-calling",
+      "title": "工具调用与 parser 配置",
+      "url": "https://docs.vllm.ai/en/latest/features/tool_calling/",
+      "kind": "engine-docs",
+      "profiles": [
+        "glm52-int4-a100",
+        "minimax-m27-awq",
+        "minimax-m27-awq-a40",
+        "qwen35-397b-awq",
+        "qwen35-397b-awq-a40"
+      ]
+    },
+    {
+      "id": "vllm-spec-decoding",
+      "title": "投机解码(MTP / draft model)",
+      "url": "https://docs.vllm.ai/en/latest/features/speculative_decoding/",
+      "kind": "engine-docs",
+      "profiles": [
+        "minimax-m27-awq",
+        "minimax-m27-awq-a40"
+      ]
+    },
+    {
+      "id": "vllm-optimization",
+      "title": "优化与调参总览",
+      "url": "https://docs.vllm.ai/en/latest/configuration/optimization/",
+      "kind": "engine-docs",
+      "profiles": []
+    },
+    {
+      "id": "vllm-lora",
+      "title": "LoRA 适配",
+      "url": "https://docs.vllm.ai/en/latest/features/lora/",
+      "kind": "engine-docs",
+      "profiles": []
+    },
+    {
+      "id": "vllm-recipes",
+      "title": "vLLM 官方 recipes 总库(逐模型部署配方,社区维护)",
+      "url": "https://github.com/vllm-project/recipes",
+      "kind": "official-recipes",
+      "profiles": []
+    },
+    {
+      "id": "vllm-serve-cli",
+      "title": "vLLM serve 命令行参数手册",
+      "url": "https://docs.vllm.ai/en/latest/cli/serve.html",
+      "kind": "engine-docs",
+      "profiles": []
+    },
+    {
+      "id": "vllm-env-vars",
+      "title": "vLLM 环境变量(VLLM_* 调优开关)",
+      "url": "https://docs.vllm.ai/en/latest/configuration/env_vars.html",
+      "kind": "engine-docs",
+      "profiles": [
+        "glm52-int4-a100",
+        "kimi-k26-awq",
+        "qwen35-397b-awq",
+        "qwen35-397b-awq-a40",
+        "minimax-m27-awq",
+        "minimax-m27-awq-a40",
+        "minimax-m27-fp8"
+      ]
+    },
+    {
+      "id": "vllm-releases",
+      "title": "vLLM 版本发布记录(核对镜像里实际的 vLLM 版本)",
+      "url": "https://github.com/vllm-project/vllm/releases",
+      "kind": "release-notes",
+      "profiles": [
+        "glm52-int4-a100"
+      ]
+    },
+    {
+      "id": "sglang-docs",
+      "title": "SGLang 官方文档(备选推理引擎)",
+      "url": "https://docs.sglang.ai/",
+      "kind": "engine-docs",
+      "profiles": []
+    },
+    {
+      "id": "lmdeploy-docs",
+      "title": "LMDeploy 官方文档(备选推理引擎)",
+      "url": "https://lmdeploy.readthedocs.io/en/latest/",
+      "kind": "engine-docs",
+      "profiles": []
+    },
+    {
+      "id": "tensorrt-llm-docs",
+      "title": "NVIDIA TensorRT-LLM 官方文档",
+      "url": "https://nvidia.github.io/TensorRT-LLM/",
+      "kind": "engine-docs",
+      "profiles": []
+    },
+    {
+      "id": "triton-docs",
+      "title": "NVIDIA Triton 推理服务器官方文档",
+      "url": "https://docs.nvidia.com/deeplearning/triton-inference-server/user-guide/docs/index.html",
+      "kind": "engine-docs",
+      "profiles": []
+    },
+    {
+      "id": "llamacpp-repo",
+      "title": "llama.cpp 官方仓库(GGUF 本地推理实现)",
+      "url": "https://github.com/ggml-org/llama.cpp",
+      "kind": "engine-docs",
+      "profiles": []
+    },
+    {
+      "id": "ollama-docs",
+      "title": "Ollama 官方文档(GGUF 单机部署)",
+      "url": "https://docs.ollama.com/",
+      "kind": "engine-docs",
+      "profiles": []
+    },
+    {
+      "id": "modelscope-docs",
+      "title": "ModelScope 官方文档(国内权重托管与推理)",
+      "url": "https://www.modelscope.cn/docs",
+      "kind": "mirror-docs",
+      "profiles": []
+    },
+    {
+      "id": "qwen-docs",
+      "title": "Qwen 官方文档(逐模型部署与量化说明)",
+      "url": "https://qwen.readthedocs.io/en/latest/",
+      "kind": "model-docs",
+      "profiles": [
+        "qwen35-397b-awq",
+        "qwen35-397b-awq-a40",
+        "qwen35-122b-fp8",
+        "qwen35-122b-awq",
+        "qwen3-235b-awq",
+        "qwen3-coder-30b-awq",
+        "qwen3-32b-awq",
+        "qwen3-14b-awq",
+        "qwen3-8b-bf16",
+        "qwen3-8b-awq",
+        "qwen3-4b-bf16"
+      ]
+    },
+    {
+      "id": "vllm-recipe:deepseek-ai/DeepSeek-R1",
+      "title": "vLLM 官方配方 · DeepSeek-R1",
+      "url": "https://github.com/vllm-project/recipes/blob/main/models/deepseek-ai/DeepSeek-R1.yaml",
+      "kind": "official-recipe",
+      "profiles": [
+        "deepseek-r1-bf16"
+      ]
+    },
+    {
+      "id": "vllm-recipe:deepseek-ai/DeepSeek-V3.1",
+      "title": "vLLM 官方配方 · DeepSeek-V3.1",
+      "url": "https://github.com/vllm-project/recipes/blob/main/models/deepseek-ai/DeepSeek-V3.1.yaml",
+      "kind": "official-recipe",
+      "profiles": [
+        "deepseek-v31-int4"
+      ]
+    },
+    {
+      "id": "vllm-recipe:zai-org/GLM-5.2",
+      "title": "vLLM 官方配方 · GLM-5.2",
+      "url": "https://github.com/vllm-project/recipes/blob/main/models/zai-org/GLM-5.2.yaml",
+      "kind": "official-recipe",
+      "profiles": [
+        "glm52-int4-a100"
+      ]
+    },
+    {
+      "id": "vllm-recipe:moonshotai/Kimi-K2.6",
+      "title": "vLLM 官方配方 · Kimi-K2.6",
+      "url": "https://github.com/vllm-project/recipes/blob/main/models/moonshotai/Kimi-K2.6.yaml",
+      "kind": "official-recipe",
+      "profiles": [
+        "kimi-k26-awq"
+      ]
+    },
+    {
+      "id": "vllm-recipe:MiniMaxAI/MiniMax-M2.7",
+      "title": "vLLM 官方配方 · MiniMax-M2.7",
+      "url": "https://github.com/vllm-project/recipes/blob/main/models/MiniMaxAI/MiniMax-M2.7.yaml",
+      "kind": "official-recipe",
+      "profiles": [
+        "minimax-m27-fp8",
+        "minimax-m27-awq",
+        "minimax-m27-awq-a40"
+      ]
+    },
+    {
+      "id": "vllm-recipe:Qwen/Qwen3.5-397B-A17B",
+      "title": "vLLM 官方配方 · Qwen3.5-397B-A17B",
+      "url": "https://github.com/vllm-project/recipes/blob/main/models/Qwen/Qwen3.5-397B-A17B.yaml",
+      "kind": "official-recipe",
+      "profiles": [
+        "qwen35-397b-awq",
+        "qwen35-397b-awq-a40"
+      ]
+    },
+    {
+      "id": "vllm-recipe:Qwen/Qwen3.5-122B-A10B",
+      "title": "vLLM 官方配方 · Qwen3.5-122B-A10B",
+      "url": "https://github.com/vllm-project/recipes/blob/main/models/Qwen/Qwen3.5-122B-A10B.yaml",
+      "kind": "official-recipe",
+      "profiles": [
+        "qwen35-122b-fp8",
+        "qwen35-122b-awq"
+      ]
+    },
+    {
+      "id": "vllm-recipe:Qwen/Qwen3-235B-A22B-Instruct-2507",
+      "title": "vLLM 官方配方 · Qwen3-235B-A22B-Instruct-2507",
+      "url": "https://github.com/vllm-project/recipes/blob/main/models/Qwen/Qwen3-235B-A22B-Instruct-2507.yaml",
+      "kind": "official-recipe",
+      "profiles": [
+        "qwen3-235b-awq"
+      ]
+    },
+    {
+      "id": "vllm-recipe:Qwen/Qwen3-32B",
+      "title": "vLLM 官方配方 · Qwen3-32B",
+      "url": "https://github.com/vllm-project/recipes/blob/main/models/Qwen/Qwen3-32B.yaml",
+      "kind": "official-recipe",
+      "profiles": [
+        "qwen3-32b-awq"
+      ]
+    },
+    {
+      "id": "vllm-recipe:Qwen/Qwen3-14B",
+      "title": "vLLM 官方配方 · Qwen3-14B",
+      "url": "https://github.com/vllm-project/recipes/blob/main/models/Qwen/Qwen3-14B.yaml",
+      "kind": "official-recipe",
+      "profiles": [
+        "qwen3-14b-awq"
+      ]
+    },
+    {
+      "id": "vllm-recipe:Qwen/Qwen3-8B",
+      "title": "vLLM 官方配方 · Qwen3-8B",
+      "url": "https://github.com/vllm-project/recipes/blob/main/models/Qwen/Qwen3-8B.yaml",
+      "kind": "official-recipe",
+      "profiles": [
+        "qwen3-8b-bf16",
+        "qwen3-8b-awq"
+      ]
+    },
+    {
+      "id": "vllm-recipe:Qwen/Qwen3-4B",
+      "title": "vLLM 官方配方 · Qwen3-4B",
+      "url": "https://github.com/vllm-project/recipes/blob/main/models/Qwen/Qwen3-4B.yaml",
+      "kind": "official-recipe",
+      "profiles": [
+        "qwen3-4b-bf16"
+      ]
+    }
+  ]
+}

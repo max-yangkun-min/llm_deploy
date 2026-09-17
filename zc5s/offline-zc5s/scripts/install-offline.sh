@@ -1,33 +1,44 @@
 #!/usr/bin/env bash
-# ============================================================================
-# zc5s 离线机(麒麟 V10)· 容器路径安装。假定硬盘拷到 /offline-zc5s。
-# 若容器栈装不上 → 改用 ./scripts/install-baremetal.sh(裸机 pip 备案C)。
-# 用法:  cd /offline-zc5s && ./scripts/install-offline.sh
-# ============================================================================
+# zc5s 银河麒麟 V10 · 单镜像/单模型离线安装
 set -euo pipefail
+
 PKG="${PKG:-/offline-zc5s}"
-IMG_TAR="$(ls "${PKG}"/images/*.tar 2>/dev/null | head -1 || true)"
+IMAGE="zc5s-vllm:0.24.0-cu129"
+MIN_DRIVER="575.51.03"
+IMG_TAR="${PKG}/images/zc5s-vllm-0.24.0-cu129.tar"
+MODEL_SOURCE="${MODEL_SOURCE:-$(dirname "${PKG}")/offline-xt/models/MiniMax-M2.7-AWQ}"
 
-echo "== 0. 自检 =="
-nvidia-smi -L || { echo "!! 无 GPU/驱动 —— 麒麟第一道关,先解决驱动+CUDA"; exit 1; }
-if ! docker version >/dev/null 2>&1; then
-  echo "!! 无 Docker。麒麟上装 system/docker/(按 recon 的 deb/rpm);装不上就走裸机:"
-  echo "   ./scripts/install-baremetal.sh"; exit 1; fi
-if ! docker info 2>/dev/null | grep -qi nvidia; then
-  echo "!! 无 nvidia runtime → 装 system/container-toolkit/ 后:"
-  echo "   sudo nvidia-ctk runtime configure --runtime=docker && sudo systemctl restart docker"
-  echo "   (麒麟上 toolkit 装不上 → 走裸机 install-baremetal.sh)"; exit 1; fi
+version_ge() { test "$(printf '%s\n%s\n' "$2" "$1" | sort -V | head -n1)" = "$2"; }
 
-echo "== 1. 校验 =="
-[ -f "${PKG}/MANIFEST.sha256" ] && ( cd "${PKG}" && sha256sum -c MANIFEST.sha256 ) || echo "   (无 MANIFEST 或权重未全,跳过)"
+echo "== 0. 宿主检查 =="
+command -v nvidia-smi >/dev/null || { echo "!! 未找到 nvidia-smi"; exit 1; }
+DRIVER="$(nvidia-smi --query-gpu=driver_version --format=csv,noheader | head -n1 | tr -d ' ')"
+version_ge "${DRIVER}" "${MIN_DRIVER}" || {
+  echo "!! 当前驱动 ${DRIVER}，RTX 4090 + CUDA 12.9 镜像要求 >= ${MIN_DRIVER}"
+  echo "!! GeForce 4090 不使用 cuda-compat 绕过驱动要求"; exit 1; }
+test "$(nvidia-smi -L | grep -ci '4090')" -eq 8 || echo "!! GPU 未识别为 8×4090，请核对 recon 报告"
+docker version >/dev/null 2>&1 || { echo "!! Docker 不可用"; exit 1; }
+docker info 2>/dev/null | grep -qi nvidia || { echo "!! NVIDIA Container Toolkit/runtime 不可用"; exit 1; }
 
-echo "== 2. docker load =="
-[ -n "${IMG_TAR}" ] || { echo "!! images/ 无 tar"; exit 1; }
-docker load -i "${IMG_TAR}"; docker images | grep zc5s-vllm || true
+echo "== 1. 离线包检查 =="
+test -f "${IMG_TAR}" || { echo "!! 缺少 ${IMG_TAR}"; exit 1; }
+test -f "${MODEL_SOURCE}/config.json" || {
+  echo "!! 共享 M2.7 路径不存在: ${MODEL_SOURCE}"
+  echo "!! 若离线介质挂载位置不同，请设置 MODEL_SOURCE=/实际路径/MiniMax-M2.7-AWQ"; exit 1; }
+SHARDS="$(find "${MODEL_SOURCE}" -maxdepth 1 -name 'model-*.safetensors' -type f | wc -l)"
+test "${SHARDS}" -eq 44 || { echo "!! M2.7 权重应有44片，当前${SHARDS}片"; exit 1; }
+if test -f "${PKG}/MANIFEST.sha256"; then
+  (cd "${PKG}" && sha256sum -c MANIFEST.sha256)
+else
+  echo "!! 未提供 MANIFEST.sha256"; exit 1
+fi
 
-echo
-echo "== 完成。改 scripts/run.sh 顶部 MODELS_DIR,按选型起: =="
-echo "   ./run.sh m2.7      # M2.7 INT4 双副本 + ./run.sh lb-nginx"
-echo "   ./run.sh m2.7-fp8  # M2.7 FP8 单副本(质量)"
-echo "   ./run.sh 397b      # Qwen3.5-397B"
-echo "   详见 大模型选型方案-8x4090-48G.md"
+echo "== 2. 导入并检查镜像 =="
+docker load -i "${IMG_TAR}"
+docker image inspect "${IMAGE}" --format \
+  'image={{.RepoTags}} min-driver={{index .Config.Labels "org.blade-agent.min-host-driver"}} cuda={{index .Config.Labels "org.blade-agent.cuda-runtime"}}'
+
+echo "== 完成 =="
+echo "共享模型: ${MODEL_SOURCE}"
+echo "先运行: cd ${PKG}/scripts && ./run.sh verify"
+echo "再设置 MODELS_DIR=$(dirname "${MODEL_SOURCE}") 后启动: ./run.sh m2.7 && ./run.sh lb-nginx"

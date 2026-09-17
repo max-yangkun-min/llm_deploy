@@ -15,11 +15,12 @@
 #   备用四:8卡机 ./run.sh 397b-8gpu ; 6卡机 ./run.sh m2.7
 # ============================================================================
 set -euo pipefail
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # ── 按现场改这几行 ──────────────────────────────────────────────────
 VLLM_TAG="${VLLM_TAG:-v0.24.0}"
-VLLM_BASE_IMAGE="${VLLM_BASE_IMAGE:-vllm/vllm-openai:${VLLM_TAG}}"
-IMAGE="${IMAGE:-xt-vllm:${VLLM_TAG#v}-cu124}" # CUDA 12.4验收镜像;两台必须相同
+VLLM_BASE_IMAGE="${VLLM_BASE_IMAGE:-vllm/vllm-openai:${VLLM_TAG}-cu129}"
+IMAGE="${IMAGE:-xt-vllm:${VLLM_TAG#v}-cu129-compat545}" # 两台必须使用同一验收镜像
 MODELS_DIR="/data/models"            # 三个权重的父目录(权重放 SSD)
 HF_CACHE="/data/hf-cache"
 NIC="ens6f0"                         # ★ 万兆光口接口名(recon 查);PP 跨机通信必须锁它
@@ -39,10 +40,11 @@ PP_ENV=(-e CUDA_VISIBLE_DEVICES="${RAY_GPU_DEVICES}"
   -e NCCL_SOCKET_IFNAME="${NIC}" -e GLOO_SOCKET_IFNAME="${NIC}" -e NCCL_IB_DISABLE=1)
 
 case "${1:-}" in
-  build) docker build --build-arg VLLM_TAG="${VLLM_TAG}" \
+  build) docker build -f "${SCRIPT_DIR}/Dockerfile" --build-arg VLLM_TAG="${VLLM_TAG}" \
            --build-arg VLLM_BASE_IMAGE="${VLLM_BASE_IMAGE}" \
-           --build-arg CUDA_COMPAT=12.4 -t "${IMAGE}" . \
-         && IMAGE="${IMAGE}" bash ./verify-cuda124.sh --image-only ;;
+           --build-arg CUDA_COMPAT=12.9 --build-arg RAY_VERSION=2.56.1 \
+           -t "${IMAGE}" "${SCRIPT_DIR}" \
+         && IMAGE="${IMAGE}" bash "${SCRIPT_DIR}/verify-cu129-compat.sh" --image-only ;;
 
   # ══ 方案三:M2.7 双副本(两台各跑一次,无需 Ray)══════════════════
   m2.7)
@@ -111,7 +113,8 @@ case "${1:-}" in
   lb-nginx)
     docker run -d --name xt-lb -p "${LB_PORT}:8000" \
       --log-driver local --log-opt max-size=10m \
-      -v "$(pwd)/lb/nginx.conf:/etc/nginx/nginx.conf:ro" nginx:stable
+      -v "${SCRIPT_DIR}/lb/nginx.conf:/etc/nginx/nginx.conf:ro" \
+      --entrypoint nginx "${IMAGE}" -g 'daemon off;'
     echo "nginx LB 起于本机 :${LB_PORT}(改 lb/nginx.conf 里的两台 upstream IP)" ;;
 
   # ══ 通用 ══

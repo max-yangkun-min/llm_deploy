@@ -1,0 +1,102 @@
+# 持续集成与定时检查
+
+这套仓库的检查只有一份实现:`tools/ci.py`。命令行、Windows 定时任务、以及
+`.github/workflows/ci.yml` 跑的都是它,所以不会出现「本地过了、CI 挂了」这种
+两套规则的问题。
+
+## 一条命令看仓库是否健康
+
+```powershell
+pwsh -File scripts\ci\run-ci.ps1            # 离线,秒级
+pwsh -File scripts\ci\run-ci.ps1 -Online    # 额外联网核实,分钟级
+```
+
+或者直接调 Python(不带日志留痕):
+
+```bash
+python tools/ci.py
+python tools/ci.py --online --json output/ci/report.json
+```
+
+退出码 = **失败项数**,0 表示全通过。`SKIP` 不计入失败,但会单独列出来。
+
+> 为什么把 `SKIP` 单独列出:一个没跑过的检查不能看起来像跑过了。本机 WSL 没装
+> 发行版时 shell 语法检查无法执行,这时它报 `SKIP` 而不是 `PASS`——**跳过和通过
+> 是两回事**。
+
+## 检查项
+
+| 检查 | 模式 | 拦什么 |
+|---|---|---|
+| `C: 盘可用空间` | 离线 | 低于 20 GiB 直接失败。这是 `AGENTS.md` 的硬约束:离线包、镜像 tar、权重动辄十几 GB,先看清磁盘再动手 |
+| `Python 语法检查` | 离线 | `tools/` `deploy-portal/` `model-selector/` 全部 `.py`。语法错误会让后面每项都失败,先隔离出来最省时间 |
+| `冒烟测试` | 离线 | `deploy-portal/tools/smoke_test.py` 的 99 项断言:接口、数据自洽、前端模块括号平衡、死控件、目录穿越 |
+| `实测值核对` | 离线 | `models.csv` / `model-families.csv` 有没有被手改。每个值都要带 40 位 `verified_revision`,所以必须来自 `apply_truth.py` |
+| `Shell 脚本语法` | 离线 | 仓库自有的 21 个 `.sh` 做 `bash -n`(只解析不执行)。第三方源码目录(如 `.vendor-fetch-*`、`source-cache`)不在门禁范围 |
+| `GPU 目录自洽` | 离线 | `gpu-catalog.json` 里没有 `verification.status != ok` 的条目,并统计厂商分布 |
+| `根目录残留物` | 离线 | 临时脚本 / 待办文件 / 散落日志,只报 `WARN`,**不删用户的东西** |
+| `在线:GPU 厂商页核实` | `--online` | 15 张卡的显存/类型/互联是否还能在厂商页逐字命中;NVIDIA 卡另外对官方算力表核 |
+| `在线:权威文档可达性` | `--online` | 65 个权威来源链接是否还活着 |
+
+## 两条刻意的设计
+
+**离线检查必须不联网、不写仓库。** 默认模式只读仓库、秒级完成,任何一次改动后
+都能跑。需要联网的核实放在 `--online`,因为厂商页慢且可能超时;把它设成默认会
+让人不敢跑 CI。
+
+**第三方代码不进门禁。** `kty5l/.vendor-fetch-cutlass-v4.4.2/` 是下载来的
+CUTLASS 源码,`kty5l/source-cache/` 是 vLLM 的 fetch 缓存。它们的语法问题不是
+本项目的缺陷,拿它们当门禁只会让 CI 常年红着,最后所有人都学会忽略结果——
+那比没有 CI 更糟。判定规则见 `tools/ci.py::is_third_party`。
+
+## 定时任务
+
+```powershell
+# 注册(默认:每天 09:30 离线 + 每周日 10:00 联网)
+pwsh -File scripts\ci\register-scheduled-task.ps1
+
+# 自定义时间
+pwsh -File scripts\ci\register-scheduled-task.ps1 -DailyAt 08:00 -WeeklyDay Monday -WeeklyAt 09:00
+
+# 立即跑一次 / 看上次结果
+Start-ScheduledTask -TaskName llm-ci-daily
+Get-ScheduledTaskInfo -TaskName llm-ci-daily | Select-Object LastRunTime,LastTaskResult
+
+# 取消
+pwsh -File scripts\ci\register-scheduled-task.ps1 -Unregister
+```
+
+任务注册在当前用户下,所以不需要提权;代价是只在用户登录后才触发。需要
+「未登录也跑」时加 `-RunWhetherLoggedOn`(那一步需要管理员权限)。
+
+### 留痕
+
+每次运行都会写两份文件,并且固定复制一份「最新」的,免得翻时间戳:
+
+```
+output/ci/ci-<时间戳>.log    全量输出
+output/ci/ci-<时间戳>.json   结构化结果(含每项耗时)
+output/ci/ci-latest.log      最新一次
+output/ci/ci-latest.json     最新一次
+```
+
+`output/` 已在 `.gitignore` 里,所以这些留痕不会污染提交。
+
+## 云端 CI
+
+`.github/workflows/ci.yml` 在 push 与 PR 上跑离线门禁(ubuntu,只需要 Python
+3.11+,没有第三方依赖)。在线核实不在云端跑:厂商页偶发超时会变成假失败,
+而这类检查按周在本机跑更有意义。
+
+> 注意:这个 workflow **尚未在真实 runner 上验证过**。本机没有可用的 GitHub
+> Actions 环境;首次 push 后请确认它确实变绿,不要假定它能跑。
+
+## 加一项检查
+
+1. 在 `tools/ci.py` 里写一个 `check_xxx(report)` 函数,用 `report.add(名字, 结果, 详情)` 汇报。
+2. 结果只能是 `pass` / `fail` / `skip` / `warn`。
+3. 在 `main()` 里调用它;联网的检查放进 `check_online()`。
+4. 如果新检查依赖某个外部命令,先探测**这个用法**是否可用,再决定报 `pass` 还是 `skip`。
+
+第 4 条不是形式主义:第一次实现 shell 检查时只探测了「bash 能不能跑 echo」,
+探测通过、紧接着每个脚本都报路径错误,把整项判成失败。探测通过不等于这个用法可用。

@@ -13,7 +13,7 @@ echo "xt 离线机核对报告  ($(hostname 2>/dev/null))  ($(date 2>/dev/null))
 line "A1 发行版/架构 (deb/rpm 与镜像架构;应 x86_64)"
 cat /etc/os-release 2>/dev/null | grep -E '^(NAME|VERSION|ID|VERSION_ID|VERSION_CODENAME)='; uname -m
 
-line "B1 GPU 概览 (7+7应各7张;备用8+6应分别8/6张 A40 48GB / CUDA 12.4档位驱动>=550.54.15 / sm_86)"
+line "B1 GPU概览(7+7应各7张;备用8+6应分别8/6张A40 48GB / cu129 Forward Compatibility驱动>=545 / sm_86)"
 have nvidia-smi && nvidia-smi || echo "!! 无 nvidia-smi,驱动没装"
 line "B2 卡清单"
 have nvidia-smi && nvidia-smi -L
@@ -23,10 +23,15 @@ line "B4 驱动/显存/ECC"
 have nvidia-smi && nvidia-smi --query-gpu=driver_version,memory.total,ecc.mode.current --format=csv
 if have nvidia-smi; then
   driver="$(nvidia-smi --query-gpu=driver_version --format=csv,noheader | head -n1 | tr -d '[:space:]')"
-  if [ "$(printf '%s\n%s\n' "550.54.15" "${driver}" | sort -V | head -n1)" = "550.54.15" ]; then
-    echo "PASS:驱动 ${driver} 满足 CUDA 12.4 基线"
+  if [ "$(printf '%s\n%s\n' "545.0" "${driver}" | sort -V | head -n1)" = "545.0" ]; then
+    echo "PASS:驱动${driver}满足Forward Compatibility策略下限545.0"
+    if [ "$(printf '%s\n%s\n' "575.51.03" "${driver}" | sort -V | head -n1)" = "575.51.03" ]; then
+      echo "PASS:驱动达到CUDA 12.9原生基线575.51.03"
+    else
+      echo "INFO:驱动低于575.51.03,必须由镜像内cuda-compat-12-9提供PTX JIT兼容"
+    fi
   else
-    echo "!! 驱动 ${driver} < 550.54.15,必须先升级再安装cu124镜像"
+    echo "!! 驱动${driver}<545.0,不进入本方案"
   fi
 fi
 line "B5 备用8+6硬件门槛 (8卡机须确认槽位/8-pin供电/PSU/风道/Above 4G Decoding)"
@@ -40,7 +45,7 @@ echo "手动: ping <对端IP> ; iperf3 若装了可测带宽"
 line "D1 容器栈 (docker + nvidia runtime;两台都要有,镜像两台都要 load)"
 have docker && docker version 2>/dev/null | grep -E 'Version|API' || echo "!! 无 docker,需备 system/docker/"
 have docker && (docker info 2>/dev/null | grep -i nvidia || echo "!! 无 nvidia runtime,需备 nvidia-container-toolkit")
-echo "安装镜像后执行:IMAGE=xt-vllm:0.24.0-cu124 ./verify-cuda124.sh"
+echo "安装镜像后执行:IMAGE=xt-vllm:0.24.0-cu129-compat545 ./verify-cu129-compat.sh"
 
 line "E1 磁盘 (权重放 SSD:M2.7~115G / 397B~200G / K2.6~500G,按要部署的方案备够)"
 df -h | grep -vE 'tmpfs|overlay|udev'

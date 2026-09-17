@@ -1,0 +1,15 @@
+{
+  "gpu_name": "NVIDIA A100 80GB PCIe",
+  "gpu_count": 8,
+  "vram_per_gpu_gib": 80,
+  "compute_capability": 8.0,
+  "driver_version": "570.124.06",
+  "host_ram_gib": 512,
+  "disk_free_gib": 1000,
+  "interconnect": "PCIe",
+  "nodes": 1,
+  "workload": "agent,coding,reasoning",
+  "require_multimodal": false,
+  "require_permissive_license": false,
+  "min_context_k": 32
+}

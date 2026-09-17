@@ -20,7 +20,7 @@ bash recon.sh
 
 确认:
 
-- A40数量符合7+7或8+6布局,驱动不低于550.54.15。
+- A40数量符合7+7或8+6布局,驱动不低于545.0;低于575.51.03时必须通过compat与Triton JIT验收。
 - `nvidia-smi topo -m` 能选出拓扑合适的4卡TP组。
 - 权重目标盘为SSD,空间足够容纳约200GB权重、缓存和日志。
 - Docker和NVIDIA Container Runtime可用。
@@ -29,13 +29,13 @@ bash recon.sh
 
 ```bash
 cd /offline-xt
-./scripts/install-offline.sh
+bash scripts/install-offline.sh
 ```
 
 验证镜像:
 
 ```bash
-docker run --rm --entrypoint bash xt-vllm:0.24.0-cu124 -lc '
+docker run --rm --entrypoint bash xt-vllm:0.24.0-cu129-compat545 -lc '
 python -c "import vllm,ray; print(\"vllm\",vllm.__version__); print(\"ray\",ray.__version__)"
 '
 ```
@@ -77,7 +77,7 @@ du -sh /data/models/Qwen3.5-397B-A17B-AWQ
 编辑 `/offline-xt/scripts/run.sh`:
 
 ```bash
-IMAGE="xt-vllm:0.24.0-cu124"
+IMAGE="xt-vllm:0.24.0-cu129-compat545"
 MODELS_DIR="/data/models"
 HF_CACHE="/data/hf-cache"
 NIC="ens6f0"          # 7+7跨机方案填写各自10GbE接口名

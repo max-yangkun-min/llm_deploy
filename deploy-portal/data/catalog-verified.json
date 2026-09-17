@@ -1,0 +1,1934 @@
+{
+ "schema": 1,
+ "note": "apply_truth.py 维护的核实缓存;每条都带 repo/revision/endpoint。",
+ "entries": {
+  "unsloth/DeepSeek-R1-BF16": {
+   "repo": "unsloth/DeepSeek-R1-BF16",
+   "endpoint": "hf-mirror.com",
+   "revision": "7d1258fb7f49406f05eba49394f79e76308ab9ce",
+   "last_modified": "2025-04-19T10:52:51.000Z",
+   "license_id": "mit",
+   "license_name": null,
+   "total_params_b": 684.49,
+   "weight_gib": 1275.0,
+   "context_k": 160.0,
+   "max_position_embeddings": 163840,
+   "quant_method": null,
+   "gated": false,
+   "params_by_dtype": {
+    "F32": 15104,
+    "BF16": 684489830400
+   },
+   "fetched_at": "2026-09-16",
+   "attention_shape": {
+    "kind": "mla",
+    "layers": 61,
+    "elements_per_token_per_layer": 576,
+    "basis": "MLA:kv_lora_rank 512 + qk_rope_head_dim 64,各头共享不乘 2"
+   },
+   "kv_lora_rank": 512,
+   "qk_rope_head_dim": 64
+  },
+  "meta-llama/Meta-Llama-3.1-405B-Instruct": {
+   "repo": "meta-llama/Meta-Llama-3.1-405B-Instruct",
+   "endpoint": "hf-mirror.com",
+   "revision": "be673f326cab4cd22ccfef76109faf68e41aa5f1",
+   "last_modified": "2024-09-25T17:02:11.000Z",
+   "license_id": "llama3.1",
+   "license_name": null,
+   "total_params_b": 405.85,
+   "weight_gib": 756.0,
+   "context_k": null,
+   "max_position_embeddings": null,
+   "quant_method": null,
+   "gated": "manual",
+   "params_by_dtype": {
+    "BF16": 405853388800
+   },
+   "fetched_at": "2026-09-16",
+   "attention_shape": {
+    "kind": "unknown",
+    "basis": "config 里缺少 attention 结构字段,无法计算"
+   }
+  },
+  "cyankiwi/GLM-5.2-AWQ-INT4": {
+   "repo": "cyankiwi/GLM-5.2-AWQ-INT4",
+   "endpoint": "hf-mirror.com",
+   "revision": "956f4d228e36c95f66a80058fe64b69af67360ca",
+   "last_modified": "2026-07-28T23:59:05.000Z",
+   "license_id": "mit",
+   "license_name": null,
+   "total_params_b": 753.33,
+   "weight_gib": 441.7,
+   "context_k": 1024.0,
+   "max_position_embeddings": 1048576,
+   "quant_method": "compressed-tensors",
+   "gated": false,
+   "params_by_dtype": {
+    "BF16": 27199429632,
+    "I32": 726130491392,
+    "F32": 19456
+   },
+   "fetched_at": "2026-09-16",
+   "attention_shape": {
+    "kind": "mla",
+    "layers": 78,
+    "elements_per_token_per_layer": 576,
+    "basis": "MLA:kv_lora_rank 512 + qk_rope_head_dim 64,各头共享不乘 2"
+   },
+   "kv_lora_rank": 512,
+   "qk_rope_head_dim": 64,
+   "full_attention_layers": 0,
+   "linear_attention_layers": 0
+  },
+  "moonshotai/Kimi-K2.6": {
+   "repo": "moonshotai/Kimi-K2.6",
+   "endpoint": "hf-mirror.com",
+   "revision": "7eb5002f6aadc958aed6a9177b7ed26bb94011bb",
+   "last_modified": "2026-05-19T09:01:54.000Z",
+   "license_id": "other",
+   "license_name": null,
+   "total_params_b": 1026.88,
+   "weight_gib": 554.3,
+   "context_k": 256.0,
+   "max_position_embeddings": 262144,
+   "quant_method": null,
+   "gated": false,
+   "params_by_dtype": {
+    "F32": 23040,
+    "I32": 1014686023680,
+    "BF16": 12193329648
+   },
+   "fetched_at": "2026-09-16",
+   "attention_shape": {
+    "kind": "mla",
+    "layers": 61,
+    "elements_per_token_per_layer": 576,
+    "basis": "MLA:kv_lora_rank 512 + qk_rope_head_dim 64,各头共享不乘 2"
+   },
+   "kv_lora_rank": 512,
+   "qk_rope_head_dim": 64
+  },
+  "QuantTrio/DeepSeek-V3.1-AWQ": {
+   "repo": "QuantTrio/DeepSeek-V3.1-AWQ",
+   "endpoint": "hf-mirror.com",
+   "revision": "0fdeb8b8b37bfee1dd7feda37cdc57effb1ab480",
+   "last_modified": "2026-05-08T01:33:48.000Z",
+   "license_id": "mit",
+   "license_name": null,
+   "total_params_b": 684.49,
+   "weight_gib": 370.8,
+   "context_k": 160.0,
+   "max_position_embeddings": 163840,
+   "quant_method": "awq",
+   "gated": false,
+   "params_by_dtype": {
+    "BF16": 28680056832,
+    "I32": 655809773568,
+    "F32": 15104
+   },
+   "fetched_at": "2026-09-16",
+   "attention_shape": {
+    "kind": "mla",
+    "layers": 61,
+    "elements_per_token_per_layer": 576,
+    "basis": "MLA:kv_lora_rank 512 + qk_rope_head_dim 64,各头共享不乘 2"
+   },
+   "kv_lora_rank": 512,
+   "qk_rope_head_dim": 64
+  },
+  "QuantTrio/Qwen3.5-397B-A17B-AWQ": {
+   "repo": "QuantTrio/Qwen3.5-397B-A17B-AWQ",
+   "endpoint": "hf-mirror.com",
+   "revision": "536f95520cb5202283f828e76fdc86afda581e43",
+   "last_modified": "2026-03-02T03:46:27.000Z",
+   "license_id": "apache-2.0",
+   "license_name": null,
+   "total_params_b": null,
+   "weight_gib": 227.6,
+   "context_k": 256.0,
+   "max_position_embeddings": 262144,
+   "quant_method": "awq",
+   "gated": false,
+   "params_by_dtype": {},
+   "fetched_at": "2026-09-16",
+   "attention_shape": {
+    "kind": "hybrid-linear",
+    "layers": 15,
+    "total_layers": 60,
+    "elements_per_token_per_layer": 1024,
+    "basis": "混合线性注意力:60 层里只有 15 层是 full_attention,其余线性层的状态不随上下文增长"
+   },
+   "full_attention_layers": 15,
+   "linear_attention_layers": 45
+  },
+  "MiniMaxAI/MiniMax-M2.7": {
+   "repo": "MiniMaxAI/MiniMax-M2.7",
+   "endpoint": "hf-mirror.com",
+   "revision": "d494266a4affc0d2995ba1fa35c8481cbd84294b",
+   "last_modified": "2026-04-20T04:28:14.000Z",
+   "license_id": "other",
+   "license_name": null,
+   "total_params_b": 228.69,
+   "weight_gib": 214.3,
+   "context_k": 200.0,
+   "max_position_embeddings": 204800,
+   "quant_method": "fp8",
+   "gated": false,
+   "params_by_dtype": {
+    "F32": 48774656,
+    "BF16": 1230021632,
+    "F8_E4M3": 227410968576
+   },
+   "fetched_at": "2026-09-16",
+   "attention_shape": {
+    "kind": "gqa",
+    "layers": 62,
+    "elements_per_token_per_layer": 2048,
+    "basis": "GQA/MHA:2 x 8 个 KV 头 x 128 维,共 62 层"
+   }
+  },
+  "QuantTrio/Qwen3-235B-A22B-Instruct-2507-AWQ": {
+   "repo": "QuantTrio/Qwen3-235B-A22B-Instruct-2507-AWQ",
+   "endpoint": "hf-mirror.com",
+   "revision": "96548f657d772187f16e9f04bc50aec78a9f9cdd",
+   "last_modified": "2025-08-19T13:50:01.000Z",
+   "license_id": "apache-2.0",
+   "license_name": null,
+   "total_params_b": 235.09,
+   "weight_gib": 115.5,
+   "context_k": 256.0,
+   "max_position_embeddings": 262144,
+   "quant_method": "awq",
+   "gated": false,
+   "params_by_dtype": {
+    "I32": 233798893568,
+    "F16": 1294740992
+   },
+   "fetched_at": "2026-09-16",
+   "attention_shape": {
+    "kind": "gqa",
+    "layers": 94,
+    "elements_per_token_per_layer": 1024,
+    "basis": "GQA/MHA:2 x 4 个 KV 头 x 128 维,共 94 层"
+   }
+  },
+  "QuantTrio/MiniMax-M2.7-AWQ": {
+   "repo": "QuantTrio/MiniMax-M2.7-AWQ",
+   "endpoint": "hf-mirror.com",
+   "revision": "c9f2192c7b81f26f9a257ce73d92122fff0aea3d",
+   "last_modified": "2026-04-20T15:56:49.000Z",
+   "license_id": "other",
+   "license_name": null,
+   "total_params_b": 228.69,
+   "weight_gib": 121.3,
+   "context_k": 192.0,
+   "max_position_embeddings": 196608,
+   "quant_method": "awq",
+   "gated": false,
+   "params_by_dtype": {
+    "F32": 48774656,
+    "BF16": 7584392192,
+    "I32": 221056598016
+   },
+   "fetched_at": "2026-09-16",
+   "attention_shape": {
+    "kind": "gqa",
+    "layers": 62,
+    "elements_per_token_per_layer": 2048,
+    "basis": "GQA/MHA:2 x 8 个 KV 头 x 128 维,共 62 层"
+   }
+  },
+  "Qwen/Qwen3.5-122B-A10B-FP8": {
+   "repo": "Qwen/Qwen3.5-122B-A10B-FP8",
+   "endpoint": "hf-mirror.com",
+   "revision": "a099dee70ccfcd8d5dda56aaa0b60cb8ecadabc9",
+   "last_modified": "2026-04-24T05:56:01.000Z",
+   "license_id": "apache-2.0",
+   "license_name": null,
+   "total_params_b": 125.09,
+   "weight_gib": 118.4,
+   "context_k": 256.0,
+   "max_position_embeddings": 262144,
+   "quant_method": "fp8",
+   "gated": false,
+   "params_by_dtype": {
+    "BF16": 2058286064,
+    "F8_E4M3": 123035713536,
+    "F32": 6912
+   },
+   "fetched_at": "2026-09-16",
+   "attention_shape": {
+    "kind": "hybrid-linear",
+    "layers": 12,
+    "total_layers": 48,
+    "elements_per_token_per_layer": 1024,
+    "basis": "混合线性注意力:48 层里只有 12 层是 full_attention,其余线性层的状态不随上下文增长"
+   },
+   "full_attention_layers": 12,
+   "linear_attention_layers": 36
+  },
+  "QuantTrio/Qwen3.5-122B-A10B-AWQ": {
+   "repo": "QuantTrio/Qwen3.5-122B-A10B-AWQ",
+   "endpoint": "hf-mirror.com",
+   "revision": "af62f78061dacbebd03825ceae7d675609e66320",
+   "last_modified": "2026-02-26T10:22:18.000Z",
+   "license_id": "apache-2.0",
+   "license_name": null,
+   "total_params_b": 125.09,
+   "weight_gib": 76.5,
+   "context_k": 256.0,
+   "max_position_embeddings": 262144,
+   "quant_method": "awq",
+   "gated": false,
+   "params_by_dtype": {
+    "F32": 37755648,
+    "BF16": 11500543472,
+    "I32": 113548197888
+   },
+   "fetched_at": "2026-09-16",
+   "attention_shape": {
+    "kind": "hybrid-linear",
+    "layers": 12,
+    "total_layers": 48,
+    "elements_per_token_per_layer": 1024,
+    "basis": "混合线性注意力:48 层里只有 12 层是 full_attention,其余线性层的状态不随上下文增长"
+   },
+   "full_attention_layers": 12,
+   "linear_attention_layers": 36
+  },
+  "QuantTrio/Qwen3-Coder-30B-A3B-Instruct-AWQ": {
+   "repo": "QuantTrio/Qwen3-Coder-30B-A3B-Instruct-AWQ",
+   "endpoint": "hf-mirror.com",
+   "revision": "c58857a7f41c0920f73d1b56678640f9c02017d7",
+   "last_modified": "2025-09-05T08:39:07.000Z",
+   "license_id": "apache-2.0",
+   "license_name": null,
+   "total_params_b": 30.53,
+   "weight_gib": 15.7,
+   "context_k": 256.0,
+   "max_position_embeddings": 262144,
+   "quant_method": "awq",
+   "gated": false,
+   "params_by_dtype": {
+    "I32": 29896998912,
+    "BF16": 635123712
+   },
+   "fetched_at": "2026-09-16",
+   "attention_shape": {
+    "kind": "gqa",
+    "layers": 48,
+    "elements_per_token_per_layer": 1024,
+    "basis": "GQA/MHA:2 x 4 个 KV 头 x 128 维,共 48 层"
+   }
+  },
+  "Qwen/Qwen3-32B-AWQ": {
+   "repo": "Qwen/Qwen3-32B-AWQ",
+   "endpoint": "hf-mirror.com",
+   "revision": "0499c3ac83fdef8810b907a23894ba91e95eddd8",
+   "last_modified": "2025-05-21T06:17:51.000Z",
+   "license_id": "apache-2.0",
+   "license_name": null,
+   "total_params_b": 32.76,
+   "weight_gib": 18.0,
+   "context_k": 40.0,
+   "max_position_embeddings": 40960,
+   "quant_method": "awq",
+   "gated": false,
+   "params_by_dtype": {
+    "I32": 31205621760,
+    "BF16": 1556501504
+   },
+   "fetched_at": "2026-09-16",
+   "attention_shape": {
+    "kind": "gqa",
+    "layers": 64,
+    "elements_per_token_per_layer": 2048,
+    "basis": "GQA/MHA:2 x 8 个 KV 头 x 128 维,共 64 层"
+   }
+  },
+  "Qwen/Qwen3-14B-AWQ": {
+   "repo": "Qwen/Qwen3-14B-AWQ",
+   "endpoint": "hf-mirror.com",
+   "revision": "31c69efc29464b6bb0aee1398b5a7b50a99340c3",
+   "last_modified": "2025-05-21T06:21:57.000Z",
+   "license_id": "apache-2.0",
+   "license_name": null,
+   "total_params_b": 14.77,
+   "weight_gib": 9.3,
+   "context_k": 40.0,
+   "max_position_embeddings": 40960,
+   "quant_method": "awq",
+   "gated": false,
+   "params_by_dtype": {
+    "I32": 13212057600,
+    "BF16": 1556249600
+   },
+   "fetched_at": "2026-09-16",
+   "attention_shape": {
+    "kind": "gqa",
+    "layers": 40,
+    "elements_per_token_per_layer": 2048,
+    "basis": "GQA/MHA:2 x 8 个 KV 头 x 128 维,共 40 层"
+   }
+  },
+  "Qwen/Qwen3-8B": {
+   "repo": "Qwen/Qwen3-8B",
+   "endpoint": "hf-mirror.com",
+   "revision": "b968826d9c46dd6066d109eabc6255188de91218",
+   "last_modified": "2025-07-26T03:49:13.000Z",
+   "license_id": "apache-2.0",
+   "license_name": null,
+   "total_params_b": 8.19,
+   "weight_gib": 15.3,
+   "context_k": 40.0,
+   "max_position_embeddings": 40960,
+   "quant_method": null,
+   "gated": false,
+   "params_by_dtype": {
+    "BF16": 8190735360
+   },
+   "fetched_at": "2026-09-16",
+   "attention_shape": {
+    "kind": "gqa",
+    "layers": 36,
+    "elements_per_token_per_layer": 2048,
+    "basis": "GQA/MHA:2 x 8 个 KV 头 x 128 维,共 36 层"
+   }
+  },
+  "Qwen/Qwen3-8B-AWQ": {
+   "repo": "Qwen/Qwen3-8B-AWQ",
+   "endpoint": "hf-mirror.com",
+   "revision": "4da05a8edb55c6046cce958586c33b61da07bb79",
+   "last_modified": "2025-05-21T06:09:42.000Z",
+   "license_id": "apache-2.0",
+   "license_name": null,
+   "total_params_b": 8.19,
+   "weight_gib": 5.7,
+   "context_k": 40.0,
+   "max_position_embeddings": 40960,
+   "quant_method": "awq",
+   "gated": false,
+   "params_by_dtype": {
+    "BF16": 1244967936,
+    "I32": 6945767424
+   },
+   "fetched_at": "2026-09-16",
+   "attention_shape": {
+    "kind": "gqa",
+    "layers": 36,
+    "elements_per_token_per_layer": 2048,
+    "basis": "GQA/MHA:2 x 8 个 KV 头 x 128 维,共 36 层"
+   }
+  },
+  "Qwen/Qwen3-4B": {
+   "repo": "Qwen/Qwen3-4B",
+   "endpoint": "hf-mirror.com",
+   "revision": "1cfa9a7208912126459214e8b04321603b3df60c",
+   "last_modified": "2025-07-26T03:46:39.000Z",
+   "license_id": "apache-2.0",
+   "license_name": null,
+   "total_params_b": 4.02,
+   "weight_gib": 7.5,
+   "context_k": 40.0,
+   "max_position_embeddings": 40960,
+   "quant_method": null,
+   "gated": false,
+   "params_by_dtype": {
+    "BF16": 4022468096
+   },
+   "fetched_at": "2026-09-16",
+   "attention_shape": {
+    "kind": "gqa",
+    "layers": 36,
+    "elements_per_token_per_layer": 2048,
+    "basis": "GQA/MHA:2 x 8 个 KV 头 x 128 维,共 36 层"
+   }
+  },
+  "deepseek-ai/DeepSeek-R1": {
+   "repo": "deepseek-ai/DeepSeek-R1",
+   "endpoint": "hf-mirror.com",
+   "revision": "56d4cbbb4d29f4355bab4b9a39ccb717a14ad5ad",
+   "last_modified": "2025-03-27T04:01:59.000Z",
+   "license_id": "mit",
+   "license_name": null,
+   "total_params_b": 684.49,
+   "weight_gib": null,
+   "context_k": 160.0,
+   "max_position_embeddings": 163840,
+   "quant_method": "fp8",
+   "gated": false,
+   "params_by_dtype": {
+    "BF16": 3918786560,
+    "F8_E4M3": 680571043840,
+    "F32": 15104
+   },
+   "fetched_at": "2026-09-16",
+   "attention_shape": {
+    "kind": "mla",
+    "layers": 61,
+    "elements_per_token_per_layer": 576,
+    "basis": "MLA:kv_lora_rank 512 + qk_rope_head_dim 64,各头共享不乘 2"
+   },
+   "kv_lora_rank": 512,
+   "qk_rope_head_dim": 64
+  },
+  "deepseek-ai/DeepSeek-V3": {
+   "repo": "deepseek-ai/DeepSeek-V3",
+   "endpoint": "hf-mirror.com",
+   "revision": "e815299b0bcbac849fa540c768ef21845365c9eb",
+   "last_modified": "2025-03-27T04:01:45.000Z",
+   "license_id": "",
+   "license_name": null,
+   "total_params_b": 684.53,
+   "weight_gib": null,
+   "context_k": 160.0,
+   "max_position_embeddings": 163840,
+   "quant_method": "fp8",
+   "gated": false,
+   "params_by_dtype": {
+    "BF16": 3918786560,
+    "F8_E4M3": 680571043840,
+    "F32": 41555600
+   },
+   "fetched_at": "2026-09-16"
+  },
+  "deepseek-ai/DeepSeek-V3.1": {
+   "repo": "deepseek-ai/DeepSeek-V3.1",
+   "endpoint": "hf-mirror.com",
+   "revision": "c0781d039fb7a1ba2abc4add0bdc293e92d2b8db",
+   "last_modified": "2025-09-05T11:30:15.000Z",
+   "license_id": "mit",
+   "license_name": null,
+   "total_params_b": 684.53,
+   "weight_gib": null,
+   "context_k": 160.0,
+   "max_position_embeddings": 163840,
+   "quant_method": "fp8",
+   "gated": false,
+   "params_by_dtype": {
+    "BF16": 3918786560,
+    "F8_E4M3": 680571043840,
+    "F32": 41555600
+   },
+   "fetched_at": "2026-09-16",
+   "attention_shape": {
+    "kind": "mla",
+    "layers": 61,
+    "elements_per_token_per_layer": 576,
+    "basis": "MLA:kv_lora_rank 512 + qk_rope_head_dim 64,各头共享不乘 2"
+   },
+   "kv_lora_rank": 512,
+   "qk_rope_head_dim": 64
+  },
+  "deepseek-ai/DeepSeek-R1-Distill-Llama-70B": {
+   "repo": "deepseek-ai/DeepSeek-R1-Distill-Llama-70B",
+   "endpoint": "hf-mirror.com",
+   "revision": "b1c0b44b4369b597ad119a196caf79a9c40e141e",
+   "last_modified": "2025-02-24T03:31:15.000Z",
+   "license_id": "mit",
+   "license_name": null,
+   "total_params_b": 70.55,
+   "weight_gib": null,
+   "context_k": 128.0,
+   "max_position_embeddings": 131072,
+   "quant_method": null,
+   "gated": false,
+   "params_by_dtype": {
+    "BF16": 70553706496
+   },
+   "fetched_at": "2026-09-16"
+  },
+  "deepseek-ai/DeepSeek-R1-Distill-Qwen-32B": {
+   "repo": "deepseek-ai/DeepSeek-R1-Distill-Qwen-32B",
+   "endpoint": "hf-mirror.com",
+   "revision": "711ad2ea6aa40cfca18895e8aca02ab92df1a746",
+   "last_modified": "2025-02-24T03:31:29.000Z",
+   "license_id": "mit",
+   "license_name": null,
+   "total_params_b": 32.76,
+   "weight_gib": null,
+   "context_k": 128.0,
+   "max_position_embeddings": 131072,
+   "quant_method": null,
+   "gated": false,
+   "params_by_dtype": {
+    "BF16": 32763876352
+   },
+   "fetched_at": "2026-09-16"
+  },
+  "deepseek-ai/DeepSeek-R1-Distill-Qwen-14B": {
+   "repo": "deepseek-ai/DeepSeek-R1-Distill-Qwen-14B",
+   "endpoint": "hf-mirror.com",
+   "revision": "1df8507178afcc1bef68cd8c393f61a886323761",
+   "last_modified": "2025-02-24T03:31:45.000Z",
+   "license_id": "mit",
+   "license_name": null,
+   "total_params_b": 14.77,
+   "weight_gib": null,
+   "context_k": 128.0,
+   "max_position_embeddings": 131072,
+   "quant_method": null,
+   "gated": false,
+   "params_by_dtype": {
+    "BF16": 14770033664
+   },
+   "fetched_at": "2026-09-16"
+  },
+  "deepseek-ai/DeepSeek-R1-Distill-Llama-8B": {
+   "repo": "deepseek-ai/DeepSeek-R1-Distill-Llama-8B",
+   "endpoint": "hf-mirror.com",
+   "revision": "6a6f4aa4197940add57724a7707d069478df56b1",
+   "last_modified": "2025-02-24T03:32:07.000Z",
+   "license_id": "mit",
+   "license_name": null,
+   "total_params_b": 8.03,
+   "weight_gib": null,
+   "context_k": 128.0,
+   "max_position_embeddings": 131072,
+   "quant_method": null,
+   "gated": false,
+   "params_by_dtype": {
+    "BF16": 8030261248
+   },
+   "fetched_at": "2026-09-16"
+  },
+  "deepseek-ai/DeepSeek-R1-Distill-Qwen-7B": {
+   "repo": "deepseek-ai/DeepSeek-R1-Distill-Qwen-7B",
+   "endpoint": "hf-mirror.com",
+   "revision": "916b56a44061fd5cd7d6a8fb632557ed4f724f60",
+   "last_modified": "2025-02-24T03:32:20.000Z",
+   "license_id": "mit",
+   "license_name": null,
+   "total_params_b": 7.62,
+   "weight_gib": null,
+   "context_k": 128.0,
+   "max_position_embeddings": 131072,
+   "quant_method": null,
+   "gated": false,
+   "params_by_dtype": {
+    "BF16": 7615616512
+   },
+   "fetched_at": "2026-09-16"
+  },
+  "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B": {
+   "repo": "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B",
+   "endpoint": "hf-mirror.com",
+   "revision": "ad9f0ae0864d7fbcd1cd905e3c6c5b069cc8b562",
+   "last_modified": "2025-02-24T03:32:35.000Z",
+   "license_id": "mit",
+   "license_name": null,
+   "total_params_b": 1.78,
+   "weight_gib": null,
+   "context_k": 128.0,
+   "max_position_embeddings": 131072,
+   "quant_method": null,
+   "gated": false,
+   "params_by_dtype": {
+    "BF16": 1777088000
+   },
+   "fetched_at": "2026-09-16"
+  },
+  "Qwen/Qwen3.5-397B-A17B": {
+   "repo": "Qwen/Qwen3.5-397B-A17B",
+   "endpoint": "hf-mirror.com",
+   "revision": "8472618112abcbd45acbcdc58436aff4233c23f7",
+   "last_modified": "2026-04-24T05:51:23.000Z",
+   "license_id": "apache-2.0",
+   "license_name": null,
+   "total_params_b": 403.4,
+   "weight_gib": null,
+   "context_k": 256.0,
+   "max_position_embeddings": 262144,
+   "quant_method": null,
+   "gated": false,
+   "params_by_dtype": {
+    "BF16": 403397920304,
+    "F32": 8640
+   },
+   "fetched_at": "2026-09-16",
+   "attention_shape": {
+    "kind": "hybrid-linear",
+    "layers": 15,
+    "total_layers": 60,
+    "elements_per_token_per_layer": 1024,
+    "basis": "混合线性注意力:60 层里只有 15 层是 full_attention,其余线性层的状态不随上下文增长"
+   },
+   "full_attention_layers": 15,
+   "linear_attention_layers": 45
+  },
+  "Qwen/Qwen3.5-122B-A10B": {
+   "repo": "Qwen/Qwen3.5-122B-A10B",
+   "endpoint": "hf-mirror.com",
+   "revision": "dc4d348443bc740c68e2d77492492c11606384d5",
+   "last_modified": "2026-04-24T03:55:23.000Z",
+   "license_id": "apache-2.0",
+   "license_name": null,
+   "total_params_b": 125.09,
+   "weight_gib": null,
+   "context_k": 256.0,
+   "max_position_embeddings": 262144,
+   "quant_method": null,
+   "gated": false,
+   "params_by_dtype": {
+    "BF16": 125086490096,
+    "F32": 6912
+   },
+   "fetched_at": "2026-09-16",
+   "attention_shape": {
+    "kind": "hybrid-linear",
+    "layers": 12,
+    "total_layers": 48,
+    "elements_per_token_per_layer": 1024,
+    "basis": "混合线性注意力:48 层里只有 12 层是 full_attention,其余线性层的状态不随上下文增长"
+   },
+   "full_attention_layers": 12,
+   "linear_attention_layers": 36
+  },
+  "Qwen/Qwen3-235B-A22B-Instruct-2507": {
+   "repo": "Qwen/Qwen3-235B-A22B-Instruct-2507",
+   "endpoint": "hf-mirror.com",
+   "revision": "ac9c66cc9b46af7306746a9250f23d47083d689e",
+   "last_modified": "2025-09-17T06:52:55.000Z",
+   "license_id": "apache-2.0",
+   "license_name": null,
+   "total_params_b": 235.09,
+   "weight_gib": null,
+   "context_k": 256.0,
+   "max_position_embeddings": 262144,
+   "quant_method": null,
+   "gated": false,
+   "params_by_dtype": {
+    "BF16": 235093634560
+   },
+   "fetched_at": "2026-09-16",
+   "attention_shape": {
+    "kind": "gqa",
+    "layers": 94,
+    "elements_per_token_per_layer": 1024,
+    "basis": "GQA/MHA:2 x 4 个 KV 头 x 128 维,共 94 层"
+   }
+  },
+  "Qwen/Qwen3-235B-A22B-Thinking-2507": {
+   "repo": "Qwen/Qwen3-235B-A22B-Thinking-2507",
+   "endpoint": "hf-mirror.com",
+   "revision": "6cbffae6d8e28b986a6b17bd36f42f9fa0f1f0a5",
+   "last_modified": "2025-08-17T08:20:17.000Z",
+   "license_id": "apache-2.0",
+   "license_name": null,
+   "total_params_b": 235.09,
+   "weight_gib": null,
+   "context_k": 256.0,
+   "max_position_embeddings": 262144,
+   "quant_method": null,
+   "gated": false,
+   "params_by_dtype": {
+    "BF16": 235093634560
+   },
+   "fetched_at": "2026-09-16"
+  },
+  "Qwen/Qwen3-Coder-480B-A35B-Instruct": {
+   "repo": "Qwen/Qwen3-Coder-480B-A35B-Instruct",
+   "endpoint": "hf-mirror.com",
+   "revision": "9d90cf8fca1bf7b7acca42d3fc9ae694a2194069",
+   "last_modified": "2025-08-21T10:18:07.000Z",
+   "license_id": "apache-2.0",
+   "license_name": null,
+   "total_params_b": 480.15,
+   "weight_gib": null,
+   "context_k": 256.0,
+   "max_position_embeddings": 262144,
+   "quant_method": null,
+   "gated": false,
+   "params_by_dtype": {
+    "BF16": 480154875392
+   },
+   "fetched_at": "2026-09-16"
+  },
+  "Qwen/Qwen3-Coder-30B-A3B-Instruct": {
+   "repo": "Qwen/Qwen3-Coder-30B-A3B-Instruct",
+   "endpoint": "hf-mirror.com",
+   "revision": "b2cff646eb4bb1d68355c01b18ae02e7cf42d120",
+   "last_modified": "2025-12-03T08:05:17.000Z",
+   "license_id": "apache-2.0",
+   "license_name": null,
+   "total_params_b": 30.53,
+   "weight_gib": null,
+   "context_k": 256.0,
+   "max_position_embeddings": 262144,
+   "quant_method": null,
+   "gated": false,
+   "params_by_dtype": {
+    "BF16": 30532122624
+   },
+   "fetched_at": "2026-09-16",
+   "attention_shape": {
+    "kind": "gqa",
+    "layers": 48,
+    "elements_per_token_per_layer": 1024,
+    "basis": "GQA/MHA:2 x 4 个 KV 头 x 128 维,共 48 层"
+   }
+  },
+  "Qwen/Qwen3-30B-A3B": {
+   "repo": "Qwen/Qwen3-30B-A3B",
+   "endpoint": "hf-mirror.com",
+   "revision": "ad44e777bcd18fa416d9da3bd8f70d33ebb85d39",
+   "last_modified": "2025-07-26T03:45:17.000Z",
+   "license_id": "apache-2.0",
+   "license_name": null,
+   "total_params_b": 30.53,
+   "weight_gib": null,
+   "context_k": 40.0,
+   "max_position_embeddings": 40960,
+   "quant_method": null,
+   "gated": false,
+   "params_by_dtype": {
+    "BF16": 30532122624
+   },
+   "fetched_at": "2026-09-16"
+  },
+  "Qwen/Qwen3-32B": {
+   "repo": "Qwen/Qwen3-32B",
+   "endpoint": "hf-mirror.com",
+   "revision": "9216db5781bf21249d130ec9da846c4624c16137",
+   "last_modified": "2025-07-26T03:45:22.000Z",
+   "license_id": "apache-2.0",
+   "license_name": null,
+   "total_params_b": 32.76,
+   "weight_gib": null,
+   "context_k": 40.0,
+   "max_position_embeddings": 40960,
+   "quant_method": null,
+   "gated": false,
+   "params_by_dtype": {
+    "BF16": 32762123264
+   },
+   "fetched_at": "2026-09-16",
+   "attention_shape": {
+    "kind": "gqa",
+    "layers": 64,
+    "elements_per_token_per_layer": 2048,
+    "basis": "GQA/MHA:2 x 8 个 KV 头 x 128 维,共 64 层"
+   }
+  },
+  "Qwen/Qwen3-14B": {
+   "repo": "Qwen/Qwen3-14B",
+   "endpoint": "hf-mirror.com",
+   "revision": "40c069824f4251a91eefaf281ebe4c544efd3e18",
+   "last_modified": "2025-07-26T03:49:23.000Z",
+   "license_id": "apache-2.0",
+   "license_name": null,
+   "total_params_b": 14.77,
+   "weight_gib": null,
+   "context_k": 40.0,
+   "max_position_embeddings": 40960,
+   "quant_method": null,
+   "gated": false,
+   "params_by_dtype": {
+    "BF16": 14768307200
+   },
+   "fetched_at": "2026-09-16",
+   "attention_shape": {
+    "kind": "gqa",
+    "layers": 40,
+    "elements_per_token_per_layer": 2048,
+    "basis": "GQA/MHA:2 x 8 个 KV 头 x 128 维,共 40 层"
+   }
+  },
+  "Qwen/Qwen3-1.7B": {
+   "repo": "Qwen/Qwen3-1.7B",
+   "endpoint": "hf-mirror.com",
+   "revision": "70d244cc86ccca08cf5af4e1e306ecf908b1ad5e",
+   "last_modified": "2025-07-26T03:46:32.000Z",
+   "license_id": "apache-2.0",
+   "license_name": null,
+   "total_params_b": 2.03,
+   "weight_gib": null,
+   "context_k": 40.0,
+   "max_position_embeddings": 40960,
+   "quant_method": null,
+   "gated": false,
+   "params_by_dtype": {
+    "BF16": 2031739904
+   },
+   "fetched_at": "2026-09-16"
+  },
+  "Qwen/Qwen3-0.6B": {
+   "repo": "Qwen/Qwen3-0.6B",
+   "endpoint": "hf-mirror.com",
+   "revision": "c1899de289a04d12100db370d81485cdf75e47ca",
+   "last_modified": "2025-07-26T03:46:27.000Z",
+   "license_id": "apache-2.0",
+   "license_name": null,
+   "total_params_b": 0.75,
+   "weight_gib": null,
+   "context_k": 40.0,
+   "max_position_embeddings": 40960,
+   "quant_method": null,
+   "gated": false,
+   "params_by_dtype": {
+    "BF16": 751632384
+   },
+   "fetched_at": "2026-09-16"
+  },
+  "Qwen/Qwen2.5-72B-Instruct": {
+   "repo": "Qwen/Qwen2.5-72B-Instruct",
+   "endpoint": "hf-mirror.com",
+   "revision": "495f39366efef23836d0cfae4fbe635880d2be31",
+   "last_modified": "2025-01-12T02:07:38.000Z",
+   "license_id": "other",
+   "license_name": null,
+   "total_params_b": 72.71,
+   "weight_gib": null,
+   "context_k": 32.0,
+   "max_position_embeddings": 32768,
+   "quant_method": null,
+   "gated": false,
+   "params_by_dtype": {
+    "BF16": 72706203648
+   },
+   "fetched_at": "2026-09-16"
+  },
+  "Qwen/Qwen2.5-32B-Instruct": {
+   "repo": "Qwen/Qwen2.5-32B-Instruct",
+   "endpoint": "hf-mirror.com",
+   "revision": "5ede1c97bbab6ce5cda5812749b4c0bdf79b18dd",
+   "last_modified": "2024-09-25T12:33:09.000Z",
+   "license_id": "apache-2.0",
+   "license_name": null,
+   "total_params_b": 32.76,
+   "weight_gib": null,
+   "context_k": 32.0,
+   "max_position_embeddings": 32768,
+   "quant_method": null,
+   "gated": false,
+   "params_by_dtype": {
+    "BF16": 32763876352
+   },
+   "fetched_at": "2026-09-16"
+  },
+  "Qwen/Qwen2.5-14B-Instruct": {
+   "repo": "Qwen/Qwen2.5-14B-Instruct",
+   "endpoint": "hf-mirror.com",
+   "revision": "cf98f3b3bbb457ad9e2bb7baf9a0125b6b88caa8",
+   "last_modified": "2024-09-25T12:33:04.000Z",
+   "license_id": "apache-2.0",
+   "license_name": null,
+   "total_params_b": 14.77,
+   "weight_gib": null,
+   "context_k": 32.0,
+   "max_position_embeddings": 32768,
+   "quant_method": null,
+   "gated": false,
+   "params_by_dtype": {
+    "BF16": 14770033664
+   },
+   "fetched_at": "2026-09-16"
+  },
+  "Qwen/Qwen2.5-7B-Instruct": {
+   "repo": "Qwen/Qwen2.5-7B-Instruct",
+   "endpoint": "hf-mirror.com",
+   "revision": "a09a35458c702b33eeacc393d103063234e8bc28",
+   "last_modified": "2025-01-12T02:10:10.000Z",
+   "license_id": "apache-2.0",
+   "license_name": null,
+   "total_params_b": 7.62,
+   "weight_gib": null,
+   "context_k": 32.0,
+   "max_position_embeddings": 32768,
+   "quant_method": null,
+   "gated": false,
+   "params_by_dtype": {
+    "BF16": 7615616512
+   },
+   "fetched_at": "2026-09-16"
+  },
+  "Qwen/Qwen2.5-3B-Instruct": {
+   "repo": "Qwen/Qwen2.5-3B-Instruct",
+   "endpoint": "hf-mirror.com",
+   "revision": "aa8e72537993ba99e69dfaafa59ed015b17504d1",
+   "last_modified": "2024-09-25T12:33:00.000Z",
+   "license_id": "other",
+   "license_name": null,
+   "total_params_b": 3.09,
+   "weight_gib": null,
+   "context_k": 32.0,
+   "max_position_embeddings": 32768,
+   "quant_method": null,
+   "gated": false,
+   "params_by_dtype": {
+    "BF16": 3085938688
+   },
+   "fetched_at": "2026-09-16"
+  },
+  "Qwen/Qwen2.5-Coder-32B-Instruct": {
+   "repo": "Qwen/Qwen2.5-Coder-32B-Instruct",
+   "endpoint": "hf-mirror.com",
+   "revision": "381fc969f78efac66bc87ff7ddeadb7e73c218a7",
+   "last_modified": "2025-01-12T02:02:22.000Z",
+   "license_id": "apache-2.0",
+   "license_name": null,
+   "total_params_b": 32.76,
+   "weight_gib": null,
+   "context_k": 32.0,
+   "max_position_embeddings": 32768,
+   "quant_method": null,
+   "gated": false,
+   "params_by_dtype": {
+    "BF16": 32763876352
+   },
+   "fetched_at": "2026-09-16"
+  },
+  "Qwen/Qwen2.5-VL-72B-Instruct": {
+   "repo": "Qwen/Qwen2.5-VL-72B-Instruct",
+   "endpoint": "hf-mirror.com",
+   "revision": "89c86200743eec961a297729e7990e8f2ddbc4c5",
+   "last_modified": "2025-06-06T02:48:50.000Z",
+   "license_id": "other",
+   "license_name": null,
+   "total_params_b": 73.41,
+   "weight_gib": null,
+   "context_k": 125.0,
+   "max_position_embeddings": 128000,
+   "quant_method": null,
+   "gated": false,
+   "params_by_dtype": {
+    "BF16": 73410777344
+   },
+   "fetched_at": "2026-09-16"
+  },
+  "Qwen/Qwen2.5-VL-32B-Instruct": {
+   "repo": "Qwen/Qwen2.5-VL-32B-Instruct",
+   "endpoint": "hf-mirror.com",
+   "revision": "7cfb30d71a1f4f49a57592323337a4a4727301da",
+   "last_modified": "2025-04-14T10:55:03.000Z",
+   "license_id": "apache-2.0",
+   "license_name": null,
+   "total_params_b": 33.45,
+   "weight_gib": null,
+   "context_k": 125.0,
+   "max_position_embeddings": 128000,
+   "quant_method": null,
+   "gated": false,
+   "params_by_dtype": {
+    "BF16": 32763876352,
+    "F32": 688841984
+   },
+   "fetched_at": "2026-09-16"
+  },
+  "Qwen/Qwen2.5-VL-7B-Instruct": {
+   "repo": "Qwen/Qwen2.5-VL-7B-Instruct",
+   "endpoint": "hf-mirror.com",
+   "revision": "cc594898137f460bfe9f0759e9844b3ce807cfb5",
+   "last_modified": "2025-04-06T16:23:01.000Z",
+   "license_id": "apache-2.0",
+   "license_name": null,
+   "total_params_b": 8.29,
+   "weight_gib": null,
+   "context_k": 125.0,
+   "max_position_embeddings": 128000,
+   "quant_method": null,
+   "gated": false,
+   "params_by_dtype": {
+    "BF16": 8292166656
+   },
+   "fetched_at": "2026-09-16"
+  },
+  "meta-llama/Llama-4-Maverick-17B-128E-Instruct": {
+   "repo": "meta-llama/Llama-4-Maverick-17B-128E-Instruct",
+   "endpoint": "hf-mirror.com",
+   "revision": "73d14711bcc77c16df3470856949c3764056b617",
+   "last_modified": "2025-05-22T23:46:12.000Z",
+   "license_id": "other",
+   "license_name": null,
+   "total_params_b": 401.58,
+   "weight_gib": null,
+   "context_k": null,
+   "max_position_embeddings": null,
+   "quant_method": null,
+   "gated": "manual",
+   "params_by_dtype": {
+    "BF16": 401583781376
+   },
+   "fetched_at": "2026-09-16"
+  },
+  "meta-llama/Llama-4-Scout-17B-16E-Instruct": {
+   "repo": "meta-llama/Llama-4-Scout-17B-16E-Instruct",
+   "endpoint": "hf-mirror.com",
+   "revision": "92f3b1597a195b523d8d9e5700e57e4fbb8f20d3",
+   "last_modified": "2025-05-22T23:44:50.000Z",
+   "license_id": "other",
+   "license_name": null,
+   "total_params_b": 108.64,
+   "weight_gib": null,
+   "context_k": null,
+   "max_position_embeddings": null,
+   "quant_method": null,
+   "gated": "manual",
+   "params_by_dtype": {
+    "BF16": 108641793536
+   },
+   "fetched_at": "2026-09-16"
+  },
+  "meta-llama/Llama-3.3-70B-Instruct": {
+   "repo": "meta-llama/Llama-3.3-70B-Instruct",
+   "endpoint": "hf-mirror.com",
+   "revision": "6f6073b423013f6a7d4d9f39144961bfbfbc386b",
+   "last_modified": "2024-12-21T18:28:01.000Z",
+   "license_id": "llama3.3",
+   "license_name": null,
+   "total_params_b": 70.55,
+   "weight_gib": null,
+   "context_k": null,
+   "max_position_embeddings": null,
+   "quant_method": null,
+   "gated": "manual",
+   "params_by_dtype": {
+    "BF16": 70553706496
+   },
+   "fetched_at": "2026-09-16"
+  },
+  "meta-llama/Meta-Llama-3.1-70B-Instruct": {
+   "repo": "meta-llama/Meta-Llama-3.1-70B-Instruct",
+   "endpoint": "hf-mirror.com",
+   "revision": "1605565b47bb9346c5515c34102e054115b4f98b",
+   "last_modified": "2024-12-15T01:55:33.000Z",
+   "license_id": "llama3.1",
+   "license_name": null,
+   "total_params_b": 70.55,
+   "weight_gib": null,
+   "context_k": null,
+   "max_position_embeddings": null,
+   "quant_method": null,
+   "gated": "manual",
+   "params_by_dtype": {
+    "BF16": 70553706496
+   },
+   "fetched_at": "2026-09-16"
+  },
+  "meta-llama/Meta-Llama-3.1-8B-Instruct": {
+   "repo": "meta-llama/Meta-Llama-3.1-8B-Instruct",
+   "endpoint": "hf-mirror.com",
+   "revision": "0e9e39f249a16976918f6564b8830bc894c89659",
+   "last_modified": "2024-09-25T17:00:57.000Z",
+   "license_id": "llama3.1",
+   "license_name": null,
+   "total_params_b": 8.03,
+   "weight_gib": null,
+   "context_k": null,
+   "max_position_embeddings": null,
+   "quant_method": null,
+   "gated": "manual",
+   "params_by_dtype": {
+    "BF16": 8030261248
+   },
+   "fetched_at": "2026-09-16"
+  },
+  "meta-llama/Llama-3.2-90B-Vision-Instruct": {
+   "repo": "meta-llama/Llama-3.2-90B-Vision-Instruct",
+   "endpoint": "hf-mirror.com",
+   "revision": "e305d2a43a4adc6987308fe7d896fb8ec5f1a5d8",
+   "last_modified": "2025-03-04T17:28:46.000Z",
+   "license_id": "llama3.2",
+   "license_name": null,
+   "total_params_b": 88.59,
+   "weight_gib": null,
+   "context_k": null,
+   "max_position_embeddings": null,
+   "quant_method": null,
+   "gated": "manual",
+   "params_by_dtype": {
+    "BF16": 88593355323
+   },
+   "fetched_at": "2026-09-16"
+  },
+  "meta-llama/Llama-3.2-11B-Vision-Instruct": {
+   "repo": "meta-llama/Llama-3.2-11B-Vision-Instruct",
+   "endpoint": "hf-mirror.com",
+   "revision": "9eb2daaa8597bf192a8b0e73f848f3a102794df5",
+   "last_modified": "2024-12-04T01:35:48.000Z",
+   "license_id": "llama3.2",
+   "license_name": null,
+   "total_params_b": 10.67,
+   "weight_gib": null,
+   "context_k": null,
+   "max_position_embeddings": null,
+   "quant_method": null,
+   "gated": "manual",
+   "params_by_dtype": {
+    "BF16": 10670220835
+   },
+   "fetched_at": "2026-09-16"
+  },
+  "mistralai/Mixtral-8x22B-Instruct-v0.1": {
+   "repo": "mistralai/Mixtral-8x22B-Instruct-v0.1",
+   "endpoint": "hf-mirror.com",
+   "revision": "cc88a6cc19fbd17d9f1c0ee0b0d70a748dce698d",
+   "last_modified": "2025-07-24T16:41:56.000Z",
+   "license_id": "apache-2.0",
+   "license_name": null,
+   "total_params_b": 140.63,
+   "weight_gib": null,
+   "context_k": 64.0,
+   "max_position_embeddings": 65536,
+   "quant_method": null,
+   "gated": false,
+   "params_by_dtype": {
+    "BF16": 140630071296
+   },
+   "fetched_at": "2026-09-16"
+  },
+  "mistralai/Mixtral-8x7B-Instruct-v0.1": {
+   "repo": "mistralai/Mixtral-8x7B-Instruct-v0.1",
+   "endpoint": "hf-mirror.com",
+   "revision": "eba92302a2861cdc0098cc54bc9f17cb2c47eb61",
+   "last_modified": "2025-07-24T16:41:06.000Z",
+   "license_id": "apache-2.0",
+   "license_name": null,
+   "total_params_b": 46.7,
+   "weight_gib": null,
+   "context_k": 32.0,
+   "max_position_embeddings": 32768,
+   "quant_method": null,
+   "gated": false,
+   "params_by_dtype": {
+    "BF16": 46702792704
+   },
+   "fetched_at": "2026-09-16"
+  },
+  "mistralai/Mistral-Large-Instruct-2407": {
+   "repo": "mistralai/Mistral-Large-Instruct-2407",
+   "endpoint": "hf-mirror.com",
+   "revision": "a286006d554cb37a61d13c7ae61bc90cc1d372fc",
+   "last_modified": "2025-07-28T17:16:38.000Z",
+   "license_id": "other",
+   "license_name": null,
+   "total_params_b": 122.61,
+   "weight_gib": null,
+   "context_k": null,
+   "max_position_embeddings": null,
+   "quant_method": null,
+   "gated": "auto",
+   "params_by_dtype": {
+    "BF16": 122610069504
+   },
+   "fetched_at": "2026-09-16"
+  },
+  "mistralai/Mistral-Small-24B-Instruct-2501": {
+   "repo": "mistralai/Mistral-Small-24B-Instruct-2501",
+   "endpoint": "hf-mirror.com",
+   "revision": "9527884be6e5616bdd54de542f9ae13384489724",
+   "last_modified": "2025-07-28T17:26:22.000Z",
+   "license_id": "apache-2.0",
+   "license_name": null,
+   "total_params_b": 23.57,
+   "weight_gib": null,
+   "context_k": 32.0,
+   "max_position_embeddings": 32768,
+   "quant_method": null,
+   "gated": false,
+   "params_by_dtype": {
+    "BF16": 23572403200
+   },
+   "fetched_at": "2026-09-16"
+  },
+  "mistralai/Mistral-Nemo-Instruct-2407": {
+   "repo": "mistralai/Mistral-Nemo-Instruct-2407",
+   "endpoint": "hf-mirror.com",
+   "revision": "04d8a90549d23fc6bd7f642064003592df51e9b3",
+   "last_modified": "2025-07-28T17:16:02.000Z",
+   "license_id": "apache-2.0",
+   "license_name": null,
+   "total_params_b": 12.25,
+   "weight_gib": null,
+   "context_k": 128.0,
+   "max_position_embeddings": 131072,
+   "quant_method": null,
+   "gated": false,
+   "params_by_dtype": {
+    "BF16": 12247782400
+   },
+   "fetched_at": "2026-09-16"
+  },
+  "mistralai/Codestral-22B-v0.1": {
+   "repo": "mistralai/Codestral-22B-v0.1",
+   "endpoint": "hf-mirror.com",
+   "revision": "28b1c1a51dabe9d86ca8c41420ada1984632498f",
+   "last_modified": "2025-07-24T16:43:37.000Z",
+   "license_id": "other",
+   "license_name": null,
+   "total_params_b": 22.25,
+   "weight_gib": null,
+   "context_k": 32.0,
+   "max_position_embeddings": 32768,
+   "quant_method": null,
+   "gated": false,
+   "params_by_dtype": {
+    "BF16": 22247282688
+   },
+   "fetched_at": "2026-09-16"
+  },
+  "google/gemma-3-27b-it": {
+   "repo": "google/gemma-3-27b-it",
+   "endpoint": "hf-mirror.com",
+   "revision": "005ad3404e59d6023443cb575daa05336842228a",
+   "last_modified": "2025-03-21T20:29:02.000Z",
+   "license_id": "gemma",
+   "license_name": null,
+   "total_params_b": 27.43,
+   "weight_gib": null,
+   "context_k": null,
+   "max_position_embeddings": null,
+   "quant_method": null,
+   "gated": "manual",
+   "params_by_dtype": {
+    "BF16": 27432406640
+   },
+   "fetched_at": "2026-09-16"
+  },
+  "google/gemma-3-12b-it": {
+   "repo": "google/gemma-3-12b-it",
+   "endpoint": "hf-mirror.com",
+   "revision": "96b6f1eccf38110c56df3a15bffe176da04bfd80",
+   "last_modified": "2025-03-21T20:28:56.000Z",
+   "license_id": "gemma",
+   "license_name": null,
+   "total_params_b": 12.19,
+   "weight_gib": null,
+   "context_k": null,
+   "max_position_embeddings": null,
+   "quant_method": null,
+   "gated": "manual",
+   "params_by_dtype": {
+    "BF16": 12187325040
+   },
+   "fetched_at": "2026-09-16"
+  },
+  "google/gemma-3-4b-it": {
+   "repo": "google/gemma-3-4b-it",
+   "endpoint": "hf-mirror.com",
+   "revision": "093f9f388b31de276ce2de164bdc2081324b9767",
+   "last_modified": "2025-03-21T20:20:53.000Z",
+   "license_id": "gemma",
+   "license_name": null,
+   "total_params_b": 4.3,
+   "weight_gib": null,
+   "context_k": null,
+   "max_position_embeddings": null,
+   "quant_method": null,
+   "gated": "manual",
+   "params_by_dtype": {
+    "BF16": 4300079472
+   },
+   "fetched_at": "2026-09-16"
+  },
+  "google/gemma-3-1b-it": {
+   "repo": "google/gemma-3-1b-it",
+   "endpoint": "hf-mirror.com",
+   "revision": "dcc83ea841ab6100d6b47a070329e1ba4cf78752",
+   "last_modified": "2025-04-04T13:12:40.000Z",
+   "license_id": "gemma",
+   "license_name": null,
+   "total_params_b": 1.0,
+   "weight_gib": null,
+   "context_k": null,
+   "max_position_embeddings": null,
+   "quant_method": null,
+   "gated": "manual",
+   "params_by_dtype": {
+    "BF16": 999885952
+   },
+   "fetched_at": "2026-09-16"
+  },
+  "microsoft/phi-4": {
+   "repo": "microsoft/phi-4",
+   "endpoint": "hf-mirror.com",
+   "revision": "2db69c1c3e91a05d2c64a3185acfbaf36f744e25",
+   "last_modified": "2026-07-14T14:22:25.000Z",
+   "license_id": "mit",
+   "license_name": null,
+   "total_params_b": 14.66,
+   "weight_gib": null,
+   "context_k": 16.0,
+   "max_position_embeddings": 16384,
+   "quant_method": null,
+   "gated": false,
+   "params_by_dtype": {
+    "BF16": 14659507200
+   },
+   "fetched_at": "2026-09-16"
+  },
+  "microsoft/Phi-4-multimodal-instruct": {
+   "repo": "microsoft/Phi-4-multimodal-instruct",
+   "endpoint": "hf-mirror.com",
+   "revision": "93f923e1a7727d1c4f446756212d9d3e8fcc5d81",
+   "last_modified": "2025-12-10T20:18:10.000Z",
+   "license_id": "mit",
+   "license_name": null,
+   "total_params_b": 5.57,
+   "weight_gib": null,
+   "context_k": 128.0,
+   "max_position_embeddings": 131072,
+   "quant_method": null,
+   "gated": false,
+   "params_by_dtype": {
+    "BF16": 5574460384
+   },
+   "fetched_at": "2026-09-16"
+  },
+  "zai-org/GLM-5.2": {
+   "repo": "zai-org/GLM-5.2",
+   "endpoint": "hf-mirror.com",
+   "revision": "cf457fa734ab149ffef225f80893eb38c6ff5cdc",
+   "last_modified": "2026-09-01T11:36:01.000Z",
+   "license_id": "mit",
+   "license_name": null,
+   "total_params_b": 753.33,
+   "weight_gib": null,
+   "context_k": 1024.0,
+   "max_position_embeddings": 1048576,
+   "quant_method": null,
+   "gated": false,
+   "params_by_dtype": {
+    "BF16": 753329921024,
+    "F32": 19456
+   },
+   "fetched_at": "2026-09-16",
+   "attention_shape": {
+    "kind": "mla",
+    "layers": 78,
+    "elements_per_token_per_layer": 576,
+    "basis": "MLA:kv_lora_rank 512 + qk_rope_head_dim 64,各头共享不乘 2"
+   },
+   "kv_lora_rank": 512,
+   "qk_rope_head_dim": 64
+  },
+  "zai-org/GLM-4.5": {
+   "repo": "zai-org/GLM-4.5",
+   "endpoint": "hf-mirror.com",
+   "revision": "cbb2c7cfb52fa128a9660cb1a7a78e017899e115",
+   "last_modified": "2025-08-11T13:27:03.000Z",
+   "license_id": "mit",
+   "license_name": null,
+   "total_params_b": 358.34,
+   "weight_gib": null,
+   "context_k": 128.0,
+   "max_position_embeddings": 131072,
+   "quant_method": null,
+   "gated": false,
+   "params_by_dtype": {
+    "BF16": 358337776896,
+    "F32": 14400
+   },
+   "fetched_at": "2026-09-16"
+  },
+  "zai-org/GLM-4.5-Air": {
+   "repo": "zai-org/GLM-4.5-Air",
+   "endpoint": "hf-mirror.com",
+   "revision": "a24ceef6ce4f3536971efe9b778bdaa1bab18daa",
+   "last_modified": "2025-08-11T13:25:37.000Z",
+   "license_id": "mit",
+   "license_name": null,
+   "total_params_b": 110.47,
+   "weight_gib": null,
+   "context_k": 128.0,
+   "max_position_embeddings": 131072,
+   "quant_method": null,
+   "gated": false,
+   "params_by_dtype": {
+    "BF16": 110468818944,
+    "F32": 5888
+   },
+   "fetched_at": "2026-09-16"
+  },
+  "moonshotai/Kimi-K2-Instruct": {
+   "repo": "moonshotai/Kimi-K2-Instruct",
+   "endpoint": "hf-mirror.com",
+   "revision": "fd1984e2b7a3350dbf7305fe73a4ede25c14de50",
+   "last_modified": "2026-04-23T02:08:36.000Z",
+   "license_id": "other",
+   "license_name": null,
+   "total_params_b": 1026.41,
+   "weight_gib": null,
+   "context_k": 128.0,
+   "max_position_embeddings": 131072,
+   "quant_method": "fp8",
+   "gated": false,
+   "params_by_dtype": {
+    "F32": 23040,
+    "BF16": 2514970968,
+    "F8_E4M3": 1023893241856
+   },
+   "fetched_at": "2026-09-16"
+  },
+  "moonshotai/Kimi-K2-Thinking": {
+   "repo": "moonshotai/Kimi-K2-Thinking",
+   "endpoint": "hf-mirror.com",
+   "revision": "a51ccc050d73dab088bf7b0e2dd9b30ae85a4e55",
+   "last_modified": "2026-01-30T04:49:39.000Z",
+   "license_id": "other",
+   "license_name": null,
+   "total_params_b": 1026.41,
+   "weight_gib": null,
+   "context_k": null,
+   "max_position_embeddings": null,
+   "quant_method": "compressed-tensors",
+   "gated": false,
+   "params_by_dtype": {
+    "F32": 23040,
+    "I32": 1014686023680,
+    "BF16": 11722193536
+   },
+   "fetched_at": "2026-09-16"
+  },
+  "MiniMaxAI/MiniMax-M2": {
+   "repo": "MiniMaxAI/MiniMax-M2",
+   "endpoint": "hf-mirror.com",
+   "revision": "757303d492a50514c312788b5247a4f696a4c6a3",
+   "last_modified": "2025-12-23T08:37:43.000Z",
+   "license_id": "other",
+   "license_name": null,
+   "total_params_b": 228.69,
+   "weight_gib": null,
+   "context_k": 192.0,
+   "max_position_embeddings": 196608,
+   "quant_method": "fp8",
+   "gated": false,
+   "params_by_dtype": {
+    "F32": 48774656,
+    "BF16": 1230021632,
+    "F8_E4M3": 227410968576
+   },
+   "fetched_at": "2026-09-16"
+  },
+  "MiniMaxAI/MiniMax-M2.1": {
+   "repo": "MiniMaxAI/MiniMax-M2.1",
+   "endpoint": "hf-mirror.com",
+   "revision": "cd97f59135f37b2a6bf09356e485d5e4aeb7dc9c",
+   "last_modified": "2026-02-13T09:24:21.000Z",
+   "license_id": "other",
+   "license_name": null,
+   "total_params_b": 228.69,
+   "weight_gib": null,
+   "context_k": 192.0,
+   "max_position_embeddings": 196608,
+   "quant_method": "fp8",
+   "gated": false,
+   "params_by_dtype": {
+    "F32": 48774656,
+    "BF16": 1230021632,
+    "F8_E4M3": 227410968576
+   },
+   "fetched_at": "2026-09-16"
+  },
+  "openai/gpt-oss-120b": {
+   "repo": "openai/gpt-oss-120b",
+   "endpoint": "hf-mirror.com",
+   "revision": "b5c939de8f754692c1647ca79fbf85e8c1e70f8a",
+   "last_modified": "2025-08-26T17:25:03.000Z",
+   "license_id": "apache-2.0",
+   "license_name": null,
+   "total_params_b": 116.83,
+   "weight_gib": null,
+   "context_k": 128.0,
+   "max_position_embeddings": 131072,
+   "quant_method": "mxfp4",
+   "gated": false,
+   "params_by_dtype": {
+    "BF16": 2167371072,
+    "U8": 114661785600
+   },
+   "fetched_at": "2026-09-16"
+  },
+  "openai/gpt-oss-20b": {
+   "repo": "openai/gpt-oss-20b",
+   "endpoint": "hf-mirror.com",
+   "revision": "6cee5e81ee83917806bbde320786a8fb61efebee",
+   "last_modified": "2025-08-26T17:25:47.000Z",
+   "license_id": "apache-2.0",
+   "license_name": null,
+   "total_params_b": 20.91,
+   "weight_gib": null,
+   "context_k": 128.0,
+   "max_position_embeddings": 131072,
+   "quant_method": "mxfp4",
+   "gated": false,
+   "params_by_dtype": {
+    "BF16": 1804459584,
+    "U8": 19110297600
+   },
+   "fetched_at": "2026-09-16"
+  },
+  "CohereForAI/c4ai-command-r-plus": {
+   "repo": "CohereForAI/c4ai-command-r-plus",
+   "endpoint": "hf-mirror.com",
+   "revision": "3de12c88b4c6c882389a6f424cc2074383aa17d8",
+   "last_modified": "2025-04-16T03:03:37.000Z",
+   "license_id": "cc-by-nc-4.0",
+   "license_name": null,
+   "total_params_b": 103.81,
+   "weight_gib": null,
+   "context_k": null,
+   "max_position_embeddings": null,
+   "quant_method": null,
+   "gated": "auto",
+   "params_by_dtype": {
+    "F16": 103810674688
+   },
+   "fetched_at": "2026-09-16"
+  },
+  "tiiuae/falcon-180B-chat": {
+   "repo": "tiiuae/falcon-180B-chat",
+   "endpoint": "hf-mirror.com",
+   "revision": "6882299beda36df40e683c4478edfcc94f2cde5f",
+   "last_modified": "2023-11-07T14:38:47.000Z",
+   "license_id": "unknown",
+   "license_name": null,
+   "total_params_b": 179.52,
+   "weight_gib": null,
+   "context_k": null,
+   "max_position_embeddings": null,
+   "quant_method": null,
+   "gated": "auto",
+   "params_by_dtype": {
+    "BF16": 179522565120
+   },
+   "fetched_at": "2026-09-16"
+  },
+  "tiiuae/falcon-40b-instruct": {
+   "repo": "tiiuae/falcon-40b-instruct",
+   "endpoint": "hf-mirror.com",
+   "revision": "ecb78d97ac356d098e79f0db222c9ce7c5d9ee5f",
+   "last_modified": "2023-09-29T14:32:27.000Z",
+   "license_id": "apache-2.0",
+   "license_name": null,
+   "total_params_b": null,
+   "weight_gib": null,
+   "context_k": null,
+   "max_position_embeddings": null,
+   "quant_method": null,
+   "gated": false,
+   "params_by_dtype": {},
+   "fetched_at": "2026-09-16"
+  },
+  "01-ai/Yi-1.5-34B-Chat": {
+   "repo": "01-ai/Yi-1.5-34B-Chat",
+   "endpoint": "hf-mirror.com",
+   "revision": "fa4ffba162f20948bf77c2a30eca952bf0812b7f",
+   "last_modified": "2024-08-27T07:11:05.000Z",
+   "license_id": "apache-2.0",
+   "license_name": null,
+   "total_params_b": 34.39,
+   "weight_gib": null,
+   "context_k": 4.0,
+   "max_position_embeddings": 4096,
+   "quant_method": null,
+   "gated": false,
+   "params_by_dtype": {
+    "BF16": 34388917248
+   },
+   "fetched_at": "2026-09-16"
+  },
+  "01-ai/Yi-1.5-9B-Chat": {
+   "repo": "01-ai/Yi-1.5-9B-Chat",
+   "endpoint": "hf-mirror.com",
+   "revision": "1a0fc698cf883c4f5c325f026ca79f0ebd9955a5",
+   "last_modified": "2024-06-26T10:41:03.000Z",
+   "license_id": "apache-2.0",
+   "license_name": null,
+   "total_params_b": 8.83,
+   "weight_gib": null,
+   "context_k": 4.0,
+   "max_position_embeddings": 4096,
+   "quant_method": null,
+   "gated": false,
+   "params_by_dtype": {
+    "BF16": 8829407232
+   },
+   "fetched_at": "2026-09-16"
+  },
+  "internlm/internlm3-8b-instruct": {
+   "repo": "internlm/internlm3-8b-instruct",
+   "endpoint": "hf-mirror.com",
+   "revision": "28c99415adaf61767bd1c619f4f99f308fdfd223",
+   "last_modified": "2025-02-11T09:53:14.000Z",
+   "license_id": "apache-2.0",
+   "license_name": null,
+   "total_params_b": 8.8,
+   "weight_gib": null,
+   "context_k": 32.0,
+   "max_position_embeddings": 32768,
+   "quant_method": null,
+   "gated": false,
+   "params_by_dtype": {
+    "BF16": 8804241408
+   },
+   "fetched_at": "2026-09-16"
+  },
+  "OpenGVLab/InternVL3-78B": {
+   "repo": "OpenGVLab/InternVL3-78B",
+   "endpoint": "hf-mirror.com",
+   "revision": "4a42b163cc0e222e97b10b562eee98da6bf26077",
+   "last_modified": "2025-09-11T12:51:29.000Z",
+   "license_id": "other",
+   "license_name": null,
+   "total_params_b": 78.41,
+   "weight_gib": null,
+   "context_k": 32.0,
+   "max_position_embeddings": 32768,
+   "quant_method": null,
+   "gated": false,
+   "params_by_dtype": {
+    "BF16": 78408318336
+   },
+   "fetched_at": "2026-09-16"
+  },
+  "OpenGVLab/InternVL3-14B": {
+   "repo": "OpenGVLab/InternVL3-14B",
+   "endpoint": "hf-mirror.com",
+   "revision": "419aa10d2db7da6c64382ad3124f79a60cec42aa",
+   "last_modified": "2025-09-11T12:50:33.000Z",
+   "license_id": "apache-2.0",
+   "license_name": null,
+   "total_params_b": 15.12,
+   "weight_gib": null,
+   "context_k": 32.0,
+   "max_position_embeddings": 32768,
+   "quant_method": null,
+   "gated": false,
+   "params_by_dtype": {
+    "BF16": 15117256704
+   },
+   "fetched_at": "2026-09-16"
+  },
+  "allenai/OLMo-2-0325-32B-Instruct": {
+   "repo": "allenai/OLMo-2-0325-32B-Instruct",
+   "endpoint": "hf-mirror.com",
+   "revision": "b96024342a77a69aa0dda815c3454a671f477463",
+   "last_modified": "2025-03-14T22:45:15.000Z",
+   "license_id": "apache-2.0",
+   "license_name": null,
+   "total_params_b": 32.23,
+   "weight_gib": null,
+   "context_k": 4.0,
+   "max_position_embeddings": 4096,
+   "quant_method": null,
+   "gated": false,
+   "params_by_dtype": {
+    "BF16": 32234279936
+   },
+   "fetched_at": "2026-09-16"
+  },
+  "allenai/OLMo-2-1124-13B-Instruct": {
+   "repo": "allenai/OLMo-2-1124-13B-Instruct",
+   "endpoint": "hf-mirror.com",
+   "revision": "3a5c85baefbb1896a54d56fe2e76c0395627ddf4",
+   "last_modified": "2025-01-06T01:02:18.000Z",
+   "license_id": "apache-2.0",
+   "license_name": null,
+   "total_params_b": 13.72,
+   "weight_gib": null,
+   "context_k": 4.0,
+   "max_position_embeddings": 4096,
+   "quant_method": null,
+   "gated": false,
+   "params_by_dtype": {
+    "BF16": 13716198400
+   },
+   "fetched_at": "2026-09-16"
+  },
+  "allenai/OLMo-2-1124-7B-Instruct": {
+   "repo": "allenai/OLMo-2-1124-7B-Instruct",
+   "endpoint": "hf-mirror.com",
+   "revision": "470b1fba1ae01581f270116362ee4aa1b97f4c84",
+   "last_modified": "2025-01-06T01:02:35.000Z",
+   "license_id": "apache-2.0",
+   "license_name": null,
+   "total_params_b": 7.3,
+   "weight_gib": null,
+   "context_k": 4.0,
+   "max_position_embeddings": 4096,
+   "quant_method": null,
+   "gated": false,
+   "params_by_dtype": {
+    "BF16": 7298617344
+   },
+   "fetched_at": "2026-09-16"
+  },
+  "ibm-granite/granite-3.3-8b-instruct": {
+   "repo": "ibm-granite/granite-3.3-8b-instruct",
+   "endpoint": "hf-mirror.com",
+   "revision": "51dd4bc2ade4059a6bd87649d68aa11e4fb2529b",
+   "last_modified": "2025-05-12T06:39:42.000Z",
+   "license_id": "apache-2.0",
+   "license_name": null,
+   "total_params_b": 8.17,
+   "weight_gib": null,
+   "context_k": 128.0,
+   "max_position_embeddings": 131072,
+   "quant_method": null,
+   "gated": false,
+   "params_by_dtype": {
+    "BF16": 8170864640
+   },
+   "fetched_at": "2026-09-16"
+  },
+  "HuggingFaceTB/SmolLM3-3B": {
+   "repo": "HuggingFaceTB/SmolLM3-3B",
+   "endpoint": "hf-mirror.com",
+   "revision": "a07cc9a04f16550a088caea529712d1d335b0ac1",
+   "last_modified": "2025-09-10T12:28:11.000Z",
+   "license_id": "apache-2.0",
+   "license_name": null,
+   "total_params_b": 3.08,
+   "weight_gib": null,
+   "context_k": 64.0,
+   "max_position_embeddings": 65536,
+   "quant_method": null,
+   "gated": false,
+   "params_by_dtype": {
+    "BF16": 3075098624
+   },
+   "fetched_at": "2026-09-16"
+  },
+  "baichuan-inc/Baichuan2-13B-Chat": {
+   "repo": "baichuan-inc/Baichuan2-13B-Chat",
+   "endpoint": "hf-mirror.com",
+   "revision": "c8d877c7ca596d9aeff429d43bff06e288684f45",
+   "last_modified": "2024-02-26T08:58:32.000Z",
+   "license_id": "other",
+   "license_name": null,
+   "total_params_b": null,
+   "weight_gib": null,
+   "context_k": null,
+   "max_position_embeddings": null,
+   "quant_method": null,
+   "gated": false,
+   "params_by_dtype": {},
+   "fetched_at": "2026-09-16"
+  },
+  "BAAI/bge-m3": {
+   "repo": "BAAI/bge-m3",
+   "endpoint": "hf-mirror.com",
+   "revision": "5617a9f61b028005a4858fdac845db406aefb181",
+   "last_modified": "2024-07-03T14:50:10.000Z",
+   "license_id": "mit",
+   "license_name": null,
+   "total_params_b": null,
+   "weight_gib": null,
+   "context_k": 8.0,
+   "max_position_embeddings": 8194,
+   "quant_method": null,
+   "gated": false,
+   "params_by_dtype": {},
+   "fetched_at": "2026-09-16"
+  },
+  "BAAI/bge-reranker-v2-m3": {
+   "repo": "BAAI/bge-reranker-v2-m3",
+   "endpoint": "hf-mirror.com",
+   "revision": "953dc6f6f85a1b2dbfca4c34a2796e7dde08d41e",
+   "last_modified": "2024-06-24T14:08:45.000Z",
+   "license_id": "apache-2.0",
+   "license_name": null,
+   "total_params_b": 0.57,
+   "weight_gib": null,
+   "context_k": 8.0,
+   "max_position_embeddings": 8194,
+   "quant_method": null,
+   "gated": false,
+   "params_by_dtype": {
+    "F32": 567755777
+   },
+   "fetched_at": "2026-09-16"
+  },
+  "Qwen/Qwen3-Embedding-8B": {
+   "repo": "Qwen/Qwen3-Embedding-8B",
+   "endpoint": "hf-mirror.com",
+   "revision": "1d8ad4ca9b3dd8059ad90a75d4983776a23d44af",
+   "last_modified": "2025-07-07T09:02:21.000Z",
+   "license_id": "apache-2.0",
+   "license_name": null,
+   "total_params_b": 7.57,
+   "weight_gib": null,
+   "context_k": 40.0,
+   "max_position_embeddings": 40960,
+   "quant_method": null,
+   "gated": false,
+   "params_by_dtype": {
+    "BF16": 7567295488
+   },
+   "fetched_at": "2026-09-16"
+  },
+  "Qwen/Qwen3-Embedding-4B": {
+   "repo": "Qwen/Qwen3-Embedding-4B",
+   "endpoint": "hf-mirror.com",
+   "revision": "5cf2132abc99cad020ac570b19d031efec650f2b",
+   "last_modified": "2025-06-20T09:30:56.000Z",
+   "license_id": "apache-2.0",
+   "license_name": null,
+   "total_params_b": 4.02,
+   "weight_gib": null,
+   "context_k": 40.0,
+   "max_position_embeddings": 40960,
+   "quant_method": null,
+   "gated": false,
+   "params_by_dtype": {
+    "BF16": 4021774336
+   },
+   "fetched_at": "2026-09-16"
+  },
+  "Qwen/Qwen3-Embedding-0.6B": {
+   "repo": "Qwen/Qwen3-Embedding-0.6B",
+   "endpoint": "hf-mirror.com",
+   "revision": "97b0c614be4d77ee51c0cef4e5f07c00f9eb65b3",
+   "last_modified": "2026-04-20T02:45:58.000Z",
+   "license_id": "apache-2.0",
+   "license_name": null,
+   "total_params_b": 0.6,
+   "weight_gib": null,
+   "context_k": 32.0,
+   "max_position_embeddings": 32768,
+   "quant_method": null,
+   "gated": false,
+   "params_by_dtype": {
+    "BF16": 595776512
+   },
+   "fetched_at": "2026-09-16"
+  },
+  "Qwen/Qwen3-Reranker-8B": {
+   "repo": "Qwen/Qwen3-Reranker-8B",
+   "endpoint": "hf-mirror.com",
+   "revision": "77d193c791ed757ca307ee72715aa132723da912",
+   "last_modified": "2026-04-16T08:56:16.000Z",
+   "license_id": "apache-2.0",
+   "license_name": null,
+   "total_params_b": 8.19,
+   "weight_gib": null,
+   "context_k": 40.0,
+   "max_position_embeddings": 40960,
+   "quant_method": null,
+   "gated": false,
+   "params_by_dtype": {
+    "BF16": 8188548096
+   },
+   "fetched_at": "2026-09-16"
+  },
+  "alpindale/dbrx-instruct": {
+   "repo": "alpindale/dbrx-instruct",
+   "endpoint": "hf-mirror.com",
+   "revision": "8007650525bf3b67d6a4763caf02230061452d45",
+   "last_modified": "2024-03-27T13:20:48.000Z",
+   "license_id": "",
+   "license_name": null,
+   "params_by_dtype": {
+    "BF16": 131596523520
+   },
+   "total_params_b": 131.6,
+   "context_k": 32.0,
+   "max_position_embeddings": 32768,
+   "quant_method": null,
+   "gated": false,
+   "fetched_at": "2026-09-16T09:52:43Z"
+  }
+ }
+}

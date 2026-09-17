@@ -1,6 +1,0 @@
-放:🥇 M2.7 FP8 权重(~230GB,质量优先,4090 独有红利),★仓库名现场确认
-命令(占位):
-  export HF_HUB_ENABLE_HF_TRANSFER=1 HF_ENDPOINT=https://hf-mirror.com
-  huggingface-cli download <org>/MiniMax-M2.7-FP8 --local-dir .
-用法:./run.sh m2.7-fp8(TP=8 单副本 + FP8 KV)。质量最好但无冗余。
-只跑 INT4 则本目录留空。若无现成 FP8 量化,跳过用 INT4。

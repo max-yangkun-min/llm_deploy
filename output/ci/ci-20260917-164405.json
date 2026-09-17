@@ -1,0 +1,56 @@
+{
+ "started_at": "2026-09-17T16:44:06",
+ "online": false,
+ "seconds": 2.3,
+ "counts": {
+  "pass": 5,
+  "fail": 0,
+  "skip": 1,
+  "warn": 1
+ },
+ "checks": [
+  {
+   "name": "C: 盘可用空间",
+   "outcome": "pass",
+   "detail": "C: 56.7 GiB · D: 44.4 GiB · E: 328.2 GiB",
+   "seconds": null
+  },
+  {
+   "name": "Python 语法检查",
+   "outcome": "pass",
+   "detail": "13 个文件",
+   "seconds": 0.070928
+  },
+  {
+   "name": "冒烟测试",
+   "outcome": "pass",
+   "detail": "99 项全部通过",
+   "seconds": 1.844551
+  },
+  {
+   "name": "实测值核对",
+   "outcome": "pass",
+   "detail": "汇总:改动 0 行;未能核实 0 条;加密档位不符 0 条;保留模型卡上下文 28 条",
+   "seconds": 0.287825
+  },
+  {
+   "name": "Shell 脚本语法",
+   "outcome": "skip",
+   "detail": "26 个脚本待检,WSL/bash 在本机不可用",
+   "seconds": null
+  },
+  {
+   "name": "GPU 目录自洽",
+   "outcome": "pass",
+   "detail": "15 张卡全部核实通过(huawei 3、nvidia 12)",
+   "seconds": null
+  },
+  {
+   "name": "根目录残留物",
+   "outcome": "warn",
+   "detail": "临时脚本(.tmp_*.py) 14 个;待办/状态文件 2 个",
+   "seconds": null
+  }
+ ],
+ "root": "D:\\workspaces\\blade_agent\\llm"
+}

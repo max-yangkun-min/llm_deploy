@@ -1,6 +1,6 @@
-放:zc5s-vllm-0.24.0.tar(~5-8GB,一个镜像跑 M2.7/397B)
+放:zc5s-vllm-0.24.0-cu129.tar(仅运行MiniMax M2.7 AWQ，镜像内含nginx)
 来源:scripts/ 下 build+save(见 下载清单-FILL-ME.md · A):
   cd ../scripts
-  docker build -t zc5s-vllm:0.24.0 .      # 国内:-f Dockerfile.cn --build-arg REGISTRY=docker.m.daocloud.io/
-  docker save zc5s-vllm:0.24.0 -o ../images/zc5s-vllm-0.24.0.tar
-注:麒麟上若装不了 docker,走裸机 pip(system/wheels/ + install-baremetal.sh),本镜像可不用。
+  docker build -t zc5s-vllm:0.24.0-cu129 .
+  docker save zc5s-vllm:0.24.0-cu129 -o ../images/zc5s-vllm-0.24.0-cu129.tar
+宿主要求:NVIDIA Linux驱动>=575.51.03；4090不使用cuda-compat绕过。

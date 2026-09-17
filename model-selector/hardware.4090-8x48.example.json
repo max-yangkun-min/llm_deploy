@@ -1,0 +1,15 @@
+{
+  "gpu_name": "NVIDIA GeForce RTX 4090 48GB",
+  "gpu_count": 8,
+  "vram_per_gpu_gib": 48,
+  "compute_capability": 8.9,
+  "driver_version": "575.51.03",
+  "host_ram_gib": 512,
+  "disk_free_gib": 1000,
+  "interconnect": "PCIe",
+  "nodes": 1,
+  "workload": "agent,coding",
+  "require_multimodal": false,
+  "require_permissive_license": false,
+  "min_context_k": 32
+}

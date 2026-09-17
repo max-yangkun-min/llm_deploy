@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>大模型部署管理台</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/css/app.css">
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <span class="logo">LLM</span>
+    <div>
+      <h1>大模型部署管理台</h1>
+      <p id="brand-sub">按硬件资源推荐可部署模型,并给出已验证的部署方法</p>
+    </div>
+  </div>
+  <nav id="nav">
+    <a href="#/recommend" data-view="recommend">硬件选型</a>
+    <a href="#/catalog" data-view="catalog">模型目录</a>
+    <a href="#/models" data-view="models">真实模型库</a>
+    <a href="#/recipes" data-view="recipes">部署方案</a>
+    <a href="#/ledger" data-view="ledger">部署台账</a>
+    <a href="#/about" data-view="about">数据来源</a>
+  </nav>
+</header>
+<main id="view" class="view"><p class="muted">加载中…</p></main>
+<footer class="footer">
+  <span id="meta-line">—</span>
+  <span class="muted">推荐结果来自 model-selector 的同一套规则;方案与命令来自本工作区已验证记录。</span>
+</footer>
+<div id="toast" class="toast" hidden></div>
+<script type="module" src="/js/app.js"></script>
+</body>
+</html>

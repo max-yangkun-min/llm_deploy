@@ -1,0 +1,503 @@
+{
+  "schema": 1,
+  "updated": "2026-09-15",
+  "note": "本文件只登记本工作区已记录、可追溯到具体文档的部署方案。状态字段沿用 model-selector/models.csv 的词汇,未经验证的组合不会被写成生产可用。",
+  "mirrors": {
+    "policy": "任何依赖、镜像、权重、驱动下载都先选国内镜像,并核实目标 tag/wheel/摘要确实存在;只有全部国内镜像不可用才回退海外源,并且要告知用户。",
+    "entries": [
+      { "id": "hf-mirror", "kind": "模型权重", "endpoint": "https://hf-mirror.com", "usage": "HF_ENDPOINT=https://hf-mirror.com", "verified": true, "notes": "工作区内多个离线包使用;大文件建议多连接工具,注意远端重置需要续传。" },
+      { "id": "modelscope", "kind": "模型权重", "endpoint": "ModelScope 官方仓库", "usage": "按仓库 revision 固定下载并校验每文件 SHA-256", "verified": true, "notes": "DeepSeek-V4-Flash-0731 的国内首选来源(deepseek-ai/DeepSeek-V4-Flash-0731)。" },
+      { "id": "daocloud-vllm", "kind": "容器镜像", "endpoint": "docker.m.daocloud.io/vllm/vllm-openai", "usage": "v0.24.0-cu129,amd64 摘要 sha256:4fab2d06cb3898f00d46def116d5aff27b2388126993efc871fe2601c7df9742", "verified": true, "notes": "与官方同摘要;曾出现 2.99GB 层传输截断,重试可用。" },
+      { "id": "1panel-cuda", "kind": "容器镜像", "endpoint": "docker.1panel.live/nvidia/cuda", "usage": "12.8.1-devel-ubuntu22.04,amd64 摘要 sha256:6617a625f4090c76c545a0e7d63f2e441718ef9af7f4efe7dd1242a29e289fd7", "verified": true, "notes": "GLM-5.2 cu128 镜像构建的 CUDA devel 基础层。" },
+      { "id": "nju-torch", "kind": "Python 轮子", "endpoint": "https://mirrors.nju.edu.cn/pytorch/whl/cu128", "usage": "torch 2.11.0+cu128 / torchvision 0.26.0+cu128 / torchaudio 2.11.0+cu128", "verified": true, "notes": "带已验证 SHA-256,见 kty5l/build-glm52-vllm-cu128/BUILD-SOURCES.md。" },
+      { "id": "tuna-pypi", "kind": "Python 轮子", "endpoint": "https://pypi.tuna.tsinghua.edu.cn/simple", "usage": "构建期默认 PyPI 索引", "verified": true, "notes": "最终依赖闭包写入镜像内 /opt/glm52-vllm-pip-freeze.txt。" },
+      { "id": "tuna-ubuntu", "kind": "系统包", "endpoint": "https://mirrors.tuna.tsinghua.edu.cn/ubuntu/", "usage": "apt sources 替换", "verified": true, "notes": "离线机的 deb 必须匹配目标发行版。" },
+      { "id": "gitee-vllm", "kind": "源码", "endpoint": "https://gitee.com/mirrors/vllm.git", "usage": "v0.24.0 / commit ee0da84ab9e04ac7610e28580af62c365e898389", "verified": true, "notes": "Gitee 不暴露未合并的 PR head,补丁按已哈希文件内置。" },
+      { "id": "gitcode-cutlass", "kind": "源码", "endpoint": "https://gitcode.com/gh_mirrors/cu/cutlass.git", "usage": "tag v4.4.2 / commit da5e086dab31d63815acafdac9a9c5893b1c69e2", "verified": true, "notes": "CUTLASS 源码国内镜像。" },
+      { "id": "ghcr-nju", "kind": "容器镜像", "endpoint": "ghcr.nju.edu.cn", "usage": "ghcr.io 前缀替换", "verified": true, "notes": "llama.cpp 官方镜像的国内加速前缀。" },
+      { "id": "daocloud-quay", "kind": "容器镜像", "endpoint": "m.daocloud.io/quay.io", "usage": "vllm-ascend 固定 OCI index sha256:ade04e75aa4a888df5dfb7917f21e7d9178014d5f5e52b358f2cd1d8897f46ce", "verified": true, "notes": "与官方 Quay 返回相同 index 与平台摘要。" }
+    ]
+  },
+  "recipes": [
+    {
+      "id": "glm52-int4-a100-8x",
+      "profile_id": "glm52-int4-a100",
+      "title": "GLM-5.2 INT4 · 8×A100 80GB · TP=8 离线栈",
+      "environment": "kty5l",
+      "status": "verified-local",
+      "model": "GLM-5.2",
+      "quantization": "INT4 (cyankiwi/GLM-5.2-AWQ-INT4,约 410GB)",
+      "verified_on": "镜像已在本地构建并通过静态验收;现场 8×A100 的 GPU 与 Triton 内核验收待完成",
+      "hardware": {
+        "summary": "8×A100 80GB PCIe(sm_80),x86_64",
+        "gpu_count": 8,
+        "vram_per_gpu_gib": 80,
+        "nodes": 1,
+        "interconnect": "NVLink 优先;PCIe 需看 topo",
+        "min_driver": "570.124.06",
+        "min_host_ram_gib": 512,
+        "min_disk_gib": 500
+      },
+      "stack": {
+        "image": "glm52-vllm:0.24.0-pr38476-cu128-native-r570-a100",
+        "image_source": "本地构建,基础层走国内镜像;含 vLLM PR #38476 补丁",
+        "vllm": "0.24.1.dev0+PR38476",
+        "torch_cuda": "12.8(原生,不使用 cuda-compat)",
+        "driver_branch": "r570"
+      },
+      "layout": {
+        "strategy": "单机 TP=8",
+        "tp": 8,
+        "pp": 1,
+        "replicas": 1,
+        "lb": "无",
+        "notes": "A100 跑不了原生 DSA 稀疏注意力,必须走 PR #38476 的 Triton 兜底。"
+      },
+      "launch": [
+        "docker run -d --name glm52 --gpus all --ipc=host",
+        "  --ulimit memlock=-1 --ulimit stack=67108864 --restart no",
+        "  -e CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7",
+        "  -e VLLM_ATTENTION_BACKEND=TRITON_MLA_SPARSE",
+        "  -p 8000:8000 -v /data/models/GLM-5.2-AWQ-INT4:/model:ro",
+        "  glm52-vllm:0.24.0-pr38476-cu128-native-r570-a100",
+        "  vllm serve /model --served-model-name glm-5.2",
+        "    --tensor-parallel-size 8 --no-async-scheduling",
+        "    --gpu-memory-utilization 0.90 --max-model-len 32768 --max-num-seqs 8",
+        "    --kv-cache-dtype auto --enable-prefix-caching --enable-chunked-prefill",
+        "    --max-num-batched-tokens 8192",
+        "    --enable-auto-tool-choice --tool-call-parser glm47 --reasoning-parser glm45"
+      ],
+      "steps": [
+        { "title": "联网机分两段打包", "detail": "./prepare-offline.sh base 先出镜像与系统依赖,权重就绪后再 ./prepare-offline.sh weights;离线机 deb 必须匹配其发行版。" },
+        { "title": "进场核对", "detail": "bash scripts/recon.sh,只看三项:topo、驱动是否 >=570、容器栈是否可用。" },
+        { "title": "校验并安装", "detail": "sha256sum -c MANIFEST.sha256 必须全 OK,再 bash scripts/install-offline.sh。" },
+        { "title": "分阶段启动", "detail": "阶段1 用 Qwen3-8B 只验 TP/NCCL;阶段3 是已验证基准(32K/util0.90);阶段4 再上 64K 与 16 路并发。" }
+      ],
+      "acceptance": [
+        "启动日志必须出现 Using TRITON_MLA_SPARSE attention backend。",
+        "必须出现 DeepGEMM not supported on this platform; using Triton fallback。",
+        "日志确认 KV 类型为 auto,绝不能在 A100 开 fp8 KV。",
+        "冷启动约 7 分钟,健康检查超时要放宽到 15 分钟以上并禁用自动重启。",
+        "压测参考:vllm bench serve,random-input-len 65536,并发 16,prompt 64;单路约 56 tok/s,16-24 路接近饱和。"
+      ],
+      "pitfalls": [
+        { "symptom": "日志没有兜底两行", "action": "PR #38476 没生效或 patch 解错,回打包阶段重做。" },
+        { "symptom": "报 dsv3_fused_a_gemm / sm90 不兼容", "action": "patch 没打全。" },
+        { "symptom": "报 DeepGEMM RuntimeError", "action": "确认 VLLM_USE_DEEP_GEMM=0 且补丁生效。" },
+        { "symptom": "加载到一半被杀", "action": "健康检查超时太短。" },
+        { "symptom": "多卡卡死无日志", "action": "nvidia-smi topo -m 出现 SYS 就是跨 socket,物理挪卡,或 NCCL_P2P_DISABLE=1 勉强跑。" }
+      ],
+      "sources": [
+        "kty5l/GLM-5.2-部署步骤-8xA100.md",
+        "kty5l/offline-glm52/start.sh",
+        "kty5l/build-glm52-vllm-cu128/BUILD-SOURCES.md"
+      ]
+    },
+    {
+      "id": "minimax-m27-awq-a40-dual",
+      "profile_id": "minimax-m27-awq-a40",
+      "title": "MiniMax M2.7 AWQ · 2×(4×A40 48GB) 双副本 + nginx",
+      "environment": "xt",
+      "status": "validated-user-workspace",
+      "model": "MiniMax-M2.7",
+      "quantization": "AWQ (QuantTrio/MiniMax-M2.7-AWQ,约 115GB)",
+      "verified_on": "用户态已在工作区验证 TP=4 单实例配置;A40 compat libcuda 与 Triton JIT 需实机验收",
+      "hardware": {
+        "summary": "两台各 4×A40 48GB(sm_86),10GbE 互联",
+        "gpu_count": 4,
+        "vram_per_gpu_gib": 48,
+        "nodes": 2,
+        "interconnect": "每台内部 PCIe,同根桥优先",
+        "min_driver": "545.0",
+        "min_host_ram_gib": 256,
+        "min_disk_gib": 220
+      },
+      "stack": {
+        "image": "xt-vllm:0.24.0-cu129-compat545",
+        "image_source": "官方 vLLM v0.24.0-cu129 派生,国内走 Dockerfile.cn 与 DaoCloud",
+        "vllm": "0.24.0",
+        "torch_cuda": "12.9 + cuda-compat-12-9",
+        "ray": "2.56.1(本方案不需要 Ray)"
+      },
+      "layout": {
+        "strategy": "每台一个 TP=4 副本,互不通信,网关做负载均衡",
+        "tp": 4,
+        "pp": 1,
+        "replicas": 2,
+        "lb": "镜像内置 nginx,宿主机 9000 端口",
+        "notes": "唯一自带同模型冗余的方案;R545 属条件兼容,必须通过 A40 上的 compat libcuda 与 Triton JIT 验收。"
+      },
+      "launch": [
+        "docker run -d --name xt-m2.7 --gpus all --ipc=host",
+        "  --ulimit memlock=-1 --ulimit stack=67108864 --restart no",
+        "  -e CUDA_VISIBLE_DEVICES=0,1,2,3 -p 8000:8000",
+        "  -v /data/models:/models:ro -v /data/hf-cache:/root/.cache/huggingface",
+        "  xt-vllm:0.24.0-cu129-compat545",
+        "  vllm serve /models/MiniMax-M2.7-AWQ --served-model-name minimax-m2.7",
+        "    --tensor-parallel-size 4 --enable-expert-parallel --quantization awq_marlin",
+        "    --speculative-config {method:mtp,num_speculative_tokens:2}",
+        "    --gpu-memory-utilization 0.90 --max-model-len 65536 --max-num-seqs 32",
+        "    --kv-cache-dtype auto --enable-prefix-caching --enable-chunked-prefill",
+        "    --enable-auto-tool-choice --tool-call-parser minimax_m2",
+        "    --reasoning-parser minimax_m2_append_think --trust-remote-code"
+      ],
+      "steps": [
+        { "title": "选卡", "detail": "nvidia-smi topo -m 选出拓扑最好的 4 张卡,避免跨 SYS;改 run.sh 里的 CUDA_VISIBLE_DEVICES。" },
+        { "title": "两台各自起副本", "detail": "两台都执行 ./run.sh m2.7,然后 docker logs -f xt-m2.7。" },
+        { "title": "起网关", "detail": "改 lb/nginx.conf 的 upstream 为两台真实 IP,再 ./run.sh lb-nginx。统一入口 :9000,必须 proxy_buffering off,否则流式 SSE 会被缓存。" },
+        { "title": "故障转移测试", "detail": "先停机器A副本,请求应继续由机器B完成;再反向测一次。" }
+      ],
+      "acceptance": [
+        "日志确认模型名 minimax-m2.7、tensor_parallel_size=4、quantization=awq_marlin。",
+        "KV 类型为 auto,没有误开 FP8 KV。",
+        "MTP 投机解码已启用,并记录无 MTP 的基线数据。",
+        "curl /v1/chat/completions 返回正常,流式输出逐块返回。",
+        "记录首 token 延迟、输出 tok/s、并发吞吐与 64K 上下文余量。"
+      ],
+      "pitfalls": [
+        { "symptom": "CUDA OOM", "action": "先降 --max-num-seqs,再降 --max-model-len。" },
+        { "symptom": "MTP 参数报错", "action": "临时移除 --speculative-config,先保基础服务,不要为它在离线机升级依赖。" },
+        { "symptom": "单路速度异常", "action": "检查 4 卡是否跨 SYS,确认 AWQ Marlin 与 MTP 真的生效。" },
+        { "symptom": "流式输出一次性返回", "action": "nginx 必须 proxy_buffering off。" },
+        { "symptom": "双副本只有一台收到请求", "action": "检查 upstream、健康状态和两台模型名是否一致。" }
+      ],
+      "sources": [
+        "xt/offline-xt/models/MiniMax-M2.7-AWQ/README-部署.md",
+        "xt/offline-xt/scripts/run.sh",
+        "xt/offline-xt/scripts/lb/nginx.conf"
+      ]
+    },
+    {
+      "id": "minimax-m27-awq-4090-dual",
+      "profile_id": "minimax-m27-awq",
+      "title": "MiniMax M2.7 AWQ · 单机 8×RTX 4090 48GB · TP=4 双副本",
+      "environment": "zc5s",
+      "status": "validated-user-workspace",
+      "model": "MiniMax-M2.7",
+      "quantization": "AWQ (约 115GB,每副本)",
+      "verified_on": "工作区最终交付决定即为本方案;原生驱动档,不依赖 cuda-compat",
+      "hardware": {
+        "summary": "单机 8×RTX 4090 48GB(Ada sm_89),银河麒麟 V10",
+        "gpu_count": 8,
+        "vram_per_gpu_gib": 48,
+        "nodes": 1,
+        "interconnect": "无 NVLink,仅 PCIe",
+        "min_driver": "575.51.03",
+        "min_host_ram_gib": 256,
+        "min_disk_gib": 220
+      },
+      "stack": {
+        "image": "zc5s-vllm:0.24.0-cu129",
+        "image_source": "官方 vLLM v0.24.0-cu129 派生",
+        "vllm": "0.24.0",
+        "torch_cuda": "12.9",
+        "ray": "不需要"
+      },
+      "layout": {
+        "strategy": "小 TP + 多副本,避开无 NVLink 的 all-reduce 短板",
+        "tp": 4,
+        "pp": 1,
+        "replicas": 2,
+        "lb": "镜像内置 nginx,统一入口 :8000",
+        "notes": "副本之间是数据并行,零跨卡通信,还自带冗余;8 张卡只在模型必须 8 卡才装下时才用 TP=8。Ada 有原生 FP8,但这里按 INT4 双副本更划算。"
+      },
+      "launch": [
+        "# 副本 A 用卡 0-3,副本 B 用卡 4-7,各起一个容器",
+        "docker run -d --name zc5s-m2.7-a --gpus device=0,1,2,3 -p 8001:8000",
+        "  -v /data/models:/models:ro zc5s-vllm:0.24.0-cu129",
+        "  vllm serve /models/MiniMax-M2.7-AWQ --served-model-name minimax-m2.7",
+        "    --tensor-parallel-size 4 --enable-expert-parallel --quantization awq_marlin",
+        "    --speculative-config {method:mtp,num_speculative_tokens:2}",
+        "    --gpu-memory-utilization 0.90 --max-model-len 65536 --max-num-seqs 32",
+        "    --kv-cache-dtype auto --enable-prefix-caching --enable-chunked-prefill",
+        "    --enable-auto-tool-choice --tool-call-parser minimax_m2",
+        "    --reasoning-parser minimax_m2_append_think --trust-remote-code"
+      ],
+      "steps": [
+        { "title": "离线包安装", "detail": "./offline-zc5s/scripts/install-offline.sh;国产 OS 容器栈装不上时走 install-baremetal.sh 的裸机 pip 备案。" },
+        { "title": "起双副本", "detail": "./scripts/run.sh m2.7 起两个副本(:8001/:8002)。" },
+        { "title": "起网关", "detail": "./scripts/run.sh lb-nginx,统一入口 :8000。" }
+      ],
+      "acceptance": [
+        "run.sh verify:断言 torch.cuda.get_device_capability == (8,9) 且卡数正确。",
+        "nvidia-smi topo -m 确认 8 卡 PCIe 拓扑,决定 TP 组怎么挑。",
+        "记录单副本与双副本的并发吞吐差异。"
+      ],
+      "pitfalls": [
+        { "symptom": "TP=8 明显打折", "action": "4090 无 NVLink,大 TP 的 all-reduce 走 PCIe,应改小 TP 多副本。" },
+        { "symptom": "误下 FP4/NVFP4 权重", "action": "sm_89 只有 FP8,FP4 需要 Blackwell。" },
+        { "symptom": "容器栈装不上", "action": "用裸机 pip 备案路径。" }
+      ],
+      "sources": [
+        "zc5s/大模型选型方案-8x4090-48G.md",
+        "zc5s/offline-zc5s/scripts/run.sh",
+        "zc5s/offline-zc5s/README-安装.md"
+      ]
+    },
+    {
+      "id": "qwen35-397b-awq-a40-pp",
+      "profile_id": "qwen35-397b-awq-a40",
+      "title": "Qwen3.5-397B-A17B AWQ · 2×(4×A40) 跨机 TP=4×PP=2",
+      "environment": "xt",
+      "status": "provisional-local",
+      "model": "Qwen3.5-397B-A17B",
+      "quantization": "AWQ (QuantTrio/Qwen3.5-397B-A17B-AWQ,约 200GB)",
+      "verified_on": "工作区已规划脚本与文档;权重下载未完成,模型架构与 parser 需实机锁定",
+      "hardware": {
+        "summary": "两台各 4×A40 48GB,10GbE 互联(跨机 PP)",
+        "gpu_count": 8,
+        "vram_per_gpu_gib": 48,
+        "nodes": 2,
+        "interconnect": "同机 TP + 跨机 PP,至少 10GbE 并锁网卡",
+        "min_driver": "545.0",
+        "min_host_ram_gib": 512,
+        "min_disk_gib": 350
+      },
+      "stack": {
+        "image": "xt-vllm:0.24.0-cu129-compat545",
+        "image_source": "官方 vLLM v0.24.0-cu129 派生",
+        "vllm": "0.24.0",
+        "torch_cuda": "12.9 + cuda-compat-12-9",
+        "ray": "2.56.1(跨机需要)"
+      },
+      "layout": {
+        "strategy": "跨机两段流水线,默认不用 TP=8",
+        "tp": 4,
+        "pp": 2,
+        "replicas": 1,
+        "lb": "无(模型自带两个 stage)",
+        "notes": "A40 只有两卡 NVLink 桥,TP=8 会在每层跨 PCIe/NUMA 做 all-reduce;单机两段 PP 更稳。跨机 TP 不要放在普通 10GbE 上。"
+      },
+      "launch": [
+        "# 机器A",
+        "./run.sh ray-head",
+        "# 机器B",
+        "./run.sh ray-worker",
+        "# 回到机器A启动模型(在 ray-head 容器内 serve)",
+        "vllm serve /models/Qwen3.5-397B-A17B-AWQ --served-model-name qwen3.5-397b",
+        "  --tensor-parallel-size 4 --pipeline-parallel-size 2",
+        "  --enable-expert-parallel --quantization awq_marlin",
+        "  --gpu-memory-utilization 0.90 --max-model-len 65536 --max-num-seqs 48",
+        "  --kv-cache-dtype auto --enable-prefix-caching --enable-chunked-prefill",
+        "  --enable-auto-tool-choice --tool-call-parser hermes --reasoning-parser qwen3"
+      ],
+      "steps": [
+        { "title": "锁万兆网卡", "detail": "export NIC=<万兆光口名>(recon 查),NCCL_SOCKET_IFNAME 与 GLOO_SOCKET_IFNAME 都指向它,并设 NCCL_IB_DISABLE=1。填错直接慢死。" },
+        { "title": "选参与建模的卡", "detail": "RAY_GPU_DEVICES 按 topo 结果选,不要默认前 N 张最好。" },
+        { "title": "起 Ray", "detail": "机器A ray-head,机器B ray-worker 加入,再在 head 上 serve。" }
+      ],
+      "acceptance": [
+        "docker run --rm --entrypoint bash 镜像 -lc 打印 vllm 与 ray 版本,确认镜像一致。",
+        "跨机通信走 10GbE:确认网卡名、NCCL 日志里没有走错接口。",
+        "检查 compat libcuda 与 Triton JIT 在 A40 上真实可用,而不是只看镜像自检。"
+      ],
+      "pitfalls": [
+        { "symptom": "跨机很慢", "action": "NIC 填错或 PP 走了错误接口;确认 NCCL_SOCKET_IFNAME。" },
+        { "symptom": "启动即 OOM", "action": "降 max-num-seqs 再降 max-model-len。" },
+        { "symptom": "TP=8 打算直接替换默认参数", "action": "不可未经压测替换,先按默认 TP=4×PP=2。" }
+      ],
+      "sources": [
+        "xt/offline-xt/models/Qwen3.5-397B-A17B-AWQ/README-部署.md",
+        "xt/offline-xt/scripts/run.sh",
+        "xt/大模型部署方案对比-2x7xA40.md"
+      ]
+    },
+    {
+      "id": "qwen35-397b-awq-single-8gpu",
+      "profile_id": "qwen35-397b-awq",
+      "title": "Qwen3.5-397B-A17B AWQ · 单机 8×48GB · TP=4×PP=2(mp)",
+      "environment": "xt / zc5s 通用",
+      "status": "provisional-local",
+      "model": "Qwen3.5-397B-A17B",
+      "quantization": "AWQ (约 200GB)",
+      "verified_on": "工作区已规划;权重下载未完成",
+      "hardware": {
+        "summary": "单机 8×48GB(A40 或 4090 48GB)",
+        "gpu_count": 8,
+        "vram_per_gpu_gib": 48,
+        "nodes": 1,
+        "interconnect": "单机 PCIe,可用 mp 后端免 Ray",
+        "min_driver": "545.0",
+        "min_host_ram_gib": 512,
+        "min_disk_gib": 350
+      },
+      "stack": {
+        "image": "xt-vllm:0.24.0-cu129-compat545 / zc5s-vllm:0.24.0-cu129",
+        "image_source": "官方 vLLM v0.24.0-cu129 派生",
+        "vllm": "0.24.0",
+        "torch_cuda": "12.9",
+        "ray": "不需要"
+      },
+      "layout": {
+        "strategy": "单机 TP=4×PP=2,分布式执行后端用 mp",
+        "tp": 4,
+        "pp": 2,
+        "replicas": 1,
+        "lb": "无",
+        "notes": "xt 的 8+6 备用布局里,8 卡机跑本档、6 卡机跑 M2.7;两个模型必须用不同 model_name,由上层显式路由。"
+      },
+      "launch": [
+        "docker run -d --name xt-397b-8gpu --gpus all --ipc=host",
+        "  -e CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7 -p 8000:8000",
+        "  -v /data/models:/models:ro xt-vllm:0.24.0-cu129-compat545",
+        "  vllm serve /models/Qwen3.5-397B-A17B-AWQ --served-model-name qwen3.5-397b",
+        "    --tensor-parallel-size 4 --pipeline-parallel-size 2",
+        "    --distributed-executor-backend mp --enable-expert-parallel --quantization awq_marlin",
+        "    --gpu-memory-utilization 0.90 --max-model-len 65536 --max-num-seqs 48",
+        "    --kv-cache-dtype auto --enable-prefix-caching --enable-chunked-prefill",
+        "    --enable-auto-tool-choice --tool-call-parser hermes --reasoning-parser qwen3"
+      ],
+      "steps": [
+        { "title": "确认单机能放下 8 卡", "detail": "改成 8+6 前必须确认第 8 张卡的槽位、8-pin 线束、PSU、风道与 BIOS 8 卡枚举。" },
+        { "title": "起服务", "detail": "./run.sh 397b-8gpu(xt)或按 zc5s 脚本单实例启动。" },
+        { "title": "可选统一入口", "detail": "用 lb/8plus6-litellm.yaml 暴露两个模型名,但不要做同名随机负载均衡。" }
+      ],
+      "acceptance": [
+        "日志确认 TP=4、PP=2、quantization=awq_marlin。",
+        "确认 8 卡都被枚举且都在同一个 PCIe 域内,没有跨 NUMA 退化。",
+        "工具调用用带 tools 与 tool_choice=auto 的真实请求验收,纯文本生成不算通过。"
+      ],
+      "pitfalls": [
+        { "symptom": "8+6 请求发错模型", "action": "两个模型必须使用不同 model_name,由 blade_agent 显式路由。" },
+        { "symptom": "第 8 张卡不稳定", "action": "回到供电/散热/槽位核查,不要用参数掩盖。" }
+      ],
+      "sources": [
+        "xt/offline-xt/models/Qwen3.5-397B-A17B-AWQ/README-部署.md",
+        "xt/offline-xt/scripts/run.sh"
+      ]
+    },
+    {
+      "id": "kimi-k26-awq-a40-pp",
+      "profile_id": "kimi-k26-awq",
+      "title": "Kimi K2.6 AWQ · 2×6×A40 · 跨机 TP=2×PP=6",
+      "environment": "xt",
+      "status": "provisional-local",
+      "model": "Kimi-K2.6",
+      "quantization": "AWQ (约 500GB)",
+      "verified_on": "脚本与文档已记录;R545 属条件兼容,权重仓库与 parser 仍需实机验证",
+      "hardware": {
+        "summary": "两台各 6×A40 48GB,10GbE 互联,共 12 卡",
+        "gpu_count": 12,
+        "vram_per_gpu_gib": 48,
+        "nodes": 2,
+        "interconnect": "同机 TP=2 + 跨机 PP=6",
+        "min_driver": "545.0",
+        "min_host_ram_gib": 768,
+        "min_disk_gib": 700
+      },
+      "stack": {
+        "image": "xt-vllm:0.24.0-cu129-compat545",
+        "image_source": "官方 vLLM v0.24.0-cu129 派生",
+        "vllm": "0.24.0",
+        "torch_cuda": "12.9 + cuda-compat-12-9",
+        "ray": "2.56.1(跨机需要)"
+      },
+      "layout": {
+        "strategy": "能力天花板方案,6 段流水线,最慢",
+        "tp": 2,
+        "pp": 6,
+        "replicas": 1,
+        "lb": "无",
+        "notes": "只在不改硬件、且接受高延迟时选它;冷启动久,第一请求 JIT 更慢。"
+      },
+      "launch": [
+        "# 机器A / 机器B 依次起 Ray,再在 head 上 serve",
+        "./run.sh ray-head",
+        "./run.sh ray-worker",
+        "vllm serve /models/Kimi-K2.6-AWQ --served-model-name kimi-k2.6",
+        "  --tensor-parallel-size 2 --pipeline-parallel-size 6",
+        "  --enable-expert-parallel --quantization awq_marlin",
+        "  --gpu-memory-utilization 0.92 --max-model-len 65536 --max-num-seqs 64",
+        "  --kv-cache-dtype auto --enable-prefix-caching --enable-chunked-prefill",
+        "  --enable-auto-tool-choice --tool-call-parser kimi_k2 --trust-remote-code"
+      ],
+      "steps": [
+        { "title": "先验 A40 兼容性", "action": "K2.6 在 A40 上要先做 compat libcuda 与 Triton JIT 实测,再决定是否投产。" },
+        { "title": "锁网卡与卡序", "action": "同 397B 跨机方案,NIC 与 RAY_GPU_DEVICES 都必须按 recon 结果填。" }
+      ],
+      "acceptance": [
+        "镜像内 vllm/ray 版本两台一致。",
+        "PP 跨机通信走 10GbE 光口,不是管理网。",
+        "记录冷启动时长与首请求 JIT 时间,作为切换预案的输入。"
+      ],
+      "pitfalls": [
+        { "symptom": "切换模型时中断很久", "action": "PP=6 冷启动久,预案里要留 7-10 分钟。" },
+        { "symptom": "权重仓库名不确定", "action": "现场确认可用的 AWQ 仓库再下载,不要照抄占位名。" }
+      ],
+      "sources": [
+        "xt/大模型部署方案对比-2x7xA40.md",
+        "xt/offline-xt/scripts/run.sh",
+        "xt/offline-xt/下载清单-FILL-ME.md"
+      ]
+    },
+    {
+      "id": "deepseek-v4-flash-gguf-llamacpp",
+      "profile_id": "",
+      "title": "DeepSeek-V4-Flash-0731 Q4_K_XL · llama.cpp 官方镜像路径",
+      "environment": "deepseekv4-flash(2×A100 实测;8×4090 为推算)",
+      "status": "verified-local",
+      "model": "DeepSeek-V4-Flash-0731",
+      "quantization": "GGUF UD-Q4_K_XL(144.44 GiB,5 分片;专家层为原生 MXFP4)",
+      "verified_on": "2×A100 80GB 上完整实测(参数调优与工具调用均已验证);8×4090 部分为推算",
+      "hardware": {
+        "summary": "2×A100 80GB 已实测;8×RTX 4090 24GB 为推算可行",
+        "gpu_count": 2,
+        "vram_per_gpu_gib": 80,
+        "nodes": 1,
+        "interconnect": "默认 layer split,不要用张量并行",
+        "min_driver": "任意支持 CUDA 12.4 的驱动",
+        "min_host_ram_gib": 256,
+        "min_disk_gib": 400
+      },
+      "stack": {
+        "image": "ghcr.io/ggml-org/llama.cpp:server-cuda-b10326",
+        "image_source": "国内可换成 ghcr.nju.edu.cn 前缀",
+        "vllm": "不适用(本方案走 llama.cpp)",
+        "torch_cuda": "镜像自带 CUDA 12 线,已含 sm_89",
+        "ray": "不需要"
+      },
+      "layout": {
+        "strategy": "单机多卡 layer split",
+        "tp": 1,
+        "pp": 1,
+        "replicas": 1,
+        "lb": "无",
+        "notes": "不需要自编译推理框架;引擎版本下限 b10223。8 卡时必须保持默认 layer split,绝不用 -sm row。"
+      },
+      "launch": [
+        "docker run -d --name dsv4-q4kxl --gpus all --restart unless-stopped",
+        "  -p 127.0.0.1:1234:1234 -v /path/to/models:/models:ro",
+        "  ghcr.io/ggml-org/llama.cpp:server-cuda-b10326",
+        "  -m /models/UD-Q4_K_XL/DeepSeek-V4-Flash-0731-UD-Q4_K_XL-00001-of-00005.gguf",
+        "  --alias deepseek-v4-flash-0731 --host 0.0.0.0 --port 1234",
+        "  -ngl 999 -c 327680 --flash-attn on",
+        "  --cache-type-k q8_0 --cache-type-v q8_0 --kv-unified",
+        "  --batch-size 2048 --ubatch-size 512 --parallel 4 --jinja",
+        "  --fit off",
+        "  --spec-type ngram-map-k4v --spec-ngram-map-k4v-size-n 16"
+      ],
+      "steps": [
+        { "title": "权重下载", "detail": "文件在 UD-Q4_K_XL/ 子目录下,直接拼文件名会 404;sha256 取 API 的 lfs.oid,下载完必须校验。" },
+        { "title": "镜像固定", "detail": "b10326 摘要 sha256:2b24f0962a5cfa75f58f3fb1809bf88559ab46b23a8565f66ebaef05977943ac,4.34 GB。" },
+        { "title": "8×4090 调整", "detail": "保持默认 layer split;GPU0 额外扛 embedding + lm_head,用 -ts 给它调低配比;若崩在 GGML_ASSERT(n_graph_inputs < 30),需自编译加大 split 上限。" }
+      ],
+      "acceptance": [
+        "320K 上下文静态占用实测 156,740 MiB(2×A100)。",
+        "decode 短上下文约 40 tok/s,49K 深度 35.9 tok/s;prefill 530 tok/s @49K。",
+        "49K 中段插针检索与 313K 满窗检索均通过。",
+        "工具调用:流式与非流式、tool_choice=required、多轮结果回传都实测通过(2026-08-08 @ b10326)。",
+        "投机解码要按多负载评估:代码复用 +68%,单负载测速会严重高估。"
+      ],
+      "pitfalls": [
+        { "symptom": "以为 Q4 名字代表粗量化", "action": "逐张量核验过:专家层是官方原生 MXFP4,注意力和其余层更高精度,不要再找更高精度版本。" },
+        { "symptom": "KV q8_0 效果异常", "action": "q8_0 KV 必须配 --flash-attn on,二者绑定。" },
+        { "symptom": "换其他推理链路工具调用失效", "action": "deepseek4 的 tool parser 依赖 llama.cpp 自带模板与 --jinja。" },
+        { "symptom": "prefill 很慢", "action": "引擎固有特性,调参无解;对话场景靠前缀缓存,日常无感。" }
+      ],
+      "sources": [
+        "deploy-q4kxl.md",
+        "deepseekv4-flash/offline-dsv4-0731/README.md"
+      ]
+    }
+  ]
+}

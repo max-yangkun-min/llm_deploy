@@ -1,5 +1,0 @@
-放:🥈 Qwen3.5-397B-A17B INT4 权重(~200GB,更强通用推理),QuantTrio/Qwen3.5-397B-A17B-AWQ
-命令:
-  export HF_HUB_ENABLE_HF_TRANSFER=1 HF_ENDPOINT=https://hf-mirror.com
-  huggingface-cli download QuantTrio/Qwen3.5-397B-A17B-AWQ --local-dir .
-用法:./run.sh 397b(单机 TP=8;无NVLink纯PCIe通信重,压测单路)。填完可删本文件。

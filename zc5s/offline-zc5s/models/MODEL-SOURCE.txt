@@ -1,0 +1,13 @@
+模型不在 zc5s 包内重复存放，也不重新下载。
+
+Windows 制作盘现有位置:
+  E:\offline-xt\models\MiniMax-M2.7-AWQ
+
+Linux 现场默认位置:
+  /offline-xt/models/MiniMax-M2.7-AWQ
+
+若离线介质挂载在其他目录:
+  export MODEL_SOURCE=/实际挂载点/offline-xt/models/MiniMax-M2.7-AWQ
+  export MODELS_DIR=/实际挂载点/offline-xt/models
+
+要求:config.json、Tokenizer/Chat Template/自定义Python文件和44个model-*.safetensors分片完整。

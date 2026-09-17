@@ -17,8 +17,8 @@ K2.6 INT4约500GB,单台8×48GB仍装不下,两种布局都必须采用跨机 `T
 
 要求:
 
-- 两台都是x86_64,驱动不低于550.54.15,A40均可被Docker识别。
-- 两台加载完全相同的 `xt-vllm:0.24.0-cu124` 镜像。
+- 两台都是x86_64,驱动不低于545.0,A40均可被Docker识别。
+- 两台加载完全相同的`xt-vllm:0.24.0-cu129-compat545`镜像。
 - 两台本地SSD都保存完整的 `Kimi-K2.6-AWQ` 权重目录。
 - 两台之间的10GbE地址直连,主机防火墙允许这两个地址互相通信。
 - K2.6社区AWQ仓库、vLLM版本、`kimi_k2` parser必须在联网准备机上先验证。
@@ -49,13 +49,13 @@ df -h
 
 ```bash
 cd /offline-xt
-./scripts/install-offline.sh
+bash scripts/install-offline.sh
 ```
 
-`install-offline.sh` 会先执行 `verify-cuda124.sh`;只有驱动、torch CUDA 12.4和A40(sm_86)全部通过才继续。再确认镜像和Ray均可用:
+`install-offline.sh`会先执行`verify-cu129-compat.sh`;只有驱动、compat libcuda、torch CUDA 12.9、Triton JIT和A40(sm_86)全部通过才继续。再确认镜像和Ray均可用:
 
 ```bash
-docker run --rm --entrypoint bash xt-vllm:0.24.0-cu124 -lc '
+docker run --rm --entrypoint bash xt-vllm:0.24.0-cu129-compat545 -lc '
 python -c "import ray,vllm; print(\"ray\",ray.__version__); print(\"vllm\",vllm.__version__)"
 ray --version
 '
@@ -92,7 +92,7 @@ du -sh /data/models/Kimi-K2.6-AWQ
 两台都编辑 `/offline-xt/scripts/run.sh` 顶部:
 
 ```bash
-IMAGE="xt-vllm:0.24.0-cu124"
+IMAGE="xt-vllm:0.24.0-cu129-compat545"
 MODELS_DIR="/data/models"
 HF_CACHE="/data/hf-cache"
 NIC="ens6f0"          # 换成各自10GbE接口名

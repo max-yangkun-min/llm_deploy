@@ -1,7 +1,7 @@
 # xt 离线包 · 下载清单(把大件填进本骨架)
 
 > 骨架已搭好(脚本 + 3个7+7主方案 + 1个8+6备用方案 + LB 配置 + 对比文档)。**大件按下表下载填充。**
-> 硬件:合计 14×A40 48GB,默认 7+7,可选 8+6;跨机仅 10GbE。所有方案共用**一个 CUDA 12.4 验收镜像**。
+> 硬件:合计 14×A40 48GB,默认 7+7,可选 8+6;跨机仅 10GbE。所有方案共用**一个cu129 Forward Compatibility验收镜像**。
 > **正式离线包固定备齐 3 个模型**:Kimi K2.6、Qwen3.5-397B、MiniMax M2.7。卡布局现场才决定,7+7 和 8+6 复用同一离线包,无需重新下载、构建镜像或制作另一套包。
 
 ---
@@ -10,44 +10,45 @@
 
 ```
 offline-xt/
-├── images/        ⬇️ xt-vllm-0.24.0-cu124.tar  # A · CUDA 12.4模型镜像(build+save),两台都load
-│                  ⬇️ nginx-stable.tar           #     M2.7双副本网关镜像
+├── images/        ⬇️ xt-vllm-0.24.0-cu129-compat545.tar # A · 模型+内置nginx网关,两台都load
 ├── models/                                     # B · 正式包三个模型全部备齐
 │   ├── MiniMax-M2.7-AWQ/          ⬇️ ~115GB    #    含 README-部署.md
 │   ├── Qwen3.5-397B-A17B-AWQ/     ⬇️ ~200GB    #    含 README-部署.md
 │   └── Kimi-K2.6-AWQ/            ⬇️ ~500GB    #    含 README-部署.md
-├── system/  nvidia-container-toolkit/ ⬇️  docker/ ⬇️(按需)  driver/ ⬇️(按需)   # C
-├── scripts/  ✅ Dockerfile(.cn) run/recon/verify-cuda124/install/prepare + lb/
+├── system/  nvidia-container-toolkit/ ⬇️  docker/{focal,jammy,noble}/ ⬇️  driver/ ⬇️ # C
+├── scripts/  ✅ Dockerfile(.cn) run/recon/verify-cu129-compat/install/prepare + lb/
 ├── 大模型部署方案对比-2x7xA40.md  ✅
+├── README-安装.md                ✅ (现场从这里开始)
 ├── 下载清单-FILL-ME.md          ✅ (本文)
 └── ⬇️ MANIFEST.sha256                          # D · 填完生成
 ```
 
-> **所有模型服务共用一个vLLM镜像和同一套三模型权重**(stock vLLM + Ray,无需 PR/patch);另备一个很小的nginx网关镜像供M2.7双副本使用。8+6只是换部署布局,无需增加第四个模型或制作第二套离线包。
+> **所有模型服务和M2.7双副本网关共用一个vLLM镜像和同一套三模型权重**。镜像以官方vLLM 0.24.0-cu129为基础,额外固化`cuda-compat-12-9`、Ray 2.56.1与nginx;不再单独下载nginx镜像。8+6只是换部署布局,无需增加第四个模型或制作第二套离线包。
 
 ---
 
-## A · CUDA 12.4 镜像 → `images/`(build+save,两台都 load)
+## A · CUDA 12.9 Forward Compatibility镜像 → `images/`(build+save,两台都load)
 
-这里的“兼容 CUDA 12.4”定义为:
+这里的“宿主驱动545兼容”定义为:
 
-- 镜像内 `torch.version.cuda` 必须为 `12.4.x`;Dockerfile 会在构建阶段硬校验,不能用 CUDA 12.8/13 镜像冒充。
-- 离线机只使用宿主 NVIDIA 驱动,不依赖宿主 `/usr/local/cuda`;驱动必须 `>=550.54.15`。
+- 官方vLLM 0.24.0没有cu124变体;显式使用`v0.24.0-cu129`,镜像内`torch.version.cuda`必须为`12.9.x`。
+- 官方cu129基础镜像必须已经包含`cuda-compat-12-9`,派生镜像将其libcuda目录置于`LD_LIBRARY_PATH`首位,补足旧驱动上的PTX JIT能力。
+- 离线机不依赖宿主`/usr/local/cuda`;策略下限为驱动`>=545.0`。驱动`>=575.51.03`可原生承载CUDA 12.9。R545不在官方镜像预置驱动分支白名单内,派生镜像通过`NVIDIA_DISABLE_REQUIRE=1`只允许进入真实A40验收,不代表官方无条件支持。
+- 官方vLLM镜像不含Ray;本包锁定Ray 2.56.1,构建和安装阶段都会校验。
 - 两台服务器必须加载同一个 tar,镜像 ID 和 vLLM/Ray 版本保持一致。
 
 在 **x86_64 Linux + Docker** 上:
 ```bash
 cd scripts
-docker build --build-arg VLLM_TAG=v0.24.0 --build-arg CUDA_COMPAT=12.4 \
-  --build-arg VLLM_BASE_IMAGE=vllm/vllm-openai:v0.24.0 \
-  -t xt-vllm:0.24.0-cu124 .
-# 国内改用:-f Dockerfile.cn --build-arg VLLM_BASE_IMAGE=<镜像站>/vllm/vllm-openai:v0.24.0
-IMAGE=xt-vllm:0.24.0-cu124 bash ./verify-cuda124.sh --image-only
-docker save xt-vllm:0.24.0-cu124 -o ../images/xt-vllm-0.24.0-cu124.tar
-docker pull nginx:stable
-docker save nginx:stable -o ../images/nginx-stable.tar
+docker build --build-arg VLLM_TAG=v0.24.0 --build-arg CUDA_COMPAT=12.9 \
+  --build-arg RAY_VERSION=2.56.1 \
+  --build-arg VLLM_BASE_IMAGE=vllm/vllm-openai:v0.24.0-cu129 \
+  -t xt-vllm:0.24.0-cu129-compat545 .
+# 国内改用:-f Dockerfile.cn --build-arg VLLM_BASE_IMAGE=docker.m.daocloud.io/vllm/vllm-openai:v0.24.0-cu129
+IMAGE=xt-vllm:0.24.0-cu129-compat545 bash ./verify-cu129-compat.sh --image-only
+docker save xt-vllm:0.24.0-cu129-compat545 -o ../images/xt-vllm-0.24.0-cu129-compat545.tar
 ```
-> ⚠️ `VLLM_BASE_IMAGE` 必须同时满足两项:①镜像内 PyTorch CUDA=12.4;②支持 M2.7 / Qwen3.5-397B / Kimi K2.6 的模型架构和 parser。默认 `v0.24.0` 仍是待验证占位;若其官方镜像不是cu124,构建会主动失败,应更换经过验证的tag或指向内部cu124镜像,不能删除断言。
+> ⚠️ `VLLM_BASE_IMAGE`已锁为官方`v0.24.0-cu129`档位,但三个2026模型的具体AWQ仓库和parser仍须用实际权重验收。`--image-only`只能证明CUDA/Ray/compat库完整,不能替代A40上的Triton、AWQ Marlin和模型加载测试。
 
 ## B · 权重 → `models/`(正式包三个都下)
 
@@ -61,11 +62,14 @@ docker save nginx:stable -o ../images/nginx-stable.tar
 >
 > **离线介质与服务器模型盘要区分**:完整三模型包保存在移动硬盘/NAS;进场后按最终布局把当前要运行的权重复制到各服务器 SSD。无需强行让两台服务器 SSD 都长期保存全部 815GB。
 
-## C · 系统依赖 → `system/`(按 recon 结果,两台同款)
+## C · 系统依赖应急包 → `system/`
 
-- **toolkit**(codename 无关):`https://nvidia.github.io/libnvidia-container/stable/deb/amd64/` 取 4 个 deb。
-- **docker-ce**(仅没装 docker 时;codename 相关):先 `lsb_release -cs`,再从 `download.docker.com/linux/ubuntu/dists/<codename>/pool/stable/amd64/` 取。
-- **驱动**:CUDA 12.4档位要求 `>=550.54.15`;更低时准备 NVIDIA `.run` 安装包及与离线机内核匹配的 headers。建议锁定现场已验证的同一生产分支,不要在线浮动升级。
+- **默认不改现有环境**:Docker与NVIDIA runtime已可用时`install-system-deps.sh`直接跳过。
+- **Docker CE**:固定准备Ubuntu 20.04/focal、22.04/jammy、24.04/noble三套amd64包;每套含`containerd.io`、`docker-ce-cli`、`docker-ce`、buildx与compose插件。
+- **NVIDIA Toolkit**:固定准备`nvidia-container-toolkit`、`-base`、`libnvidia-container1`、`libnvidia-container-tools`四个amd64 deb。
+- **驱动**:准备R570 `.run`仅作人工兜底,绝不自动安装。驱动不满足时仍需现场内核精确匹配的headers、gcc/make、Secure Boot审查和重启窗口。
+- **联网Windows一键下载**:`powershell -ExecutionPolicy Bypass -File scripts/prepare-system-windows.ps1 -OutRoot E:\offline-xt\system`;脚本读取官方Packages索引并验证SHA256,不经过Docker VHDX。
+- **现场缺依赖时**:`sudo bash scripts/install-system-deps.sh`;非focal/jammy/noble会安全拒绝。
 
 ## D · 填完 · 校验和
 
@@ -89,7 +93,7 @@ export OUT=<硬盘挂载点上级> VLLM_TAG=v0.24.0 SYS_DISTRO=ubuntu HF_ENDPOIN
 
 ## 部署提醒(填完拷到两台后)
 
-1. **两台都** `./install-offline.sh`(load 后会强制运行 CUDA 12.4/A40 验收),改 `run.sh` 顶部 `MODELS_DIR / NIC / HEAD_IP`。
+1. **两台都**在`/offline-xt`执行`bash scripts/install-offline.sh`(兼容exFAT无执行位;load后强制运行驱动/compat libcuda/CUDA 12.9/A40/Triton JIT验收),改`scripts/run.sh`顶部`MODELS_DIR / NIC / HEAD_IP`。
    - **`NIC` = 万兆光口接口名**(recon C1 查),PP 方案跨机通信全靠它,填错直接慢死。
    - 完整离线包保持不变;根据最终是7+7还是8+6,只把需要运行的模型权重复制到对应服务器 SSD。
 2. 按方案起(详见 `run.sh` 头部 + 对比文档):

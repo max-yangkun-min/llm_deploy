@@ -1,0 +1,37 @@
+# 云端 CI:push 与 PR 上跑离线门禁。
+#
+# 只跑离线模式。在线核实(厂商页 / 权威文档)不在云端跑:那些站点偶发超时会
+# 变成假失败,把真实缺陷淹掉。按周在本机跑 --online 更有意义。
+#
+# 未验证:本仓库本机没有可用的 GitHub Actions 环境,这个 workflow 还没在真实
+# runner 上跑过。首次 push 后请确认它确实变绿,不要假定它能工作。
+name: ci
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  offline-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      # 项目刻意只用标准库,所以没有依赖安装步骤。
+      # 真要装,也要走国内镜像并在 build 脚本里固定版本(见 AGENTS.md 下载源策略)。
+      - name: 项目 CI(离线门禁)
+        run: python tools/ci.py --json output/ci/report.json
+
+      - name: 上传结果
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-report
+          path: output/ci/
+          if-no-files-found: ignore

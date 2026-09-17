@@ -1,31 +1,48 @@
 # syntax=docker/dockerfile:1.7
 # ============================================================================
-# xt · CUDA 12.4【国内源版】—— 与 Dockerfile 等价,只把镜像来源/pip 走国内。
-# 比 kty5l 的简单得多:无 git clone、无 patch、无 precompiled wheel,唯一大件是官方镜像本身。
-# 构建示例:
-#   docker build -f Dockerfile.cn \
-#     --build-arg VLLM_BASE_IMAGE=docker.m.daocloud.io/vllm/vllm-openai:v0.24.0 \
-#     --build-arg VLLM_TAG=v0.24.0 -t xt-vllm:0.24.0-cu124 .
-# 若镜像仍拉不动:在别处预拉后推到内部仓库,再用VLLM_BASE_IMAGE指向它。
+# xt · CUDA 12.9 Forward Compatibility【国内源版】。
+# 与Dockerfile等价,基础镜像走DaoCloud,pip走清华源。
 # ============================================================================
 ARG VLLM_TAG=v0.24.0
-ARG VLLM_BASE_IMAGE=docker.m.daocloud.io/vllm/vllm-openai:v0.24.0
+ARG VLLM_BASE_IMAGE=docker.m.daocloud.io/vllm/vllm-openai:v0.24.0-cu129
 FROM ${VLLM_BASE_IMAGE}
 
 ARG VLLM_TAG
 ARG VLLM_BASE_IMAGE
-ARG CUDA_COMPAT=12.4
+ARG CUDA_COMPAT=12.9
+ARG RAY_VERSION=2.56.1
 
-# cu124 是硬约束。失败表示这个官方 tag 不是 CUDA 12.4 构建,必须换 tag。
+USER root
+
+# 官方cu129基础镜像已内置compat包。R545不在其NVIDIA_REQUIRE_CUDA白名单内,
+# 因此关闭启动前门禁,但仍须在真实A40上通过完整验收才可交付。
+RUN dpkg-query -W cuda-compat-12-9 \
+ && test -e /usr/local/cuda-12.9/compat/libcuda.so.1 \
+ && apt-get update \
+ && apt-get install -y --no-install-recommends nginx \
+ && rm -rf /var/lib/apt/lists/*
+
 RUN CUDA_COMPAT="${CUDA_COMPAT}" python3 -c 'import os, torch; expected=os.environ["CUDA_COMPAT"]; actual=torch.version.cuda or ""; assert actual == expected or actual.startswith(expected + "."), f"expected CUDA {expected}, got torch CUDA {actual}"; print(f"verified torch CUDA {actual}")'
 
-RUN pip install --no-cache-dir -i https://pypi.tuna.tsinghua.edu.cn/simple \
-      "huggingface_hub[hf_transfer]" || true
+RUN python3 -m pip install --no-cache-dir \
+      -i https://pypi.tuna.tsinghua.edu.cn/simple \
+      "ray[default]==${RAY_VERSION}" "huggingface_hub[hf_transfer]" \
+ && RAY_VERSION="${RAY_VERSION}" python3 -c 'import os, ray, vllm; assert ray.__version__ == os.environ["RAY_VERSION"], (ray.__version__, os.environ["RAY_VERSION"]); print(f"vllm={vllm.__version__} ray={ray.__version__}")'
 
-ENV HF_HUB_ENABLE_HF_TRANSFER=1
-LABEL org.blade-agent.cuda-profile="cu124" \
+ENV HF_HUB_ENABLE_HF_TRANSFER=1 \
+    NVIDIA_DISABLE_REQUIRE=1 \
+    LD_LIBRARY_PATH=/usr/local/cuda-12.9/compat:${LD_LIBRARY_PATH}
+
+LABEL org.blade-agent.cuda-profile="cu129-compat545" \
       org.blade-agent.cuda-runtime="${CUDA_COMPAT}" \
+      org.blade-agent.cuda-compat-package="cuda-compat-12-9" \
+      org.blade-agent.min-host-driver="545.0" \
+      org.blade-agent.native-host-driver="575.51.03" \
+      org.blade-agent.driver-545-policy="conditional-real-a40-validation-required" \
       org.blade-agent.vllm-tag="${VLLM_TAG}" \
+      org.blade-agent.ray-version="${RAY_VERSION}" \
+      org.blade-agent.gateway="nginx-in-vllm-image" \
       org.blade-agent.base-image="${VLLM_BASE_IMAGE}"
+
 ENTRYPOINT []
 CMD ["bash"]

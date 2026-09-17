@@ -1,0 +1,18 @@
+# ── ARM64 目标机镜像 ──────────────────────────────────────────
+# ARM64 tar 由 scripts/pull-arm64-image.sh 在目标机上生成，
+# 生成后将其 SHA-256 写入下面占位行：
+# ARM64 tar 已下载、组装并独立验证：
+57bbe948bec21654eebdcdfe9bbbc939c6054ba40592d75f8b6ee73403c557a1  images/vllm-ascend-nightly-main-20260804-arm64.tar
+# ── amd64 镜像（仅供 amd64 排障，不能在 ARM64 目标机使用）─────
+02c7077305980f5cb03a7728436b90259ed07bc491f58d16a860ecf1931003b8  images/vllm-ascend-nightly-main-20260804-amd64.tar
+6151d0b973783745d80c13d50dfd153c25e71393b1d6923fae5b17964bc66a6a  models/DeepSeek-V4-Flash-0731-w8a8/PUT-MODEL-HERE.txt
+7a40f180374a69ad0862006bebe51c0fdf83290c15a794579fde41d10671c0a2  MODEL-SOURCE.md
+33a8b29ac46219690c599a49bde7e45d4cea14c0004dbf6b5a8ee6741d44344f  README.md
+44e929bfb8db941fbfd90397c0bf6f2e6d5fe3274fd2e510f683674cad55dff5  scripts/download_model.py
+adf150c64630c0e2b07a9d8ed40d7ad0f81458baade00e232f0c07bac98e6ff2  scripts/run-server.sh
+403c12d59119a93d2a2519d4420ce25040f046ddf3fc99accf757c22869ff439  scripts/verify_model.py
+b728a502884689f3202ac21affad87bcc390614bd03686b55215f7014217ea2e  start.sh
+# ── 新增脚本 ────────────────────────────────────────────────
+2a6aecf1144f7bc285d14b8c5fcc077b8a25ae8dfbd526ef7b14855180d87dbd  scripts/pull-arm64-image.sh
+988a6b7f32032e8a46f48728e907b5c15ed142a4a988c90e4ba786092db8972c  scripts/download-arm64-oci.ps1
+59ba569b60434e07e2f4a3c3d2860fe3b85028346f19bd3fffb1d28ac4f69ffd  scripts/assemble-arm64-docker-save.ps1

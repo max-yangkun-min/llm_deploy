@@ -1,0 +1,107 @@
+{
+  "schema": 1,
+  "updated": "2026-09-15",
+  "note": "部署台账:每个环境一条记录。hardware 字段与 model-selector 的 hardware*.json 同结构,可直接喂给推荐引擎做达标检查。",
+  "environments": [
+    {
+      "id": "kty5l",
+      "name": "kty5l",
+      "headline": "8×A100 80GB PCIe · GLM-5.2 INT4",
+      "hardware_preset": "hardware.example.json",
+      "hardware": {
+        "gpu_id": "a100-pcie-80",
+        "gpu_name": "NVIDIA A100 80GB PCIe",
+        "gpu_count": 8,
+        "vram_per_gpu_gib": 80,
+        "compute_capability": 8.0,
+        "driver_version": "570.124.06",
+        "host_ram_gib": 512,
+        "disk_free_gib": 1000,
+        "interconnect": "PCIe",
+        "nodes": 1,
+        "workload": "agent,coding,reasoning",
+        "require_multimodal": false,
+        "require_permissive_license": false,
+        "min_context_k": 32
+      },
+      "selected_profile": "glm52-int4-a100",
+      "recipes": ["glm52-int4-a100-8x"],
+      "offline_package": "kty5l/offline-glm52",
+      "docs": ["kty5l/GLM-5.2-部署步骤-8xA100.md", "kty5l/MEMORY.md"],
+      "status": "verified-local",
+      "status_note": "镜像本地构建并静态验收通过;现场 8×A100 的 GPU/Triton 验收待完成",
+      "constraints": [
+        "A100(sm_80)跑不了原生 DSA 稀疏注意力,必须走 vLLM PR #38476 的 Triton 兜底。",
+        "A100 绝不开 fp8 KV,保持 --kv-cache-dtype auto。",
+        "明确只上 GLM-5.2,不准备替代模型与备用重量化。"
+      ]
+    },
+    {
+      "id": "xt",
+      "name": "xt",
+      "headline": "合计 14×A40 48GB · 7+7 三方案 + 8+6 备用",
+      "hardware_preset": "hardware.a40-14x48.example.json",
+      "hardware": {
+        "gpu_id": "a40-48",
+        "gpu_name": "NVIDIA A40",
+        "gpu_count": 14,
+        "vram_per_gpu_gib": 48,
+        "compute_capability": 8.6,
+        "driver_version": "545.23.08",
+        "host_ram_gib": 768,
+        "disk_free_gib": 2000,
+        "interconnect": "PCIe, two nodes connected by 10GbE",
+        "nodes": 2,
+        "workload": "agent,coding,reasoning",
+        "require_multimodal": false,
+        "require_permissive_license": false,
+        "min_context_k": 32
+      },
+      "selected_profile": "minimax-m27-awq-a40",
+      "recipes": ["minimax-m27-awq-a40-dual", "qwen35-397b-awq-a40-pp", "qwen35-397b-awq-single-8gpu", "kimi-k26-awq-a40-pp"],
+      "offline_package": "xt/offline-xt",
+      "docs": ["xt/大模型部署方案对比-2x7xA40.md", "xt/offline-xt/README-安装.md", "xt/offline-xt/下载清单-FILL-ME.md"],
+      "status": "provisional-local",
+      "status_note": "脚本与方案已就绪;R545 属条件兼容,必须通过真实 A40 的 compat libcuda 与 Triton JIT 验收",
+      "constraints": [
+        "宿主驱动 >=545 走 cuda-compat;>=575.51.03 才算原生承载 CUDA 12.9。",
+        "跨机只有 10GbE,跨机 TP 不可行;K2.6/397B 用 Ray 跑跨机 PP,M2.7 走双副本。",
+        "A40 无 FP8,一律 INT4/AWQ;KV 不开 fp8。"
+      ]
+    },
+    {
+      "id": "zc5s",
+      "name": "zc5s",
+      "headline": "单机 8×RTX 4090 48GB · M2.7 AWQ 双副本",
+      "hardware_preset": "hardware.4090-8x48.example.json",
+      "hardware": {
+        "gpu_name": "NVIDIA GeForce RTX 4090 48GB",
+        "gpu_id_unverified": "",
+        "verification_note": "48GB 显存是改装卡规格,NVIDIA 官方 4090 产品页只标称 24GB,故这里按现场登记值核算并标注未经厂商页核实",
+        "gpu_count": 8,
+        "vram_per_gpu_gib": 48,
+        "compute_capability": 8.9,
+        "driver_version": "575.51.03",
+        "host_ram_gib": 512,
+        "disk_free_gib": 1000,
+        "interconnect": "PCIe",
+        "nodes": 1,
+        "workload": "agent,coding",
+        "require_multimodal": false,
+        "require_permissive_license": false,
+        "min_context_k": 32
+      },
+      "selected_profile": "minimax-m27-awq",
+      "recipes": ["minimax-m27-awq-4090-dual", "qwen35-397b-awq-single-8gpu"],
+      "offline_package": "zc5s/offline-zc5s",
+      "docs": ["zc5s/大模型选型方案-8x4090-48G.md", "zc5s/工作记忆与进度.md", "zc5s/offline-zc5s/README-安装.md"],
+      "status": "validated-user-workspace",
+      "status_note": "最终交付决定为 M2.7 AWQ TP=4 双副本;权重复用 offline-xt 目录",
+      "constraints": [
+        "有原生 FP8(Ada sm_89),但没有 FP4(NVFP4 需要 Blackwell)。",
+        "无 NVLink,大 TP 的 all-reduce 走 PCIe 会打折,优先小 TP + 多副本。",
+        "银河麒麟 V10;容器栈装不上时走裸机 pip 备案。"
+      ]
+    }
+  ]
+}

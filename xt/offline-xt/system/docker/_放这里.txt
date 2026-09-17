@@ -1,5 +1,3 @@
-放:docker-ce deb —— 仅当离线机没装 docker。两台都要装。
-先确认离线机发行版:lsb_release -cs(Ubuntu)。
-来源:https://download.docker.com/linux/ubuntu/dists/<codename>/pool/stable/amd64/
-  docker-ce / docker-ce-cli / containerd.io (/ docker-buildx-plugin 可选)
-已装 docker 则留空。
+目录按Ubuntu LTS分开:focal/jammy/noble。每套固定5个amd64 deb和PACKAGES.lock:
+containerd.io / docker-ce-cli / docker-ce / docker-buildx-plugin / docker-compose-plugin。
+已装且可用时现场脚本跳过,不会覆盖升级。

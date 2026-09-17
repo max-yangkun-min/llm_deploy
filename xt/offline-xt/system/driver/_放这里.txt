@@ -1,4 +1,9 @@
-放:NVIDIA 驱动 —— CUDA 12.4档位要求 >=550.54.15;低于此版本或没装时准备。两台都要。
-  NVIDIA-Linux-x86_64-<版本>.run   (>=550.54.15,支持 A40 sm_86)
-  与离线机内核匹配的 linux-headers
-来源:nvidia.com。`nvidia-smi` 顶部 CUDA Version 不是宿主Toolkit版本;最终以驱动号和 verify-cuda124.sh 为准。
+本方案默认不升级宿主驱动。现场实际驱动必须>=545.0;低于575.51.03时由
+镜像内cuda-compat-12-9提供CUDA 12.9用户态libcuda和PTX JIT兼容。
+
+包内准备R570 `.run`作为人工兜底。只有recon发现驱动不满足且已准备与当前
+`uname -r`精确匹配的linux-headers、gcc/make、Secure Boot处置和维护窗口时才使用;
+install-system-deps.sh绝不自动执行它,不要混装apt驱动与NVIDIA .run驱动。
+
+`nvidia-smi`顶部CUDA Version不是宿主Toolkit版本;最终以驱动号和
+verify-cu129-compat.sh的真实A40/Triton验收结果为准。

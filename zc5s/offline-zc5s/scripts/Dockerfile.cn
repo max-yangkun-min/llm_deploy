@@ -1,14 +1,29 @@
 # syntax=docker/dockerfile:1.7
-# zc5s · 【国内源版】—— 与 Dockerfile 等价,镜像来源/pip 走国内。
-# 构建:  docker build -f Dockerfile.cn --build-arg REGISTRY=docker.m.daocloud.io/ \
-#           --build-arg VLLM_TAG=v0.24.0 -t zc5s-vllm:0.24.0 .
-# 官方镜像拉不动就别处 pull 好再 docker tag 成 vllm/vllm-openai:<tag> 用原版 Dockerfile。
-ARG REGISTRY=docker.m.daocloud.io/
+# zc5s 国内源版；运行时与 Dockerfile 完全一致，仅基础镜像默认走 DaoCloud。
 ARG VLLM_TAG=v0.24.0
-FROM ${REGISTRY}vllm/vllm-openai:${VLLM_TAG}
+ARG VLLM_BASE_IMAGE=docker.m.daocloud.io/vllm/vllm-openai:v0.24.0-cu129
+FROM ${VLLM_BASE_IMAGE}
 
-RUN pip install --no-cache-dir -i https://pypi.tuna.tsinghua.edu.cn/simple \
-      "huggingface_hub[hf_transfer]" || true
-ENV HF_HUB_ENABLE_HF_TRANSFER=1
+ARG VLLM_TAG
+ARG VLLM_BASE_IMAGE
+USER root
+
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends nginx \
+ && rm -rf /var/lib/apt/lists/*
+
+RUN python3 -c 'import torch, vllm; assert torch.version.cuda and torch.version.cuda.startswith("12.9"), torch.version.cuda; assert vllm.__version__ == "0.24.0", vllm.__version__; print("vllm", vllm.__version__, "torch-cuda", torch.version.cuda)'
+
+ENV HF_HUB_OFFLINE=1 \
+    TRANSFORMERS_OFFLINE=1
+
+LABEL org.blade-agent.environment="zc5s" \
+      org.blade-agent.model="MiniMax-M2.7-AWQ" \
+      org.blade-agent.cuda-runtime="12.9" \
+      org.blade-agent.min-host-driver="575.51.03" \
+      org.blade-agent.geforce-forward-compat="disabled" \
+      org.blade-agent.vllm-tag="${VLLM_TAG}" \
+      org.blade-agent.base-image="${VLLM_BASE_IMAGE}"
+
 ENTRYPOINT []
 CMD ["bash"]

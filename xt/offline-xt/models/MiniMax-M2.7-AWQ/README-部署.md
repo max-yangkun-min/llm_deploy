@@ -23,13 +23,13 @@ nvidia-smi topo -m
 
 ```bash
 cd /offline-xt
-./scripts/install-offline.sh
+bash scripts/install-offline.sh
 ```
 
-安装脚本会先校验驱动>=550.54.15、镜像内torch CUDA=12.4.x及A40(sm_86)。确认镜像能看到GPU:
+安装脚本会先校验驱动>=545.0、镜像内torch CUDA=12.9.x、cuda-compat-12-9、Triton JIT及A40(sm_86)。确认镜像能看到GPU:
 
 ```bash
-docker run --rm --gpus all xt-vllm:0.24.0-cu124 \
+docker run --rm --gpus all xt-vllm:0.24.0-cu129-compat545 \
   python -c 'import torch; print(torch.cuda.device_count())'
 ```
 
@@ -65,7 +65,7 @@ du -sh /data/models/MiniMax-M2.7-AWQ
 编辑 `/offline-xt/scripts/run.sh`:
 
 ```bash
-IMAGE="xt-vllm:0.24.0-cu124"
+IMAGE="xt-vllm:0.24.0-cu129-compat545"
 MODELS_DIR="/data/models"
 HF_CACHE="/data/hf-cache"
 PORT="8000"
@@ -92,7 +92,7 @@ docker logs -f xt-m2.7
 
 编辑网关机 `/offline-xt/scripts/lb/nginx.conf`,把upstream改成两台实际IP。然后启动负载均衡:
 
-完整离线包已包含 `nginx-stable.tar`;执行 `install-offline.sh` 时会与vLLM镜像一起加载,现场不需要联网拉取nginx。
+nginx已固化在`xt-vllm:0.24.0-cu129-compat545`镜像内;`run.sh lb-nginx`复用同一镜像启动网关,现场不需要联网拉取第二张镜像。
 
 ```bash
 cd /offline-xt/scripts

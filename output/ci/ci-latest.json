@@ -1,0 +1,80 @@
+{
+ "started_at": "2026-09-17T17:04:33",
+ "online": true,
+ "seconds": 134.6,
+ "counts": {
+  "pass": 11,
+  "fail": 0,
+  "skip": 0,
+  "warn": 0
+ },
+ "checks": [
+  {
+   "name": "C: 盘可用空间",
+   "outcome": "pass",
+   "detail": "C: 58.5 GiB · D: 44.4 GiB · E: 334.1 GiB",
+   "seconds": null
+  },
+  {
+   "name": "Python 语法检查",
+   "outcome": "pass",
+   "detail": "13 个文件",
+   "seconds": 0.104253
+  },
+  {
+   "name": "冒烟测试",
+   "outcome": "pass",
+   "detail": "99 项全部通过",
+   "seconds": 1.914134
+  },
+  {
+   "name": "实测值核对",
+   "outcome": "pass",
+   "detail": "汇总:改动 0 行;未能核实 0 条;加密档位不符 0 条;保留模型卡上下文 28 条",
+   "seconds": 0.382838
+  },
+  {
+   "name": "Shell 脚本语法",
+   "outcome": "pass",
+   "detail": "21 个脚本(路径风格 posix)",
+   "seconds": null
+  },
+  {
+   "name": "GPU 目录自洽",
+   "outcome": "pass",
+   "detail": "15 张卡全部核实通过(huawei 3、nvidia 12)",
+   "seconds": null
+  },
+  {
+   "name": "整文件替换工具",
+   "outcome": "pass",
+   "detail": "往返替换逐字节一致",
+   "seconds": 0.528129
+  },
+  {
+   "name": "根目录残留物",
+   "outcome": "pass",
+   "detail": "未发现临时脚本/待办文件/散落日志",
+   "seconds": null
+  },
+  {
+   "name": "工作流骨架文件",
+   "outcome": "pass",
+   "detail": "7 个文件齐全,规范 2 份",
+   "seconds": null
+  },
+  {
+   "name": "在线:GPU 厂商页核实",
+   "outcome": "pass",
+   "detail": "核实 15 张卡,通过 15 张,失败 0 张",
+   "seconds": 21.999509
+  },
+  {
+   "name": "在线:权威文档可达性",
+   "outcome": "pass",
+   "detail": "可达 65 / 65,失败 0",
+   "seconds": 106.986901
+  }
+ ],
+ "root": "D:\\workspaces\\blade_agent\\llm"
+}

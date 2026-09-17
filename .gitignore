@@ -3,6 +3,21 @@
 
 # 离线包待填的大件(仓库只保留骨架 + 占位说明,不提交实际大文件)
 **/images/*.tar
+# 分卷镜像:GNU split 产出的 *.tar.partNN。上面那条 **/images/*.tar 只匹配以
+# .tar 结尾的名字,匹配不到分卷,于是 4.4 GiB 的 .part01 曾经是「未被忽略」状态,
+# 一次 git add -A 就会把它拖进提交。这里连同其他归档后缀一起挡住。
+**/images/*.tar.*
+**/images/*.tar.gz
+**/images/*.tar.zst
+**/images/*.tar.xz
+# 顶层与其他位置的离线包归档(例如 *-with-image-no-weights-*.tar.gz,6.2 GiB)
+*.tar.gz
+*.tar.zst
+*.tar.xz
+*.tar.part*
+# 构建时下载的第三方源码归档(vendor-sources 里的 cutlass / vllm 源码包,各 30+ MiB)
+**/vendor-sources/*.tar.gz
+**/vendor-sources/*.tgz
 **/models/**/*.safetensors
 **/models/**/*.bin
 **/models/**/*.gguf
@@ -19,3 +34,20 @@
 recon-report*.txt
 *.log
 build.log
+
+# Python 缓存
+__pycache__/
+*.pyc
+
+# 浏览器验证产物
+output/playwright/
+.playwright-cli/
+
+# 任务临时工作区(阶段五采集种子 .tmp/truth.json 保留在本地,不入库)
+.tmp/
+
+# 下载来的第三方源码检出(CUTLASS 全量 / vLLM shallow clone)
+# 它们在旧索引里是 gitlink, 但本地没有对应提交对象,
+# 推上去会变成无法 submodule update 的坏引用。
+kty5l/.vendor-fetch-cutlass-v4.4.2/
+kty5l/source-cache/

@@ -1,0 +1,15 @@
+{
+  "gpu_name": "NVIDIA A40",
+  "gpu_count": 14,
+  "vram_per_gpu_gib": 48,
+  "compute_capability": 8.6,
+  "driver_version": "545.23.08",
+  "host_ram_gib": 768,
+  "disk_free_gib": 2000,
+  "interconnect": "PCIe, two nodes connected by 10GbE",
+  "nodes": 2,
+  "workload": "agent,coding,reasoning",
+  "require_multimodal": false,
+  "require_permissive_license": false,
+  "min_context_k": 32
+}

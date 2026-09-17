@@ -1,0 +1,8 @@
+zc5s-vllm-0.24.0-cu129.tar
+
+本机 D 盘导出后校验结果:
+  bytes: 12127031296
+  sha256: 78570c88efdd5ef77bce15ec80274ceb924ce36ec781e6d0f4396b8bceb73fe0
+
+随后使用 robocopy /J /MOV 从 D 盘移动到 E 盘，复制命令成功。
+按用户要求，E 盘仅作为存储介质，不在 E 盘运行镜像或做全文件二次哈希测试。
