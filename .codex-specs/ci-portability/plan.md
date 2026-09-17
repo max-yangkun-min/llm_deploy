@@ -21,7 +21,9 @@
 - WSL Ubuntu(真 Linux,同一份工作区):`python3 tools/ci.py` → 通过 9 · 失败 0 ·
   跳过 1,`EXIT=0`。这就是修复前必然失败的那一项。
 - 反例验证:把已应用过的补丁再打一次,内置引擎报「原文对不上」并退出 1,文件不变。
-- 云端:`.github/workflows/ci.yml` 的 Actions 结论(见 `docs/CI.md` 的云端一节)。
+- 云端:`.github/workflows/ci.yml` 的 Actions 结论。首次推送 `17331d0` 为 failure,
+  修复后 `8b03239` 的运行 #2 为 **success**(job `offline-gate` 第 4 步
+  「项目 CI(离线门禁)」通过,run 35209938457)。
 
 ## 回滚
 

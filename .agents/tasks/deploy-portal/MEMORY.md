@@ -354,7 +354,10 @@ been accepted on real hardware yet** (`models/` still only holds
   `LastTaskResult = 0`.
 - `.github/workflows/ci.yml` runs the offline gate on push/PR. The first real run
   (push `17331d0`, 2026-09-17 09:24 UTC, run 35204924376) came back **failure**.
-  Cause and fix are in stage eight below.
+  Cause and fix are in stage eight below. After the fix, run #2 on `8b03239`
+  (2026-09-17 10:20 UTC, run 35209938457) is **success** - job `offline-gate`,
+  step 4 "项目 CI(离线门禁)". The workflow is now verified on a real runner
+  instead of assumed to work.
 - Two lessons baked into the runner, both learned by getting them wrong first:
   1. Detecting that `bash` exists is **not** the same as that usage working. The
      bare `bash` here is WSL /bin/bash, which needs /mnt/d/... paths. The first
