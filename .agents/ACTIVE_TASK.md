@@ -1,6 +1,42 @@
 # Active task pointer
 
-Status: 大模型部署管理台已完成七阶段。阶段七(2026-09-17)=①GPU 目录加入**华为昇腾**(Atlas 350 / Atlas 300I Duo 96GB·48GB,逐字命中华为官方产品页),目录 12→15 张卡;昇腾**不做 sm 映射**(compute_capability=null + 口径说明),FP8 改读厂商页标称值,算力门槛与 NVIDIA 驱动下限加 cuda 守卫,KV cache 因 --quantization ascend 是专有量化而只按权重下界核算;方案按生态分组,不把 CUDA 栈方案挂到昇腾卡上;现场登记改为「不填算力就必须写明 ecosystem」。910B/310P 经尽力核实仍无厂商页证据(官网已换代,逐字 0 命中),故不收录,只在页面写明原因。②按用户要求把项目整理成纯终端工作流:重写 AGENTS.md 为项目宪法,新增 .codex-specs/ 规范层、docs/PROJECT-MAP.md、docs/CI.md,并把稳定检查固化为 tools/ci.py + scripts/ci/*;两个 Windows 定时任务(llm-ci-daily / llm-ci-weekly)已注册并验证 LastTaskResult=0。验证:ci.py 离线 8/8、联网 10/10(GPU 15/15、文档 65/65);smoke_test.py 99/99(昇腾反回归 20 项);浏览器六视图 0 报错 0 警告、无 [object Object]/sm_null。同版修掉 whole_file_replace.py 两个缺陷(首行被改动时丢新首行、回滚用 Python 3.8 不支持的 write_text(newline=))并补了往返断言。
+Status: 大模型部署管理台已完成八阶段。阶段八(2026-09-17)=把仓库发布到
+github.com/max-yangkun-min/llm_deploy(旧 remote 指向的 .../llm 已 404),并修掉首次云端
+CI 变红的原因。推送前拦住两个真危险:①`git add -A` 本来会吞进 12.4 GiB 本地产物
+(6225.67 MB 的 no-weights tar.gz、两卷 `*.tar.part01/02`、两个 vendor 源码包),
+`.gitignore` 只挡了 `**/images/*.tar`、匹配不到分卷;②索引里有两个指向本地不存在提交的
+gitlink(`kty5l/.vendor-fetch-cutlass-v4.4.2`、`kty5l/source-cache/vllm`),已用
+`git rm --cached -f -r` 退出索引并加忽略(本地文件保留)。入库 229 个文件 / 57.3 MB,
+无单文件超 50 MB,未发现凭据。云端第一次运行(推送 17331d0)失败,日志与产物要鉴权
+(401/403),于是用 WSL Ubuntu 做**忠实检出**复现(`git archive` 必须显式关掉
+`core.autocrlf=true`,否则导出物变 CRLF、凭空多出三个 bash 语法错):真凶只有一个——
+`deploy-portal/tools/apply_patch.py` 写死了 Windows 的 codex.exe 路径,Linux 上必然失败,
+于是「改文件工具」门禁常年是红的。修法见 `.codex-specs/ci-portability/`:补丁后端改为
+codex(要求真的跑得起来,先 `codex --version` 探测——文件存在不等于可用,WSL 里 PATH 上的
+Windows codex 会 `exec: node: not found`)+ 内置严格引擎(逐字匹配、不认识的指令报错、
+绝不猜插入位置、全部算完才落盘);`tools/apply_patch.py` 原是字节相同的第二份副本,现在
+只做转发;门禁同时测默认后端与内置引擎(三条真实往返),并新增「Shell 脚本行尾」检查
+(入库 `.sh` 不得带 CRLF,查索引不查工作区)。验证:Windows `python tools/ci.py` 与 WSL
+`python3 tools/ci.py` 都是「通过 9 · 失败 0 · 跳过 1」(WSL EXIT=0),跳过项只有本机
+Windows 的 Shell 语法(能访问 WSL 时它会真跑)。实际结果:能访问 WSL 时
+Windows 为「通过 10 · 失败 0 · 跳过 0」,沙箱里 WSL 被拒(`E_ACCESSDENIED`)则如实报
+SKIP(9 · 0 · 1);WSL 内为「通过 9 · 失败 0 · 跳过 1」(EXIT=0),跳过的是 `C:` 盘余量。
+
+Task ID: deploy-portal
+Memory: `.agents/tasks/deploy-portal/MEMORY.md`
+Inputs: `.agents/tasks/deploy-portal/INPUTS.md`
+Last updated: 2026-09-17 (Asia/Shanghai) — 阶段七(昇腾双生态 + 持续集成/定时检查)已完成并验证
+
+## Previously active task
+
+Status: DeepSeek 0731 ARM64 image archived and split; target 910B4 validation pending
+Task ID: deepseekv4-flash-910b4
+Memory: `.agents/tasks/deepseekv4-flash-910b4/MEMORY.md`
+Inputs: `.agents/tasks/deepseekv4-flash-910b4/INPUTS.md`
+Last updated: 2026-08-06 (Asia/Shanghai)
+
+Read the referenced files before continuing a task. Update this pointer only
+when the user starts, switches, completes, or explicitly clears a task.
 Task ID: deploy-portal
 Memory: `.agents/tasks/deploy-portal/MEMORY.md`
 Inputs: `.agents/tasks/deploy-portal/INPUTS.md`

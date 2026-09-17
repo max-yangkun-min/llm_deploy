@@ -13,7 +13,7 @@
 |---|---|---|
 | `deploy-portal/` | **部署管理台本体**(Web 界面 + API + 数据) | 唯一还在演进的子系统;最常改的就是这里 |
 | `model-selector/` | 选型规则与模型目录(CSV + CLI) | 规则只有一份实现,`deploy-portal/engine.py` 直接 import 它 |
-| `tools/` | 仓库级工具 | `ci.py`(门禁)、`add_file.py`、`apply_patch.py` |
+| `tools/` | 仓库级工具 | `ci.py`(门禁)、`add_file.py`、`apply_patch.py`(转发入口) |
 | `scripts/ci/` | CI 包装脚本与定时任务注册 | 见 `docs/CI.md` |
 | `docs/` | 项目级文档 | `PROJECT-MAP.md`(本文件)、`CI.md` |
 | `.codex-specs/` | 规范驱动开发(SDD)工作区 | 每个功能一份 `spec.md`;见其 `README.md` |
@@ -150,7 +150,9 @@ python tools/ci.py                                 # 全部门禁
 
 1. **必须用 `tools/apply_patch.py` 或 `deploy-portal/tools/whole_file_replace.py` 改文件。**
    本机 `apply_patch` 是 `.bat` 包装器,PowerShell 直接调用会把 patch 里的
-   `\"` 序列破坏掉,静默写坏文件。
+   `\"` 序列破坏掉,静默写坏文件。两个 `apply_patch.py` 是同一份实现(本体在
+   `deploy-portal/tools/`,另一个是转发入口);补丁后端优先用跑得起来的 `codex`,
+   没有可用 codex 时自动改用内置严格引擎——**CI 上就是后者**。
 2. **整文件替换走 `whole_file_replace.py`。** 它分块应用、结束时逐字节校验,
    对不上就整体回滚。历史上用一次性脚本做过一次替换,因为脚本末尾
    `text.split("\n")[:-1]` 丢了最后一行,导致 `recommend.js` 少一个 `}`,

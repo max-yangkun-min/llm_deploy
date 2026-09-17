@@ -1,9 +1,11 @@
 # deploy-portal task memory
 
 Status: active
-Last updated: 2026-09-17 (Asia/Shanghai) - stage seven (Huawei Ascend dual-
-ecosystem support + continuous integration / scheduled checks) implemented and
-verified end to end
+Last updated: 2026-09-17 (Asia/Shanghai) - stage eight: the repository is
+published to github.com/max-yangkun-min/llm_deploy, and the first cloud CI run
+(which came back red) was diagnosed and fixed. Stage seven (Huawei Ascend dual-
+ecosystem support + continuous integration / scheduled checks) is recorded below
+and remains valid.
 
 ## User objective
 
@@ -340,17 +342,19 @@ been accepted on real hardware yet** (`models/` still only holds
 
 ## Continuous integration (stage seven)
 
-- `tools/ci.py` is the **single** gate implementation: 8 offline checks + 2
+- `tools/ci.py` is the **single** gate implementation: 10 offline checks + 2
   online. Exit code = number of failures. `SKIP` is reported separately and is
   **not** a pass, because a check that never ran must not look like one that did.
+  (This line said 8 and the table in `docs/CI.md` was missing two rows. Both are
+  corrected; the table now lists every check the gate actually runs.)
 - `scripts/ci/run-ci.ps1` wraps it and leaves logs in `output/ci/`
   (`ci-latest.log`, `ci-latest.json`).
 - `scripts/ci/register-scheduled-task.ps1` registers `llm-ci-daily` (offline
   daily) and `llm-ci-weekly` (online weekly). Registered and verified:
   `LastTaskResult = 0`.
-- `.github/workflows/ci.yml` runs the offline gate on push/PR. **Not yet verified
-  on a real runner** - no GitHub Actions environment is reachable from this
-  machine. Confirm on first push; do not assume it works.
+- `.github/workflows/ci.yml` runs the offline gate on push/PR. The first real run
+  (push `17331d0`, 2026-09-17 09:24 UTC, run 35204924376) came back **failure**.
+  Cause and fix are in stage eight below.
 - Two lessons baked into the runner, both learned by getting them wrong first:
   1. Detecting that `bash` exists is **not** the same as that usage working. The
      bare `bash` here is WSL /bin/bash, which needs /mnt/d/... paths. The first
@@ -359,6 +363,76 @@ been accepted on real hardware yet** (`models/` still only holds
   2. Third-party trees (`.vendor-fetch-cutlass-v4.4.2`, `source-cache`) must be
      excluded from the gate. Gating on downloaded code makes CI permanently red
      and trains everyone to ignore it - worse than having no CI.
+
+## Stage eight this session: repository published, first cloud CI run red
+
+- Published `main` to `https://github.com/max-yangkun-min/llm_deploy.git`; the old
+  `origin` pointed at `.../llm`, which 404s. First push into an empty repository,
+  so `git push -u origin main` was the whole job.
+- Two real hazards were closed before pushing, both found by inspecting the index
+  instead of trusting `.gitignore`:
+  1. `git add -A` would have swallowed 12.4 GiB of local artifacts - the 6225.67 MB
+     `offline-dsv4-0731-with-image-no-weights-*.tar.gz`, two split image volumes
+     (`*.tar.part01` 4386.9 MB / `*.tar.part02` 1682.35 MB) and two ~37 MB vendor
+     source tarballs. `.gitignore` only matched `**/images/*.tar`, which never
+     matches a `.tar.partNN` volume. Added `*.tar.gz`, `*.tar.zst`, `*.tar.xz`,
+     `*.tar.part*`, `**/images/*.tar.*`, `**/vendor-sources/*.tar.gz|*.tgz` and
+     re-verified each of the five files with `git check-ignore -v`.
+  2. The index carried two mode-`160000` gitlinks pointing at commits that do not
+     exist locally (`kty5l/.vendor-fetch-cutlass-v4.4.2` -> `da5e086dab31...`,
+     `kty5l/source-cache/vllm` -> `ee0da84ab9...`). Removed from the index with
+     `git rm --cached -f -r` (the local checkouts stay on disk) and ignored.
+     Pushing them would have created submodule references nobody can initialise.
+- What was published: 229 files, 57.3 MB, nothing over 50 MB, and no credentials
+  (152 text files scanned for `sk-*`, `ghp_*`, `openai_pat_*`, `AKIA*`, private
+  keys, `hf_*`).
+- The cloud run was red. Logs and artifacts need auth (401/403), so the failure was
+  reproduced locally instead. **The reproduction method matters:** `git archive`
+  here honours `core.autocrlf=true`, which rewrote every exported text file to CRLF
+  and invented three `bash -n` failures. Only
+  `git -c core.autocrlf=false archive` (or a real Linux clone) shows what the
+  runner sees; on a faithful tree exactly one check failed, the same count as the
+  cloud run.
+- Root cause: `deploy-portal/tools/apply_patch.py` hard-coded one Windows
+  `codex.exe` path and exited when it was missing. On `ubuntu-latest` there is no
+  codex, so `whole_file_replace.py` - and with it the whole "改文件工具" gate -
+  could never pass. That is precisely the permanently-red-gate failure mode this
+  project already warns about.
+- Fix (spec `.codex-specs/ci-portability/`): two patch backends. `codex` is used
+  when a **runnable** codex is found - `shutil.which` plus a platform-agnostic npm
+  vendor glob, then a real `codex --version` probe, because file existence is not
+  usability (WSL proved it: the Windows npm `codex` wrapper that PATH exposes dies
+  with `exec: node: not found`). Otherwise the built-in strict engine runs: it
+  matches context byte-for-byte, rejects unknown directives, refuses to guess an
+  insertion position, and writes only after every operation has been resolved.
+  `--backend auto|codex|builtin` or `LLM_DEPLOY_PATCH_BACKEND` selects it, and an
+  explicit `--backend codex` that cannot run fails loudly instead of silently
+  switching backends.
+- `tools/apply_patch.py` was a byte-identical second copy of the same script
+  (sha256 `4ee22af60cca05f2`). It is now a forwarder to the single implementation,
+  so both documented paths keep working with one behaviour.
+- The gate now covers both backends: `改文件工具` runs three real round-trips
+  (whole-file replace on the default backend, whole-file replace on the built-in
+  engine, add-file on the built-in engine) and checks the bytes. Testing only the
+  machine's default backend is how the other one regresses unnoticed.
+- New check `Shell 脚本行尾`: indexed `.sh` content must be LF. A CRLF shell script
+  on Linux does not fail politely - it sprays `$'\r': command not found`, which is
+  the kind of defect that costs a site visit. It reads blobs via
+  `git cat-file --batch`, not the working tree, because `core.autocrlf=true` makes
+  a working-tree check false-positive.
+- Verified: Windows `python tools/ci.py` -> 10 pass / 0 fail / **0 skip** when the
+  process can reach WSL (the bare `bash` here is WSL; with the distro reachable the
+  shell-syntax check really runs - 21 scripts, path style posix). Inside the agent
+  sandbox WSL is blocked (`E_ACCESSDENIED`) and the same check honestly reports
+  `SKIP`, which is why a sandboxed run shows 9/0/1. WSL Ubuntu itself (real Linux,
+  same tree) -> 9 pass / 0 fail / 1 skip, `EXIT=0`; there the skip is
+  `C: 盘可用空间`, because `C:/` does not exist on Linux. Negative control:
+  re-applying an applied patch makes the built-in engine report "原文对不上" and
+  exit 1 without touching the file.
+- Lesson worth keeping: a patch may hold several `@@` hunks, and **each hunk is
+  searched forward from the end of the previous one**. Order hunks by position in
+  the file; reversed order makes the later hunk report "expected lines not found"
+  even though the text is right there. That cost one rejected `docs/CI.md` patch.
 
 ## Next actions
 

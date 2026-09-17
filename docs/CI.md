@@ -20,9 +20,15 @@ python tools/ci.py --online --json output/ci/report.json
 
 退出码 = **失败项数**,0 表示全通过。`SKIP` 不计入失败,但会单独列出来。
 
-> 为什么把 `SKIP` 单独列出:一个没跑过的检查不能看起来像跑过了。本机 WSL 没装
-> 发行版时 shell 语法检查无法执行,这时它报 `SKIP` 而不是 `PASS`——**跳过和通过
-> 是两回事**。
+> 为什么把 `SKIP` 单独列出:一个没跑过的检查不能看起来像跑过了。本机 Windows 侧
+> 调用的 `bash` 其实就是 WSL 的,它读不到 `D:/...` 这种路径:进程能访问 WSL 时这一项
+> 会**真跑**(实测 21 个脚本全过,路径风格 posix);被沙箱挡住 WSL 时报 `SKIP`
+> (`E_ACCESSDENIED`)而不是 `PASS`——**跳过和通过是两回事**,它不会把没跑过的说成
+> 跑过了。要在真 Linux 下跑这一项:
+>
+> ```bash
+> wsl -d Ubuntu bash -lc "cd /mnt/d/workspaces/blade_agent/llm && python3 tools/ci.py"
+> ```
 
 ## 检查项
 
@@ -33,8 +39,11 @@ python tools/ci.py --online --json output/ci/report.json
 | `冒烟测试` | 离线 | `deploy-portal/tools/smoke_test.py` 的 99 项断言:接口、数据自洽、前端模块括号平衡、死控件、目录穿越 |
 | `实测值核对` | 离线 | `models.csv` / `model-families.csv` 有没有被手改。每个值都要带 40 位 `verified_revision`,所以必须来自 `apply_truth.py` |
 | `Shell 脚本语法` | 离线 | 仓库自有的 21 个 `.sh` 做 `bash -n`(只解析不执行)。第三方源码目录(如 `.vendor-fetch-*`、`source-cache`)不在门禁范围 |
+| `Shell 脚本行尾` | 离线 | `.sh` 的**入库内容**不能带 CRLF——带 CRLF 的脚本在 Linux 上会成片报 `$'\r': command not found`。查索引而不是工作区:本机 `core.autocrlf=true` 会把工作区换行还原成 CRLF,查工作区必然误报 |
 | `GPU 目录自洽` | 离线 | `gpu-catalog.json` 里没有 `verification.status != ok` 的条目,并统计厂商分布 |
+| `改文件工具` | 离线 | 真跑三条链路:整文件替换(默认后端)、整文件替换(内置引擎)、新增文件(内置引擎),每条都逐字节校验。内置引擎用环境变量强制,所以本机即使有 codex,它也被真的跑过 |
 | `根目录残留物` | 离线 | 临时脚本 / 待办文件 / 散落日志,只报 `WARN`,**不删用户的东西** |
+| `工作流骨架文件` | 离线 | `AGENTS.md`、`.codex-specs/`、`tools/ci.py`、`scripts/ci/*`、`docs/*`、`.github/workflows/ci.yml` 还在不在,规范目录里有没有活的 `spec.md` |
 | `在线:GPU 厂商页核实` | `--online` | 15 张卡的显存/类型/互联是否还能在厂商页逐字命中;NVIDIA 卡另外对官方算力表核 |
 | `在线:权威文档可达性` | `--online` | 65 个权威来源链接是否还活着 |
 
@@ -88,8 +97,12 @@ output/ci/ci-latest.json     最新一次
 3.11+,没有第三方依赖)。在线核实不在云端跑:厂商页偶发超时会变成假失败,
 而这类检查按周在本机跑更有意义。
 
-> 注意:这个 workflow **尚未在真实 runner 上验证过**。本机没有可用的 GitHub
-> Actions 环境;首次 push 后请确认它确实变绿,不要假定它能跑。
+> 验证记录(2026-09-17):首次推送 `17331d0` 的第一次运行**失败**了——job
+> `offline-gate` 停在「项目 CI(离线门禁)」,因为门禁里有一项依赖只在本机存在的
+> `codex.exe`。定位与修复见 `.codex-specs/ci-portability/`;修复后本机为
+> 「通过 10 · 失败 0 · 跳过 0」,WSL(真 Linux)为「通过 9 · 失败 0 · 跳过 1」
+> (那里读不到 `C:/`,跳过的是磁盘余量那一项)。云端结论以 Actions 页面为准,
+> 别假定它能跑。
 
 ## 加一项检查
 
