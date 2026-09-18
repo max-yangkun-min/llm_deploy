@@ -508,11 +508,12 @@ been accepted on real hardware yet** (`models/` still only holds
   Disaggregation / Piecewise AclGraph / Fullgraph AclGraph / max-model-len / MLP Weight
   Prefetch / Doc`. The `Doc` column links to an official per-model tutorial
   (`tutorials/models/<Model>.html`) that contains the real launch commands.
-- **`Atlas 300I DUO` and `Ascend 950` are both in that matrix** and both are already in our
-  GPU catalog, so card-to-model matching for them needs no local evidence at all. `A2/A3`
-  is documented but has no catalog card yet - that is the one open decision (whether to add
-  cards from the official A2/A3 product list; an unverifiable 910B still must not be forced
-  in).
+- `Atlas 300I DUO` is in that matrix and is already in our GPU catalog, so matching for it
+  needs no local evidence. `Ascend 950 Products` / `Ascend 950DT` are **family** names, and
+  the official docs never tie either to a card model name - correction made in stage eleven
+  (below): the initial reading that "Ascend 950 is in the matrix, so our 950PR matches" was
+  wrong. `A2/A3` is documented but has no catalog card; adding cards from the official
+  A2/A3 product list remains optional (an unverifiable 910B still must not be forced in).
 - R15 (`deepseekv4-flash-910b4`) is explicitly decoupled: it is no longer described as
   "R2's unlock condition". It is a site-delivery acceptance task, orthogonal to the
   generic Ascend recipe work.
@@ -520,6 +521,52 @@ been accepted on real hardware yet** (`models/` still only holds
   facts from the official matrix with provenance recorded (URL + version + fetch time +
   sha256) instead of hand-writing them into code or JSON, and cite the official per-model
   tutorial as the deployment method, tagged `ecosystem: cann`.
+
+## Stage eleven this session (2026-09-18): R2 implemented from the official matrix
+
+- Pinned the **stable** docs release v0.23.0 instead of `latest` (the page states "You are
+  viewing the stable release (v0.23.0) documentation"), so a sha256 drift is a meaningful
+  signal rather than silent reference rot. `.../en/v0.23.0/...` verified 200.
+- New `deploy-portal/tools/sync_ascend.py` fetches the machine-readable matrix source
+  (`_sources/user_guide/support_matrix/supported_models.md`) plus all 31 tutorials that the
+  matrix `Doc` column links to, and writes `data/ascend-support-matrix.json` with per-source
+  URL + doc version + fetch time + sha256 + byte count. Only this tool writes that file.
+  Measured: 10 tables / 96 capability rows / 7 hardware families. The official matrix has
+  **10 rows with a blank `Supported Hardware` cell** - recorded as blank, not guessed.
+- Matching rule (`engine.official_family_match`, single implementation, used both by the
+  sync tool and at request time): a family name must appear **verbatim** in the
+  vendor-verified card name (normalised substring); families shorter than 4 normalised
+  chars (e.g. `A2`) are excluded so they cannot match by accident.
+  Measured outcome: `ascend-300i-duo-96` / `-48` -> `Atlas 300I DUO` (15 model rows);
+  `ascend-950pr-atlas350` -> **no match**, and the UI states why with a link to the matrix.
+  This is deliberate: the official docs only ever say `Ascend 950 Products` / `Ascend 950DT`,
+  never a card model name, so claiming that family for our 950PR would be an invented claim.
+- UI: the recommend view gained an "official support matrix (public source)" card showing the
+  verbatim capability table plus the official tutorial's launch commands for the matching
+  hardware tab (collapsed `<details>`, labelled with how many code blocks the tutorial has
+  and how many were taken, linking to the original page). Commands are not rewritten.
+- Guardrails added: offline check `昇腾官方矩阵` and online check `在线:昇腾官方文档`
+  (drift detector); 10 new smoke assertions (99 -> 109). All 6 views re-checked in a real
+  browser: 0 console errors; evidence `output/playwright/21-ascend-official-matrix.png`,
+  `22-ascend-official-commands.png`.
+- Measured CI: `python tools/ci.py --online` = 15 pass / 0 fail / 0 skip (GPU 15/15,
+  docs 65/65, Ascend matrix + 31 tutorials sha256 unchanged). Sandboxed offline run =
+  11 pass / 0 fail / 1 skip (the WSL shell-syntax check).
+- Also fixed a "docs claim it is ignored, reality disagrees" case: `output/ci/*.json` was
+  tracked by git while `docs/CI.md` said it was gitignored. Added `output/ci/` to
+  `.gitignore` and removed the files from the index (local files kept).
+- Found and fixed a second defect of the same family while running `--online`: the CI check
+  claim was false. `sync_docs.py --check` **wrote the snapshot and then printed
+  "--check:未写入"** (the write sat before the check branch), so every `tools/ci.py --online`
+  run refreshed 154 `checked_at` lines and dirtied the working tree while the output said it
+  had not written. Moved the write after the check branch, and added an online gate
+  `检查模式不改仓库`: after the three `--check` runs, the digests of `gpu-catalog.json`,
+  `doc-sources.json` and `ascend-support-matrix.json` must be unchanged. Reverse-verified by
+  re-introducing the old order - the gate immediately reported FAIL, naming the file.
+  Confirmed after the fix: `--check` leaves the file byte-identical and still reports 65/65.
+- Final measured CI this round: `--online` = 16 pass / 0 fail / 0 skip; sandboxed offline =
+  11 pass / 0 fail / 1 skip; WSL Ubuntu (python 3.14.4) = 11 pass / 0 fail / 1 skip (the
+  skip there is the C-drive check, since WSL cannot read `C:/`).
 
 ## Next actions
 

@@ -306,6 +306,81 @@ function rankCard(item, index, gpu) {
   </div>`;
 }
 
+function officialMatrixHtml(official) {
+  if (!official) return '';
+  const src = official.source || {};
+  const links = [];
+  if (src.matrix_page) links.push('<a href="' + esc(src.matrix_page) + '" target="_blank" rel="noopener">打开官方支持矩阵页</a>');
+  if (src.project_url) links.push('<a href="' + esc(src.project_url) + '" target="_blank" rel="noopener">项目仓库</a>');
+  const head = `
+    <div class="card">
+      <h2>官方支持矩阵(公开来源)</h2>
+      <p class="muted small" style="margin-top:0">
+        这张卡能跑哪些模型,以官方文档为准:${esc(src.project || '')}
+        ${src.doc_version ? '<code>' + esc(src.doc_version) + '</code>' : ''}
+        ${src.doc_channel ? '(' + esc(src.doc_channel) + ' 版)' : ''}
+        ${links.join(' · ')}
+        ${src.generated_at ? '<br>抓取于 ' + esc(src.generated_at) + ';' : ''}
+        ${esc(src.policy || '')}
+      </p>`;
+  if (!official.available) {
+    return head + '<p class="muted small">' + esc(official.reason || '还没有抓取官方支持矩阵。') + '</p></div>';
+  }
+  if (!official.family) {
+    return head +
+      '<p class="small" style="color:var(--warn,#a60)">' + esc(official.reason || '') + '</p>' +
+      '<p class="muted small">官方矩阵在列的硬件族:' + (official.families || []).map(esc).join('、') + '</p>' +
+      '</div>';
+  }
+
+  const models = official.models || [];
+  // `Support` 不在 capabilities 里(它和 Model/Note 一起单列),所以这一列取 item.support。
+  const columns = [
+    ['BF16', 'BF16'], ['W8A8', 'W8A8'],
+    ['Tensor Parallel', 'Tensor Parallel'], ['Expert Parallel', 'Expert Parallel'],
+    ['max-model-len', 'max-model-len'],
+  ];
+  const rows = models.map((item) => {
+    const caps = item.capabilities || {};
+    const doc = (item.tutorial && item.tutorial.url)
+      ? '<a href="' + esc(item.tutorial.url) + '" target="_blank" rel="noopener">官方教程</a>'
+      : '<span class="muted">官方未给教程</span>';
+    return '<tr>' +
+      '<td>' + esc(item.model) +
+        (item.note ? '<br><span class="muted small">' + esc(item.note) + '</span>' : '') + '</td>' +
+      '<td>' + esc(item.support || '—') + '</td>' +
+      columns.map((key) => '<td>' + esc(caps[key[0]] || '—') + '</td>').join('') +
+      '<td>' + doc + '</td></tr>';
+  }).join('');
+
+  const withCommands = models.filter((item) => ((item.tutorial || {}).blocks || []).length);
+  const commands = withCommands.map((item) => {
+    const blocks = item.tutorial.blocks.map((block) =>
+      '<p class="muted small" style="margin:10px 0 4px">' + esc(block.section) +
+      (block.tab ? ' · ' + esc(block.tab) : '') + ' · ' + esc(block.language) + '</p>' +
+      '<pre class="code">' + esc(block.code) + '</pre>').join('');
+    return '<details style="margin:10px 0"><summary>' + esc(item.model) + ' · 官方启动命令' +
+      '(教程共 ' + esc(item.tutorial.block_total) + ' 个代码块,这里取部署相关小节 ' +
+      esc(item.tutorial.blocks.length) + ' 个)</summary>' + blocks +
+      '<p class="muted small">命令逐字来自 <a href="' + esc(item.tutorial.url) +
+      '" target="_blank" rel="noopener">' + esc(item.tutorial.title || item.tutorial.key) +
+      '</a>,本平台不改写。</p></details>';
+  }).join('');
+
+  return head +
+    '<p class="small" style="margin:8px 0 0">这张卡的卡名里逐字出现了官方硬件族 <b>' +
+    esc(official.family) + '</b>,所以按官方口径给出该族在列的 ' + esc(models.length) +
+    ' 个模型行(其中生成式 ' + esc(official.generative_total) + ' 个)。' +
+    '<br><span class="muted">匹配规则:' + esc(official.basis || '') + '</span></p>' +
+    (models.length
+      ? '<div class="table-wrap"><table><thead><tr><th>官方模型</th>' +
+        '<th>官方支持</th>' +
+        columns.map((key) => '<th>' + esc(key[1]) + '</th>').join('') +
+        '<th>官方文档</th></tr></thead><tbody>' + rows + '</tbody></table></div>'
+      : '<p class="muted small">官方矩阵里这张卡没有任何模型行。</p>') +
+    (commands ? '<h3 style="margin:16px 0 0">官方部署方法(逐字照搬)</h3>' + commands : '') +
+    '</div>';
+}
 function renderResult(target, data) {
   const totals = data.totals;
   const gpu = gpuById(data.hardware.gpu_id);
@@ -332,6 +407,8 @@ function renderResult(target, data) {
     ${data.stack_note ? '<p class="small" style="margin:8px 0 0;color:var(--warn,#a60)">' + esc(data.stack_note) + '</p>' : ''}
     <p class="muted small" style="margin:8px 0 0">${esc(data.scoring_note || '')}</p>
   </div>`);
+
+  parts.push(officialMatrixHtml(data.official_matrix));
 
   if (data.plans.length) {
     parts.push('<div class="card"><h2>匹配到的部署方案</h2>' +

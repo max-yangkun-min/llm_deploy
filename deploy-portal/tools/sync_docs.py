@@ -131,14 +131,16 @@ def main(argv=None):
         "sources": results,
         "errors": errors,
     }
-    OUT.write_text(json.dumps(payload, ensure_ascii=False, indent=1), encoding="utf-8")
     if args.check:
         # 门禁只关心「链接是否还活着」;失败就非零退出,但不能让一次检查改动仓库状态。
+        # 这里**不能**先写盘再打印「未写入」:原先正是那样,于是每次 `tools/ci.py --online`
+        # 都会刷新 154 行 checked_at、把工作区弄脏,而输出还说没写。检查就只检查。
         print("\n--check:未写入 %s" % OUT)
         print("可达 %d / %d,失败 %d" % (len(results), len(targets), len(errors)))
         for record in errors:
             print("  FAIL %-58s %s" % (record.get("id"), record.get("error") or record.get("status")))
         return 1 if errors else 0
+    OUT.write_text(json.dumps(payload, ensure_ascii=False, indent=1), encoding="utf-8")
     print("\n写入 %s" % OUT)
     print("可达 %d / %d,失败 %d" % (len(results), len(targets), len(errors)))
     return 0

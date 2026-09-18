@@ -20,6 +20,7 @@
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import os
 import re
@@ -139,6 +140,14 @@ def index_crlf(paths):
             dirty.append(path)
         offset += size + 1
     return dirty
+
+
+def file_digest(path):
+    """文件的 sha256;文件不存在时返回 None(用来判断「检查有没有改仓库」)。"""
+    try:
+        return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+    except OSError:
+        return None
 
 
 def check_disk(report):
@@ -323,6 +332,97 @@ def check_catalog(report):
         report.add("GPU 目录自洽", "pass",
                    "%d 张卡全部核实通过(%s)" % (len(gpus),
                    "、".join("%s %d" % (key, value) for key, value in sorted(vendors.items()))))
+
+
+def check_ascend(report):
+    """昇腾官方支持矩阵的留痕:来源必须可公开核实,且与卡目录的匹配结论一致。
+
+    这份数据是 R2 的根基——昇腾的部署方法不参考本机现场资产,只来自官方文档。
+    所以这里要拦住三类坏法:来源不是公开 https、缺 sha256/字节数/抓取时间、
+    以及别人手改了能力值(与矩阵行数对不上)。
+    """
+    path = ROOT / "deploy-portal" / "data" / "ascend-support-matrix.json"
+    if not path.is_file():
+        report.add("昇腾官方矩阵", "fail",
+                   "缺少 %s(跑 deploy-portal/tools/sync_ascend.py 生成)" % path.name)
+        return
+    try:
+        snapshot = json.loads(path.read_text(encoding="utf-8"))
+    except ValueError as error:
+        report.add("昇腾官方矩阵", "fail", "读不出 JSON:%s" % error)
+        return
+
+    problems = []
+    source = snapshot.get("source") or {}
+    for key in ("project_url", "matrix_page", "policy", "doc_version", "doc_channel"):
+        if not source.get(key):
+            problems.append("source.%s 缺失" % key)
+    if not snapshot.get("generated_at"):
+        problems.append("缺少 generated_at")
+
+    families = snapshot.get("hardware_families") or []
+    pages = snapshot.get("pages") or []
+    if not [item for item in pages if item.get("role") == "support-matrix"]:
+        problems.append("pages 里没有支持矩阵的抓取留痕")
+    for page in pages:
+        if not str(page.get("url", "")).startswith("https://"):
+            problems.append("来源不是 https:%s" % page.get("url"))
+        if len(str(page.get("sha256", ""))) != 64:
+            problems.append("sha256 不合法:%s" % page.get("url"))
+        if not page.get("bytes") or not page.get("fetched_at"):
+            problems.append("来源缺字节数或抓取时间:%s" % page.get("url"))
+
+    rows = 0
+    blank_hardware = 0
+    tutorials = snapshot.get("tutorials") or {}
+    for table in snapshot.get("tables") or []:
+        for row in table.get("rows") or []:
+            rows += 1
+            # 官方矩阵里确实有 `Supported Hardware` 留空的行(上游没填),照实记为
+            # 空值;非空的值必须落在 hardware_families 里,不能凭空多出一个族名。
+            if not row.get("hardware"):
+                blank_hardware += 1
+            elif row["hardware"] not in families:
+                problems.append("行的硬件族不在 hardware_families 里:%r" % row.get("hardware"))
+            if row.get("tutorial") and row["tutorial"] not in tutorials:
+                problems.append("行引用了没抓到的教程:%s" % row["tutorial"])
+    if rows < 60:
+        problems.append("只解析出 %d 行,明显偏少" % rows)
+    for key, item in tutorials.items():
+        if not str(item.get("url", "")).startswith("https://"):
+            problems.append("教程来源不是 https:%s" % key)
+        if len(str(item.get("sha256", ""))) != 64:
+            problems.append("教程缺 sha256:%s" % key)
+
+    # 卡 ↔ 硬件族的匹配重算一遍,与留痕里的结论核对(规则只有 engine 一份实现)。
+    try:
+        sys.path.insert(0, str(ROOT / "deploy-portal"))
+        import engine  # noqa: E402  路径注入后导入,复用同一套匹配规则
+        cards = json.loads((ROOT / "deploy-portal" / "data" / "gpu-catalog.json")
+                           .read_text(encoding="utf-8"))["gpus"]
+    except (OSError, ValueError, ImportError) as error:
+        report.add("昇腾官方矩阵", "fail", "算不出卡与硬件族的匹配:%s" % error)
+        return
+    stored = {item.get("gpu_id"): item.get("family") for item in snapshot.get("card_matches") or []}
+    cann = [card for card in cards if card.get("ecosystem") == "cann"]
+    for card in cann:
+        if card["id"] not in stored:
+            problems.append("昇腾卡 %s 没有匹配留痕" % card["id"])
+            continue
+        again = engine.official_family_match(card, families)
+        if again != stored[card["id"]]:
+            problems.append("卡 %s 的匹配与留痕不一致(%r / %r)"
+                            % (card["id"], stored[card["id"]], again))
+
+    if problems:
+        report.add("昇腾官方矩阵", "fail", ";".join(problems[:3])[:220])
+        return
+    matched = len([value for value in stored.values() if value])
+    report.add("昇腾官方矩阵", "pass",
+               "%d 张表 · %d 行能力(官方留空硬件族 %d 行)· %d 份官方教程 · %s %s 版 · "
+               "昇腾卡命中 %d/%d"
+               % (len(snapshot.get("tables") or []), rows, blank_hardware, len(tutorials),
+                  source.get("doc_version"), source.get("doc_channel"), matched, len(cann)))
 
 
 def check_residue(report):
@@ -537,6 +637,14 @@ def check_memory_files(report):
 
 def check_online(report):
     """联网核实:厂商页是否还逐字命中,权威文档链接是否还活着。"""
+    # 「检查」不许改仓库。sync_docs.py 曾经的缺陷就是先写盘、再打印「--check:未写入」,
+    # 于是每次联网门禁都刷新 154 行 checked_at、把工作区弄脏,而输出说没写。
+    # 这三个 --check 都要过这道「前后指纹一致」的关:检查模式改数据 = 门禁自己违规。
+    watched = ["deploy-portal/data/gpu-catalog.json",
+               "deploy-portal/data/doc-sources.json",
+               "deploy-portal/data/ascend-support-matrix.json"]
+    before = {name: file_digest(ROOT / name) for name in watched}
+
     code, output, seconds = run([sys.executable, "deploy-portal/tools/sync_gpus.py", "--check"],
                                 timeout=900)
     if code is None:
@@ -558,6 +666,25 @@ def check_online(report):
     else:
         bad = [item.strip() for item in output.splitlines() if item.strip().startswith("FAIL")]
         report.add("在线:权威文档可达性", "fail", "; ".join(bad[:3])[:200], seconds)
+
+    code, output, seconds = run([sys.executable, "deploy-portal/tools/sync_ascend.py", "--check"],
+                                timeout=1800)
+    if code is None:
+        report.add("在线:昇腾官方文档", "fail", output, seconds)
+    elif code == 0:
+        line = next((item for item in output.splitlines() if item.startswith("可达")), "")
+        report.add("在线:昇腾官方文档", "pass", line.strip()[:120], seconds)
+    else:
+        bad = [item.strip() for item in output.splitlines() if item.strip().startswith("FAIL")]
+        report.add("在线:昇腾官方文档", "fail", "; ".join(bad[:3])[:200], seconds)
+
+    touched = [name for name in watched if file_digest(ROOT / name) != before[name]]
+    if touched:
+        report.add("检查模式不改仓库", "fail",
+                   "--check 改动了数据文件:%s" % "、".join(touched))
+    else:
+        report.add("检查模式不改仓库", "pass",
+                   "三个 --check 都没动 %d 个数据文件" % len(watched))
 
 
 def main(argv=None):
@@ -586,6 +713,7 @@ def main(argv=None):
     check_bash(report)
     check_shell_eol(report)
     check_catalog(report)
+    check_ascend(report)
     check_replace_tool(report)
     check_residue(report)
     check_project_files(report)

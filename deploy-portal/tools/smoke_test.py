@@ -450,6 +450,68 @@ def main():
               str([(item["profile"]["model_id"], item["recipes"])
                    for item in ascend_result["plans"]])[:160])
 
+        # --- 昇腾的官方口径(公开来源)---------------------------------------
+        # 用户 2026-09-18 明确:这条线不参考本机现场资产。所以这里钉住的是
+        # 「能力值与命令逐字来自官方公开页面」,而不是「我们本机试过」。
+        official = ascend_result.get("official_matrix") or {}
+        official_source = official.get("source") or {}
+        check("昇腾推荐结果带官方支持矩阵",
+              official.get("available") is True
+              and str(official_source.get("matrix_page", "")).startswith("https://"),
+              str(official_source)[:160])
+        check("官方矩阵标明文档版本与留痕策略",
+              "v0.23" in str(official_source.get("doc_version"))
+              and "sha256" in str(official_source.get("policy")),
+              str(official_source.get("policy"))[:120])
+        check("卡名对不上硬件族时如实报不匹配而不是猜",
+              official.get("family") is None and bool(official.get("reason"))
+              and str(official_source.get("matrix_page", "")).startswith("https://"),
+              str(official.get("reason"))[:160])
+
+        status, duo_result = post_json("/api/recommend", {
+            "hardware": {"gpu_id": "ascend-300i-duo-96", "gpu_count": 8, "context_k": 32},
+            "preference": "balanced", "top": 5,
+        })
+        duo_official = duo_result.get("official_matrix") or {}
+        duo_models = duo_official.get("models") or []
+        check("Atlas 300I Duo 命中官方硬件族",
+              status == 200 and duo_official.get("family") == "Atlas 300I DUO"
+              and len(duo_models) >= 10,
+              "族=%r 官方模型行=%d" % (duo_official.get("family"), len(duo_models)))
+        bad_sources = [item["model"] for item in duo_models
+                       if (item.get("tutorial") or {}).get("key")
+                       and not str((item.get("tutorial") or {}).get("url", ""))
+                       .startswith("https://docs.vllm.ai/")]
+        check("官方模型行都带官方教程链接", not bad_sources, str(bad_sources)[:160])
+        no_doc = [item["model"] for item in duo_models
+                  if not (item.get("tutorial") or {}).get("key")]
+        check("官方没给教程的行如实留空而不是补一个链接",
+              bool(duo_models) and len(no_doc) < len(duo_models)
+              and all(not (item.get("tutorial") or {}).get("url")
+                      for item in duo_models
+                      if not (item.get("tutorial") or {}).get("key")),
+              "无官方教程的行=%s" % no_doc)
+        blocks = [block for item in duo_models
+                  for block in (item.get("tutorial") or {}).get("blocks") or []]
+        commands = [block["code"] for block in blocks]
+        check("部署命令逐字来自官方教程",
+              any("vllm serve" in code for code in commands)
+              and any("--quantization ascend" in code for code in commands)
+              and any("-310p" in code for code in commands),
+              "命令块=%d 示例=%s" % (len(commands), (commands[0][:60] if commands else "")))
+        check("官方命令与能力值里没有 NVIDIA 专有口径",
+              not any("sm_" in code or "nvidia" in code.lower() for code in commands)
+              and "sm_" not in json.dumps(duo_official, ensure_ascii=False)
+              and "min_driver" not in json.dumps(duo_official, ensure_ascii=False),
+              str([code[:60] for code in commands
+                   if "sm_" in code or "nvidia" in code.lower()])[:160])
+        dense = next((item for item in duo_models if item["model"] == "Qwen3-Dense"), None)
+        check("能力值逐字来自官方矩阵",
+              dense is not None
+              and (dense.get("capabilities") or {}).get("Supported Hardware") == "Atlas 300I DUO"
+              and (dense.get("capabilities") or {}).get("W8A8") == "✅",
+              str((dense or {}).get("capabilities"))[:160])
+
         # 选卡时这几个字段只能由目录供值,否则「实测匹配」能靠自填绕过判定。
         status, spoofed = post_json("/api/recommend", {
             "hardware": {"gpu_id": "ascend-300i-duo-96", "gpu_count": 8,
@@ -497,6 +559,9 @@ def main():
         check("CUDA 卡不显示跨生态说明",
               status == 200 and (cuda_result.get("stack_note") or "") == "",
               str(cuda_result.get("stack_note"))[:80])
+        check("CUDA 卡不带昇腾官方矩阵",
+              cuda_result.get("official_matrix") is None,
+              str(cuda_result.get("official_matrix"))[:80])
 
         # 现场登记路径:不填算力就必须写明生态。原实现强制 CUDA 卡填
         # compute_capability,昇腾只能编一个数,而那个数还会影响 FP8 判定。

@@ -52,14 +52,14 @@ deploy-portal/
 │       └── views/       六个视图,每个导出 render(container)
 ├── data/                见下表;除 gpu-catalog.json 外都是快照,由 tools/ 生成
 ├── tools/               核实与生成脚本(联网)+ 冒烟测试
-└── DEVELOPMENT.md       设计文档(v1.4):技术栈、边界、阶段进度、已知缺陷、backlog
+└── DEVELOPMENT.md       设计文档(v1.5):技术栈、边界、阶段进度、已知缺陷、backlog
 ```
 
 ### 路由 → 视图
 
 | 路由 | 视图模块 | 作用 |
 |---|---|---|
-| `#/recommend` | `views/recommend.js` | **硬件选型**:选卡+卡数 → 3-5 条可行方案 |
+| `#/recommend` | `views/recommend.js` | **硬件选型**:选卡+卡数 → 3-5 条可行方案;昇腾卡另外给出官方支持矩阵与官方启动命令 |
 | `#/catalog` | `views/catalog.js` | 模型目录(部署档表) |
 | `#/models` | `views/models.js` | 真实模型库(HF 快照,可搜索/筛选/翻页) |
 | `#/recipes` | `views/recipes.js` | 部署方案(7 条已记录方案) |
@@ -80,8 +80,23 @@ deploy-portal/
 | `sources.json` | 抓取输入:2 端点 / 41 组织 / 28 关注仓库 / 37 文档源 | 手工维护 |
 | `doc-sources.json` | 65 个权威来源的可达性 + 内容指纹 | `tools/sync_docs.py`(联网) |
 | `hf-catalog.json` | HF 元数据快照(**19 MiB**,24412 条) | `tools/sync_hf.py`(联网,走 hf-mirror.com) |
+| `ascend-support-matrix.json` | 昇腾官方支持矩阵(10 张表 / 96 行能力)+ 31 份官方教程的部署命令,每条来源带 URL + 文档版本 + 抓取时间 + sha256 | `tools/sync_ascend.py`(联网,固定引 v0.23.0 稳定版) |
 
 > `hf-catalog.json` 有 19 MiB,是首屏体积的主要来源。要减就先做这里,别动别的。
+
+### 昇腾的部署方法从哪来(R2)
+
+昇腾卡的「能跑哪些模型 + 怎么启动」**只来自公开权威来源**,不参考本工作区的现场
+资产:能力值与命令逐字来自 vllm-ascend 官方文档的支持矩阵与逐模型教程,
+`sync_ascend.py` 抓取时留痕,`smoke_test.py` 钉住「不是手写值」。
+
+卡与官方硬件族的匹配只在「族名逐字出现在厂商核实过的卡名里」时成立
+(`engine.official_family_match`,规则只有一份实现)。目录里
+`ascend-300i-duo-96` / `-48` 命中 `Atlas 300I DUO`;
+`ascend-950pr-atlas350` 的卡名是 `Ascend 950PR`,官方文档里没有把它与
+`Ascend 950 Products` 对应的可引用表述,所以**不匹配**,并在页面上如实说明
+——不把该族的模型说成这张卡支持的型号。详见
+`.codex-specs/ascend-official-recipes/spec.md`。
 
 ## 选型规则(`model-selector/`)
 

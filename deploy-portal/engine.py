@@ -26,6 +26,7 @@ HF_CATALOG_JSON = PORTAL_DIR / "data" / "hf-catalog.json"
 DOC_SOURCES_JSON = PORTAL_DIR / "data" / "doc-sources.json"
 GPU_CATALOG_JSON = PORTAL_DIR / "data" / "gpu-catalog.json"
 GPU_CATALOG = GPU_CATALOG_JSON
+ASCEND_MATRIX_JSON = PORTAL_DIR / "data" / "ascend-support-matrix.json"
 
 if not (MODEL_SELECTOR / "recommend.py").is_file():
     raise SystemExit(
@@ -414,6 +415,7 @@ def recommend(hw, preference="balanced", top=5, include_estimates=True):
         "ecosystem_note": ECOSYSTEM_NOTES.get(ecosystem, ""),
         "profile_catalog_ecosystem": PROFILE_CATALOG_ECOSYSTEM,
         "stack_note": catalog_ecosystem_note(ecosystem),
+        "official_matrix": ascend_official(hw) if ecosystem == "cann" else None,
         "totals": hardware_totals(hw),
         "plans": distinct[:limit],
         "plans_total": len(distinct),
@@ -501,6 +503,145 @@ def gpu_snapshot_meta():
         "cc_source": snapshot.get("cc_source"),
         "source_policy": snapshot.get("source_policy"),
     }
+
+
+#: 卡 ↔ 官方支持矩阵硬件族的匹配规则。官方矩阵给的是**硬件族名**(如
+#: `Atlas 300I DUO` / `Ascend 950 Products` / `A2/A3`),目录里的卡是具体产品名。
+#: 只有在「族名逐字出现在厂商核实过的卡名里」时才认定匹配,否则如实报不匹配。
+OFFICIAL_FAMILY_BASIS = (
+    "官方支持矩阵的硬件族名必须逐字出现在厂商核实过的卡名里(归一化后子串相等);"
+    "归一化后不足 4 个字符的族名(如 `A2`)不参与匹配,避免在卡名里误命中"
+)
+MIN_FAMILY_CHARS = 4
+
+#: 官方教程里跟「怎么部署」直接相关的小节。其余小节(评测/调优)只给原文链接,
+#: 不搬进响应体,免得把整份教程塞进页面。挑哪几节由这个常量决定,不改写命令本身。
+OFFICIAL_DEPLOY_SECTIONS = ("Prerequisites", "Installation", "Deployment")
+
+
+def normalize_card_text(value):
+    """归一化:只留字母数字,用于「族名是否出现在卡名里」的比较。"""
+    return "".join(char for char in str(value or "").lower() if char.isalnum())
+
+
+def official_family_match(gpu, families):
+    """把一张卡对到官方支持矩阵的硬件族;对不上返回 None。
+
+    规则只有这一处实现:sync_ascend.py 抓取时用它,运行时也是它。
+    """
+    name = normalize_card_text((gpu or {}).get("name"))
+    if not name:
+        return None
+    for family in sorted(families or [], key=len, reverse=True):
+        key = normalize_card_text(family)
+        if len(key) >= MIN_FAMILY_CHARS and key in name:
+            return family
+    return None
+
+
+def load_ascend_matrix():
+    """读 sync_ascend.py 生成的官方支持矩阵快照;没有就返回空字典。"""
+    if not ASCEND_MATRIX_JSON.is_file():
+        return {}
+    try:
+        return json.loads(ASCEND_MATRIX_JSON.read_text(encoding="utf-8"))
+    except ValueError:
+        return {}
+
+
+def official_blocks(tutorial, family):
+    """取官方教程里与这张卡对应 tab 的部署小节代码块(命令逐字照搬,不改写)。"""
+    blocks, tabs = [], set()
+    for block in (tutorial or {}).get("blocks") or []:
+        tab = block.get("tab") or ""
+        if tab and normalize_card_text(family) not in normalize_card_text(tab):
+            continue
+        if tab:
+            tabs.add(tab)
+        section = block.get("section") or ""
+        if not any(name in section for name in OFFICIAL_DEPLOY_SECTIONS):
+            continue
+        blocks.append({
+            "section": section,
+            "tab": tab,
+            "language": block.get("language"),
+            "code": block.get("code"),
+        })
+    return blocks, sorted(tabs)
+
+
+def ascend_official(hw):
+    """昇腾卡在官方支持矩阵里的位置。
+
+    命中硬件族:给出该族的官方能力行(值逐字来自矩阵)与官方教程里对应 tab 的
+    部署命令。没命中:写明为什么没命中并给出矩阵链接。两种情况都不猜。
+    """
+    matrix = load_ascend_matrix()
+    if not matrix:
+        return {
+            "available": False,
+            "reason": ("还没有抓取官方支持矩阵。跑 "
+                       "`python deploy-portal/tools/sync_ascend.py` 生成 "
+                       "data/ascend-support-matrix.json 之后,这里会显示官方口径。"),
+            "source": None,
+        }
+    source = matrix.get("source") or {}
+    families = matrix.get("hardware_families") or []
+    family = official_family_match({"name": hw.get("gpu_name")}, families)
+    payload = {
+        "available": True,
+        "family": family,
+        "basis": OFFICIAL_FAMILY_BASIS,
+        "families": families,
+        "legend": matrix.get("legend") or {},
+        "source": {
+            "project": source.get("project"),
+            "project_url": source.get("project_url"),
+            "doc_version": source.get("doc_version"),
+            "doc_channel": source.get("doc_channel"),
+            "matrix_page": source.get("matrix_page"),
+            "policy": source.get("policy"),
+            "generated_at": matrix.get("generated_at"),
+        },
+    }
+    if family is None:
+        payload["reason"] = (
+            "官方支持矩阵用的是硬件族名(%s),而这张卡在目录里的名字是「%s」;"
+            "族名没有逐字出现在卡名里,官方文档里也没有把两者对应的可引用表述,"
+            "所以不把该族的模型说成这张卡支持的型号。"
+            % ("、".join(families), hw.get("gpu_name") or "")
+        )
+        return payload
+
+    tutorials = matrix.get("tutorials") or {}
+    models = []
+    for table in matrix.get("tables") or []:
+        for row in table.get("rows") or []:
+            if row.get("hardware") != family:
+                continue
+            tutorial = tutorials.get(row.get("tutorial") or "") or {}
+            blocks, tabs = official_blocks(tutorial, family)
+            models.append({
+                "section": table.get("section"),
+                "kind": table.get("kind"),
+                "generative": table.get("generative"),
+                "model": row.get("model"),
+                "support": row.get("support"),
+                "note": row.get("note"),
+                "capabilities": row.get("capabilities"),
+                "tutorial": {
+                    "key": row.get("tutorial"),
+                    "title": tutorial.get("title"),
+                    "url": tutorial.get("url"),
+                    "blocks": blocks,
+                    "tabs": tabs,
+                    "block_total": len(tutorial.get("blocks") or []),
+                },
+            })
+    payload["models"] = models
+    payload["models_total"] = len(models)
+    payload["generative_total"] = len([item for item in models if item["generative"]])
+    return payload
 
 
 def hardware_from_gpu(gpu_id, gpu_count, **overrides):
