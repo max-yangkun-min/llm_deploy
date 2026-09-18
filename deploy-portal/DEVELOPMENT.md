@@ -283,6 +283,7 @@
 | 阶段七 | 双生态(华为昇腾)与持续集成(见 5.9) | ✅ 完成并验收 |
 | 阶段八 | 仓库发布到 GitHub + 云端 CI 首次实测转绿(见 5.9) | ✅ 完成并验收 |
 | 阶段九 | 昇腾部署方法改从**公开权威来源**建立(R2,见 5.9.1) | ✅ 完成并验收 |
+| 阶段十 | 方案的公开依据按**归属**显式挂接(R17,见 5.9.2) | ✅ 完成并验收 |
 | 待办 | 其余人工评分项(quality/throughput)实测化等 | 见 `docs/ROADMAP.md`(单一真源) |
 
 ### 5.2 阶段一:网站骨架(已完成)
@@ -299,7 +300,7 @@
 - 新增接口 `/api/hf-catalog`、`/api/hf-detail`、`/api/docs`。
 - 新增「真实模型库」视图(`web/js/views/models.js`),支持关键词/组织/任务/许可证过滤与分页。
 - `engine.py` 新增 `verification_for()`、`compare()`、`quant_class()`、`hf_query()`、
-  `hf_summary()`、`doc_sources()`、`global_docs()`。
+  `hf_summary()`、`doc_sources()`(阶段十另加 `docs_for_recipe()`,见 5.9.2)。
 - `app.js` 新增 `verificationBlock()`、`docSourceBlock()`,已接入推荐结果页与方案详情页。
 - 核对逻辑按量化档位匹配(见 4.4),并回传 `is_reference` / `target_quant` 标记。
 
@@ -342,8 +343,8 @@
 
 | 验证项 | 结果 | 方式 |
 | --- | --- | --- |
-| 接口自检 | **75 / 75 通过** | `python deploy-portal/tools/smoke_test.py` |
-| 权威来源可达性 | **56 / 56 可达,0 失败** | `sync_docs.py` 真实 HTTP 请求 + 内容指纹 |
+| 接口自检 | **112 / 112 通过**(阶段十口径;本节其余行是阶段五–六的留痕) | `python deploy-portal/tools/smoke_test.py` |
+| 权威来源可达性 | **66 / 66 可达,0 失败**(阶段十口径) | `sync_docs.py` 真实 HTTP 请求 + 内容指纹 |
 | 抓取快照 | 24,412 条索引 / 41 个组织 / 28 个重点仓库 / 剩余 1 条已记录错误 | `sync_hf.py` |
 | 索引字段覆盖率 | sha 100%、likes 100%、tags 99.6%、license 87.7%、pipeline_tag 52.3%(上游只标了一部分) | 快照统计 |
 | 重点仓库完整性 | 28 / 28 均具备 revision + 权重大小 + config 字段 | 自检断言 + 人工核对 |
@@ -617,8 +618,8 @@ sha256、推荐条数落在 3-5、结果内模型不重复、每条方案都带�
 | 项 | 结果 |
 |---|---|
 | `python tools/ci.py` | 沙箱内:通过 11 · 失败 0 · 跳过 1(读不到 WSL → shell 语法报 SKIP,不算通过);WSL 可达时 12 · 0 · 0 |
-| `python tools/ci.py --online` | 通过 16 · 失败 0 · 跳过 0(GPU 15/15、文档 65/65、昇腾矩阵与 31 份教程 sha256 未漂移、三个 `--check` 都没改数据文件) |
-| `python deploy-portal/tools/smoke_test.py` | **109/109**(其中昇腾反回归 20 项 + 昇腾官方口径 10 项) |
+| `python tools/ci.py --online` | 通过 16 · 失败 0 · 跳过 0(GPU 15/15、文档 65/65、昇腾矩阵与 31 份教程 sha256 未漂移、三个 `--check` 都没改数据文件)——阶段九当轮;阶段十口径见 5.9.2 |
+| `python deploy-portal/tools/smoke_test.py` | **109/109**(阶段九当轮;阶段十增至 112/112,见 5.9.2) |
 | `python deploy-portal/tools/sync_gpus.py --check` | 15/15 |
 | `python deploy-portal/tools/sync_ascend.py --check` | 官方矩阵与教程 sha256 未漂移 |
 | 浏览器六视图 | 0 控制台报错、0 警告;无 `[object Object]`、无 `sm_null` |
@@ -668,7 +669,47 @@ sha256、推荐条数落在 3-5、结果内模型不重复、每条方案都带�
 实测修复后 `--check` 前后文件哈希一致,65/65 仍可达。
 
 > 未做:磁盘上的现场资产(`deepseekv4-flash/offline-dsv4-0731/`)仍只以 `*-local`
-> 状态存在,不参与通用方案生成;R17(现有 7 条方案的来源仍是工作区路径)另立一项。
+> 状态存在,不参与通用方案生成。R17(现有 7 条方案的来源仍是工作区路径)已在
+> 阶段十处理,见 5.9.2。
+
+#### 5.9.2 阶段十:方案的公开依据按归属显式挂接(R17)
+
+**用户方向(2026-09-18)**:R17「现有 7 条方案的来源只有本工作区路径」。它与 R2 是同一个
+通用性缺口的两半:R2 是「昇腾还没有通用方案」,R17 是「已有方案的依据也不通用」——
+平台的部署方法只拿本机证据说话,第三方打不开、也核实不了。
+
+先量现状,结论是验收标准一、二**已经满足一半**,真正缺的是「归属」:
+
+| 实测(改前) | 结果 |
+|---|---|
+| 6 条有部署档的方案 | 来源台账里本来就有 **7–10 条**按 `profiles` 挂好的公开来源(vLLM 官方并行 / 量化 / 工具调用 / 环境变量文档、`vllm-project/recipes` 官方配方、官方模型卡),只是页面没把它当成「依据」展示 |
+| 唯一没有部署档的方案 `deepseek-v4-flash-gguf-llamacpp` | 走 `engine.global_docs()` 兜底 = 17 条「profiles 为空」的全局条目,于是 **sglang / TensorRT-LLM / Triton / Ollama 的引擎总览全被算成一条 llama.cpp 方案的依据**,还夹着两条不属于本方案的模型卡 |
+| 19 个本地 `sources` 路径 | 逐条 `os.path.isfile` 验过,**missing=0**——证据都在,只是需要分开标注 |
+
+改的是归属,不是证据:
+
+| 项 | 内容 |
+|---|---|
+| 只认显式挂接 | 新增 `engine.docs_for_recipe(recipe)`:`profile_id` 命中条目的 `profiles`,或条目的 `recipe_ids` 明文点名本方案,才算这条方案的依据;`binding` 字段写明是哪种挂接。`global_docs()` 这个「谁都能用」的兜底**删除**——它唯一的作用就是制造假归属 |
+| 无部署档靠 `recipe_ids` | `data/sources.json` 的 `doc_sources` / `tracked_repos` 支持 `recipe_ids`;`sync_docs.py` 把 `tracked_repos` 的 `recipe_ids` 抄到自动生成的模型卡条目上。GGUF 那条现在拿到 3 条:llama.cpp 官方仓库、**新增的** `llamacpp-server`(`https://github.com/ggml-org/llama.cpp/blob/master/tools/server/README.md`,实测 200)、以及它真正用的权重仓 `model-card:unsloth/DeepSeek-V4-Flash-0731-GGUF` |
+| 前端分开归属 | 详情页分成「可公开核实的通用依据」(带 `归属` 列:`部署档 xxx` / `本方案显式声明`)与「本工作区的现场记录(第三方打不开)」;列表页每条标 `公开依据 N 条` / `暂无,只有现场记录`;一条都挂不上时**如实降级**成「公开依据:暂无」,不拿别的引擎的文档凑数 |
+
+反回归:`smoke_test.py` 新增 3 项 + 强化 1 项(109→112),钉住「每条方案都有可公开核实的
+依据」(原来只要求 ≥5)、「方案的公开依据不跨引擎」、「`recipe_ids` 都指向真实方案」、
+「没有部署档的方案都被 `recipe_ids` 点名」。**反向验证过两条**:给 `ollama-docs` 挂上 GGUF
+方案 → `FAIL 方案的公开依据不跨引擎 {'deepseek-v4-flash-gguf-llamacpp': ['ollama-docs']}`;
+把 `recipe_ids` 打错一个字 → `FAIL recipe_ids 都指向真实方案`。
+规范见 `.codex-specs/recipe-public-sources/`。
+
+**验证证据(阶段十当轮)**
+
+| 项 | 结果 |
+|---|---|
+| 方案依据逐条打印 | 6 条 vLLM 方案各 7–10 条同引擎来源;GGUF 方案 3 条 llama.cpp 来源,无跨引擎条目 |
+| `python deploy-portal/tools/sync_docs.py` | **66 / 66 可达,0 失败** |
+| `python deploy-portal/tools/smoke_test.py` | **112/112** |
+| `python tools/ci.py` | 沙箱内:通过 11 · 失败 0 · 跳过 1(读不到 WSL → shell 语法 SKIP,不算通过) |
+| `python tools/ci.py --online` | 通过 16 · 失败 0 · 跳过 0(文档 66/66;三个 `--check` 都没改数据文件) |
 
 ### 5.10 未完成事项(Backlog)
 
@@ -745,6 +786,7 @@ sha256、推荐条数落在 3-5、结果内模型不重复、每条方案都带�
 
 | 日期 | 版本 | 变更 |
 | --- | --- | --- |
+| 2026-09-18 | 1.7 | 阶段十(R17):方案的公开依据改成**只认显式挂接**。新增 `engine.docs_for_recipe()`(`profile_id` 命中条目的 `profiles`,或条目的 `recipe_ids` 明文点名本方案),**删除** `engine.global_docs()` 这个导致假归属的全局兜底——它曾把 sglang / TensorRT-LLM / Triton / Ollama 的引擎总览算成一条 llama.cpp 方案的依据。`data/sources.json` 的 `doc_sources`/`tracked_repos` 新增 `recipe_ids`,`sync_docs.py` 把它抄到自动生成的模型卡条目上;GGUF 方案据此拿到 llama.cpp 官方仓库、新增的 `llamacpp-server` 官方文档与它真正用的权重模型卡(来源 65→66,实测 66/66 可达)。前端详情页与列表页把「可公开核实的通用依据」(带归属列)与「本工作区的现场记录(第三方打不开)」分开,一条都挂不上时如实降级。自检 109→112 项(新增「不跨引擎」「`recipe_ids` 都指向真实方案」「没有部署档的方案都被点名」并强化「每条方案都有依据」),反向验证过两条;另修掉门禁自身的空白失败细节(`tools/ci.py::failure_detail`)。规范 `.codex-specs/recipe-public-sources/` |
 | 2026-09-18 | 1.6 | 阶段九(R2):昇腾的部署方法改为**只来自公开权威来源**,不参考本机现场资产(用户明确「要做一个通用的平台」)。新增 `tools/sync_ascend.py`,从 vllm-ascend 官方文档**稳定版 v0.23.0** 抓取支持矩阵(10 张表 / 96 行能力)与矩阵 `Doc` 列引用的 31 份逐模型教程,每条来源留痕 URL + 文档版本 + 抓取时间 + sha256 + 字节数,落成 `data/ascend-support-matrix.json`(只由工具写入)。新增 `engine.official_family_match`(卡名必须逐字含官方硬件族名;归一化后不足 4 字符的族不参与匹配)与 `engine.ascend_official`,推荐结果对昇腾卡返回 `official_matrix`:命中族给官方能力表与官方教程里对应 tab 的部署命令(逐字、折叠展示、带原文链接),未命中族**如实报不匹配并给矩阵链接**(实测 `Atlas 300I DUO` 命中,`Ascend 950PR` 不匹配,官方文档无对应表述)。改掉一处「文档说已忽略、实际没忽略」:`output/ci/*.json` 一直被 git 跟踪而 `docs/CI.md` 写着已 gitignore,现加入 `.gitignore` 并移出索引。门禁新增离线「昇腾官方矩阵」与联网「在线:昇腾官方文档」(sha256 漂移即报)、以及「检查模式不改仓库」(修掉 `sync_docs.py --check` 先写盘再打印「未写入」的缺陷,见 5.9.1),离线 11→12 项、联网 2→4 项;自检 99→109 项;浏览器六视图复核 0 报错,证据 `output/playwright/21-ascend-official-matrix.png`、`22-ascend-official-commands.png`;规范 `.codex-specs/ascend-official-recipes/` |
 | 2026-09-18 | 1.5 | 阶段八:仓库发布到 github.com/max-yangkun-min/llm_deploy,并让云端 workflow 首次实测转绿。修掉首次云端 CI 变红的原因——`apply_patch.py` 只认 Windows 的 `codex.exe`,Linux 上「改文件工具」门禁必然红;现改为双后端(优先用真能跑起来的 codex,否则用内置严格补丁引擎,见 `.codex-specs/ci-portability/`),`tools/apply_patch.py` 由字节相同的第二份副本改为转发入口。门禁新增「Shell 脚本行尾」「任务记忆文件」两项,并修正两处「检查自己报假数」:规范计数把 `_TEMPLATE/spec.md` 算成一份、离线项数历来写错。待办清单收敛到 `docs/ROADMAP.md`(单一真源) |
 | 2026-09-17 | 1.4 | 阶段七完成:GPU 目录新增**华为昇腾**(Atlas 350 / Atlas 300I Duo 96GB·48GB,逐字命中华为官方产品页),目录 12→15 张卡;昇腾**不做 sm 映射**(`compute_capability=null` + `compute_capability_basis`),FP8 改读厂商页标称值,算力门槛与 NVIDIA 驱动下限加 `cuda` 守卫,KV cache 因专有量化只按权重下界核算;`hardware_from_gpu()` 支持 `compute_capability=None`;方案按生态分组(`recipes_grouped`)并返回 `recipes_other_ecosystem`,不把 CUDA 栈方案挂到昇腾卡上;现场登记改为「不填算力就必须写明 ecosystem」;前端下拉按厂商分组、`smLabel(null)` 返回 `—`、新增共享 `computeLabel`/`stackLabel`、计划卡片不再对昇腾显示 CUDA 栈与 NVIDIA 驱动下限;台账对 KV 未计入的档显示「下界通过」;自检 75→99 项(昇腾反回归 20 项)。同版新增**持续集成**:`tools/ci.py`(离线 8 项 + 联网 2 项)、`scripts/ci/run-ci.ps1`、`scripts/ci/register-scheduled-task.ps1`(已注册 llm-ci-daily/llm-ci-weekly 并验证 `LastTaskResult=0`)、`.github/workflows/ci.yml`、`docs/CI.md`、`docs/PROJECT-MAP.md`、`.codex-specs/` 规范层;修掉 `whole_file_replace.py` 两个缺陷(首行被改动时丢新首行、回滚用 Python 3.8 不支持的 `write_text(newline=)`) |

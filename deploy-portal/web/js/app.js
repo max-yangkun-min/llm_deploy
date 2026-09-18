@@ -173,16 +173,18 @@ export function verificationBlock(verification, options = {}) {
   </div>`;
 }
 
-/** 权威文档来源列表。 */
-export function docSourceBlock(sources, title = '权威来源') {
+/** 权威文档来源列表。条目带 binding(挂接方式)时多显示一列归属。 */
+export function docSourceBlock(sources, title = '权威来源', note = '') {
   if (!sources || !sources.length) {
     return '';
   }
+  const hasBinding = sources.some((item) => item.binding);
   const rows = sources.map((item) => `
     <tr>
       <td><a href="${esc(item.url)}" target="_blank" rel="noreferrer">${esc(item.title || item.id)}</a>
         <br><span class="muted small">${esc(item.url)}</span></td>
       <td class="small">${esc(item.kind)}</td>
+      ${hasBinding ? '<td class="small">' + esc(item.binding || '') + '</td>' : ''}
       <td class="small">${item.status === 200 ? '<span class="badge ok">已验证可达</span>' : '<span class="badge bad">' + esc(item.status || item.error) + '</span>'}</td>
       <td class="small">${esc((item.checked_at || '').replace('T', ' ').replace('Z', ''))}</td>
     </tr>`).join('');
@@ -190,10 +192,10 @@ export function docSourceBlock(sources, title = '权威来源') {
   <div class="card">
     <h2>${esc(title)}</h2>
     <p class="muted small" style="margin-top:0">
-      这些链接由 <code>tools/sync_docs.py</code> 实际请求验证过,记录当时的 HTTP 状态与内容指纹,不是凭记忆写的地址。
+      ${note ? esc(note) + ' ' : ''}这些链接由 <code>tools/sync_docs.py</code> 实际请求验证过,记录当时的 HTTP 状态与内容指纹,不是凭记忆写的地址。
     </p>
     <div class="table-wrap"><table>
-      <thead><tr><th>来源</th><th>类型</th><th>状态</th><th>验证时间</th></tr></thead>
+      <thead><tr><th>来源</th><th>类型</th>${hasBinding ? '<th>归属</th>' : ''}<th>状态</th><th>验证时间</th></tr></thead>
       <tbody>${rows}</tbody>
     </table></div>
   </div>`;

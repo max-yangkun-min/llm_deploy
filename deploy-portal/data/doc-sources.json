@@ -1,9 +1,9 @@
 {
  "schema": 1,
- "fetched_at": "2026-09-18T03:00:17Z",
+ "fetched_at": "2026-09-18T03:30:12Z",
  "counts": {
-  "checked": 65,
-  "ok": 65,
+  "checked": 66,
+  "ok": 66,
   "failed": 0
  },
  "note": "只记录可达性与内容指纹,正文版权归原站。failed 条目会保留在 errors 里,不会被隐藏。",
@@ -19,7 +19,7 @@
    "bytes": 639505,
    "sha256": "fed75b382d2b966b42ef7508a86846ca74547a8c1515ff00aaa34fc832ffa88e",
    "description": "",
-   "checked_at": "2026-09-18T02:58:55Z",
+   "checked_at": "2026-09-18T03:28:26Z",
    "engine_markers": [
     "vllm",
     "transformers"
@@ -36,7 +36,7 @@
    "bytes": 788486,
    "sha256": "0234cc1ba2040ddf58f872cb194f48fde953f5613d0f9b92ed037443078710f2",
    "description": "",
-   "checked_at": "2026-09-18T02:58:56Z",
+   "checked_at": "2026-09-18T03:28:28Z",
    "engine_markers": [
     "vllm",
     "transformers"
@@ -59,7 +59,7 @@
    "bytes": 689788,
    "sha256": "caf43c02e3f0b6b77f717ffe10104f5d8e6a1bd0d512616b3a649b33f0e1cf9d",
    "description": "",
-   "checked_at": "2026-09-18T02:58:58Z",
+   "checked_at": "2026-09-18T03:28:31Z",
    "engine_markers": [
     "vllm",
     "transformers",
@@ -83,7 +83,7 @@
    "bytes": 717537,
    "sha256": "58a3fa75585f1a517628d20a671d831380c637842a0020a943688f9a8024491d",
    "description": "",
-   "checked_at": "2026-09-18T02:58:59Z",
+   "checked_at": "2026-09-18T03:28:33Z",
    "engine_markers": [
     "vllm",
     "transformers",
@@ -104,7 +104,7 @@
    "bytes": 659709,
    "sha256": "3a2a5ec44804ae2199a1e32866ddc9de15528e7795343845e555152301131fe1",
    "description": "",
-   "checked_at": "2026-09-18T02:59:01Z",
+   "checked_at": "2026-09-18T03:28:34Z",
    "engine_markers": [
     "vllm",
     "transformers"
@@ -121,7 +121,7 @@
    "bytes": 688187,
    "sha256": "04e56e8c4f850cc579e56e6535853c15b57ac811c27ea1356947c8c11a98dac5",
    "description": "",
-   "checked_at": "2026-09-18T02:59:02Z",
+   "checked_at": "2026-09-18T03:28:36Z",
    "engine_markers": [
     "vllm",
     "transformers"
@@ -145,7 +145,7 @@
    "bytes": 671608,
    "sha256": "c6ca6ef51559e7f1c97c8b6d5e86f36bdebdbe51e1e3a3dc10becb477bc0c8af",
    "description": "",
-   "checked_at": "2026-09-18T02:59:03Z",
+   "checked_at": "2026-09-18T03:28:37Z",
    "engine_markers": [
     "vllm",
     "transformers"
@@ -166,7 +166,7 @@
    "bytes": 695114,
    "sha256": "bf35f83855f2257db4b06753b02dd2809f70309c4f922c706fc2c59a3376e94b",
    "description": "",
-   "checked_at": "2026-09-18T02:59:04Z",
+   "checked_at": "2026-09-18T03:28:39Z",
    "engine_markers": [
     "vllm",
     "transformers"
@@ -183,7 +183,7 @@
    "bytes": 671314,
    "sha256": "a8aa0ff36c8b01ef5f3fd17ae64203c3b453c1e9b373f41e0b49195a8e788aee",
    "description": "",
-   "checked_at": "2026-09-18T02:59:06Z",
+   "checked_at": "2026-09-18T03:28:41Z",
    "engine_markers": [
     "vllm",
     "transformers",
@@ -207,7 +207,7 @@
    "bytes": 739307,
    "sha256": "efd54b466539f0bb4b2ab2a5ed9b0d8e93563132d10e574dcda67c53011f682d",
    "description": "",
-   "checked_at": "2026-09-18T02:59:07Z",
+   "checked_at": "2026-09-18T03:28:43Z",
    "engine_markers": [
     "vllm",
     "transformers"
@@ -227,7 +227,7 @@
    "bytes": 678550,
    "sha256": "ed29a5f4bf0ace279bc67c483e0f4e879ed6037f5771de7b8f658310fe2a69ed",
    "description": "",
-   "checked_at": "2026-09-18T02:59:08Z",
+   "checked_at": "2026-09-18T03:28:44Z",
    "engine_markers": [
     "vllm",
     "transformers"
@@ -244,7 +244,7 @@
    "bytes": 723730,
    "sha256": "87be841e27776a80f3b63ef3c2c960f1ac406e26e28f6fae404baee533cdfcf7",
    "description": "",
-   "checked_at": "2026-09-18T02:59:09Z",
+   "checked_at": "2026-09-18T03:28:46Z",
    "engine_markers": [
     "vllm",
     "transformers",
@@ -262,7 +262,7 @@
    "bytes": 727111,
    "sha256": "0a086aa7d70e17901512db34e7a7f6460abfb3a2c24cf106b658f3e180e94979",
    "description": "",
-   "checked_at": "2026-09-18T02:59:11Z",
+   "checked_at": "2026-09-18T03:28:48Z",
    "engine_markers": [
     "vllm",
     "transformers",
@@ -277,10 +277,10 @@
    "profiles": [],
    "status": 200,
    "final_url": "https://github.com/vllm-project/recipes",
-   "bytes": 437266,
-   "sha256": "9b359f380c58f2d3253771e676dccccb2e49091b88640eca4399bc19a8d5ff67",
+   "bytes": 437265,
+   "sha256": "394dacbd08b2fe20640ad9956244446d6501bb5cd8ab0d9ad563b43f388e672f",
    "description": "Common recipes to run vLLM. Contribute to vllm-project/recipes development by creating an account on GitHub.",
-   "checked_at": "2026-09-18T02:59:13Z",
+   "checked_at": "2026-09-18T03:28:50Z",
    "engine_markers": [
     "vllm"
    ]
@@ -296,7 +296,7 @@
    "bytes": 822524,
    "sha256": "acc7cc44a4a3b2364a7e057bcceb2742d1ab125ebd8fed70219e67d70c233cc3",
    "description": "",
-   "checked_at": "2026-09-18T02:59:15Z",
+   "checked_at": "2026-09-18T03:28:53Z",
    "engine_markers": [
     "vllm",
     "transformers",
@@ -322,7 +322,7 @@
    "bytes": 1045804,
    "sha256": "4e039cdbc75be2f7db3b2172af4132cef5ad122c7b56dbff90cf4447b7a84b46",
    "description": "",
-   "checked_at": "2026-09-18T02:59:17Z",
+   "checked_at": "2026-09-18T03:28:56Z",
    "engine_markers": [
     "vllm",
     "sglang",
@@ -339,10 +339,10 @@
    ],
    "status": 200,
    "final_url": "https://github.com/vllm-project/vllm/releases",
-   "bytes": 1679537,
-   "sha256": "31d278fc1d61a4b6569e79981e973934f86d75533a5fe426f0b8f1580f2ee069",
+   "bytes": 1679539,
+   "sha256": "0cca566f84d28fe215fd404fdf37589216b26244e5a849d6d65de979745e392a",
    "description": "A high-throughput and memory-efficient inference and serving engine for LLMs - Releases · vllm-project/vllm",
-   "checked_at": "2026-09-18T02:59:21Z",
+   "checked_at": "2026-09-18T03:29:00Z",
    "engine_markers": [
     "vllm",
     "transformers"
@@ -359,7 +359,7 @@
    "bytes": 389598,
    "sha256": "9640de0deebe30e3eafbcab2fa9a6c15a66855d71a0cef3f1682421c7c837003",
    "description": "High-performance serving framework for large language and multimodal models.",
-   "checked_at": "2026-09-18T02:59:22Z",
+   "checked_at": "2026-09-18T03:29:02Z",
    "engine_markers": [
     "sglang"
    ]
@@ -375,7 +375,7 @@
    "bytes": 31808,
    "sha256": "30d976a807f61a743d1a98c02576ed2135ff9826ae4d63fcb6c64eace7622eb8",
    "description": "",
-   "checked_at": "2026-09-18T02:59:23Z",
+   "checked_at": "2026-09-18T03:29:03Z",
    "engine_markers": [
     "vllm"
    ]
@@ -391,7 +391,7 @@
    "bytes": 152709,
    "sha256": "73c6fccf136a399f39d40c3d0d7f3ad8fbd2e8c174a9a8eb16bdd630d2388739",
    "description": "",
-   "checked_at": "2026-09-18T02:59:23Z",
+   "checked_at": "2026-09-18T03:29:04Z",
    "engine_markers": []
   },
   {
@@ -405,7 +405,7 @@
    "bytes": 45268,
    "sha256": "e601536eb697e6f04953fb5589c80c7292fbc3cea78bdbdd02c71a087d2aaef6",
    "description": "",
-   "checked_at": "2026-09-18T02:59:24Z",
+   "checked_at": "2026-09-18T03:29:05Z",
    "engine_markers": [
     "vllm",
     "transformers"
@@ -417,12 +417,34 @@
    "url": "https://github.com/ggml-org/llama.cpp",
    "kind": "engine-docs",
    "profiles": [],
+   "recipe_ids": [
+    "deepseek-v4-flash-gguf-llamacpp"
+   ],
    "status": 200,
    "final_url": "https://github.com/ggml-org/llama.cpp",
    "bytes": 429117,
-   "sha256": "6640a2d0f2896b267c04266732bc05e5461e830f7fbf337a16e64c45a6349deb",
+   "sha256": "6b0fcf9a472eb391f7b392b10d3b90d7efa03940c604c4da2576ba69cded4d73",
    "description": "LLM inference in C/C++. Contribute to ggml-org/llama.cpp development by creating an account on GitHub.",
-   "checked_at": "2026-09-18T02:59:26Z",
+   "checked_at": "2026-09-18T03:29:07Z",
+   "engine_markers": [
+    "llama.cpp"
+   ]
+  },
+  {
+   "id": "llamacpp-server",
+   "title": "llama.cpp/tools/server/README.md at master · ggml-org/llama.cpp · GitHub",
+   "url": "https://github.com/ggml-org/llama.cpp/blob/master/tools/server/README.md",
+   "kind": "engine-docs",
+   "profiles": [],
+   "recipe_ids": [
+    "deepseek-v4-flash-gguf-llamacpp"
+   ],
+   "status": 200,
+   "final_url": "https://github.com/ggml-org/llama.cpp/blob/master/tools/server/README.md",
+   "bytes": 1096538,
+   "sha256": "f7f0253efa40b0812ae5247affb7d530bb1a7068fb6b236b346cf306d8723a0d",
+   "description": "LLM inference in C/C++. Contribute to ggml-org/llama.cpp development by creating an account on GitHub.",
+   "checked_at": "2026-09-18T03:29:11Z",
    "engine_markers": [
     "llama.cpp"
    ]
@@ -438,7 +460,7 @@
    "bytes": 240795,
    "sha256": "d38919168af9cd61586296eeb19770dfaad3871bfb4629f1c86bbf8e4460fc13",
    "description": "",
-   "checked_at": "2026-09-18T02:59:29Z",
+   "checked_at": "2026-09-18T03:29:12Z",
    "engine_markers": []
   },
   {
@@ -450,9 +472,9 @@
    "status": 200,
    "final_url": "https://www.modelscope.cn/docs",
    "bytes": 3307,
-   "sha256": "6516079659ecb11f03ef5e4828bd37ace3612208ab8503f0e9566fa2a7e6ca9c",
+   "sha256": "0a78f8ce35a69c604ad6ac01779f181c61287552b8c621285021e2a62387e49a",
    "description": "ModelScope",
-   "checked_at": "2026-09-18T02:59:29Z",
+   "checked_at": "2026-09-18T03:29:13Z",
    "engine_markers": []
   },
   {
@@ -478,7 +500,7 @@
    "bytes": 22895,
    "sha256": "a844f1c79c9fd8efb10cfc28f365bb26366bde3e53de7891c0fd01b36ce4ebce",
    "description": "",
-   "checked_at": "2026-09-18T02:59:30Z",
+   "checked_at": "2026-09-18T03:29:14Z",
    "engine_markers": [
     "vllm",
     "sglang",
@@ -497,9 +519,9 @@
    "status": 200,
    "final_url": "https://github.com/vllm-project/recipes/blob/main/models/deepseek-ai/DeepSeek-R1.yaml",
    "bytes": 355991,
-   "sha256": "02302cbb6e5dac31a52aa9b599a0caa620399a50d2aca635971812bbca06968a",
+   "sha256": "99c6d3f36897f4c8f17db8f2b37ac036eb729fcdeb18a42a47c36421578f8daa",
    "description": "Common recipes to run vLLM. Contribute to vllm-project/recipes development by creating an account on GitHub.",
-   "checked_at": "2026-09-18T02:59:31Z",
+   "checked_at": "2026-09-18T03:29:16Z",
    "engine_markers": [
     "vllm",
     "tensor-parallel"
@@ -515,10 +537,10 @@
    ],
    "status": 200,
    "final_url": "https://github.com/vllm-project/recipes/blob/main/models/deepseek-ai/DeepSeek-V3.1.yaml",
-   "bytes": 324419,
-   "sha256": "300642a24f90d1ae46a8c9817ea53cc243378c03d45c11fb645ed937254d243b",
+   "bytes": 324429,
+   "sha256": "2a3ec0702989cb2e3cb81dd702c5f5b7c6731bb2c3cd1891960b340076aa8206",
    "description": "Common recipes to run vLLM. Contribute to vllm-project/recipes development by creating an account on GitHub.",
-   "checked_at": "2026-09-18T02:59:33Z",
+   "checked_at": "2026-09-18T03:29:18Z",
    "engine_markers": [
     "vllm",
     "tensor-parallel"
@@ -534,10 +556,10 @@
    ],
    "status": 200,
    "final_url": "https://github.com/vllm-project/recipes/blob/main/models/zai-org/GLM-5.2.yaml",
-   "bytes": 435713,
-   "sha256": "ad27b875f01d930241955a9930ae465d1490dd9795644c04845a8edb5cb84c9f",
+   "bytes": 435711,
+   "sha256": "04fca71d50e1e0e00f5b2f10175dea4facb6de119d54261190f9b444e53d8d48",
    "description": "Common recipes to run vLLM. Contribute to vllm-project/recipes development by creating an account on GitHub.",
-   "checked_at": "2026-09-18T02:59:34Z",
+   "checked_at": "2026-09-18T03:29:20Z",
    "engine_markers": [
     "vllm",
     "transformers",
@@ -554,10 +576,10 @@
    ],
    "status": 200,
    "final_url": "https://github.com/vllm-project/recipes/blob/main/models/moonshotai/Kimi-K2.6.yaml",
-   "bytes": 376391,
-   "sha256": "c143a6adf5be2499c8ca189c59f7dc4981c9e0637e7e6d32c1988c0a11ff358c",
+   "bytes": 376390,
+   "sha256": "8398602ba91b252c14fbe515dc721379155b70729735cc54046858f9da8e0d8e",
    "description": "Common recipes to run vLLM. Contribute to vllm-project/recipes development by creating an account on GitHub.",
-   "checked_at": "2026-09-18T02:59:36Z",
+   "checked_at": "2026-09-18T03:29:23Z",
    "engine_markers": [
     "vllm",
     "tensor-parallel"
@@ -575,10 +597,10 @@
    ],
    "status": 200,
    "final_url": "https://github.com/vllm-project/recipes/blob/main/models/MiniMaxAI/MiniMax-M2.7.yaml",
-   "bytes": 348917,
-   "sha256": "98ec09bd5f52fe6eaa169047d91be9e55be5d2f41db96ebcf081937378b244f7",
+   "bytes": 348930,
+   "sha256": "b693ef434055bc16b58475e7ecafdd14dd5177119f01da699ad3f135a04536bf",
    "description": "Common recipes to run vLLM. Contribute to vllm-project/recipes development by creating an account on GitHub.",
-   "checked_at": "2026-09-18T02:59:37Z",
+   "checked_at": "2026-09-18T03:29:25Z",
    "engine_markers": [
     "vllm",
     "tensor-parallel"
@@ -596,9 +618,9 @@
    "status": 200,
    "final_url": "https://github.com/vllm-project/recipes/blob/main/models/Qwen/Qwen3.5-397B-A17B.yaml",
    "bytes": 448907,
-   "sha256": "db894b53e881d87f65465532ca1298a040f03269148b7d905207aa30911dd3ae",
+   "sha256": "149d728508e4a505aa15708400bfad3f154e5166fba761ca5772a2f01db4c2f2",
    "description": "Common recipes to run vLLM. Contribute to vllm-project/recipes development by creating an account on GitHub.",
-   "checked_at": "2026-09-18T02:59:39Z",
+   "checked_at": "2026-09-18T03:29:28Z",
    "engine_markers": [
     "vllm",
     "tensor-parallel"
@@ -615,10 +637,10 @@
    ],
    "status": 200,
    "final_url": "https://github.com/vllm-project/recipes/blob/main/models/Qwen/Qwen3.5-122B-A10B.yaml",
-   "bytes": 335613,
-   "sha256": "9f74e5b2850ec30845a408448b70ab5a55c9c8f5a304500a0eff4bc7d0569b98",
+   "bytes": 335609,
+   "sha256": "7e50e5af5ae198efbe8b9fd48f7c5e196fa00ca1de581368f5598f95b9ae08a5",
    "description": "Common recipes to run vLLM. Contribute to vllm-project/recipes development by creating an account on GitHub.",
-   "checked_at": "2026-09-18T02:59:40Z",
+   "checked_at": "2026-09-18T03:29:30Z",
    "engine_markers": [
     "vllm",
     "tensor-parallel"
@@ -634,10 +656,10 @@
    ],
    "status": 200,
    "final_url": "https://github.com/vllm-project/recipes/blob/main/models/Qwen/Qwen3-235B-A22B-Instruct-2507.yaml",
-   "bytes": 313869,
-   "sha256": "5ff9b0e23d8746d37613d30f927805f8a7d03b6712a70f6771e2aae830306a63",
+   "bytes": 313860,
+   "sha256": "53a5b6744364bd5d3caff8686c2d481dd15648705f9b258772b2ffc350578444",
    "description": "Common recipes to run vLLM. Contribute to vllm-project/recipes development by creating an account on GitHub.",
-   "checked_at": "2026-09-18T02:59:42Z",
+   "checked_at": "2026-09-18T03:29:33Z",
    "engine_markers": [
     "vllm"
    ]
@@ -652,10 +674,10 @@
    ],
    "status": 200,
    "final_url": "https://github.com/vllm-project/recipes/blob/main/models/Qwen/Qwen3-32B.yaml",
-   "bytes": 332627,
-   "sha256": "d0f435d4394b6953d00fe68bae60111054b2de2e429a0917af70d3fb0d0f772b",
+   "bytes": 332628,
+   "sha256": "63393684f372d692624c9fc85195eba4450ea37aba333b6b1f25ca7e77d23660",
    "description": "Common recipes to run vLLM. Contribute to vllm-project/recipes development by creating an account on GitHub.",
-   "checked_at": "2026-09-18T02:59:43Z",
+   "checked_at": "2026-09-18T03:29:35Z",
    "engine_markers": [
     "vllm",
     "tensor-parallel"
@@ -672,9 +694,9 @@
    "status": 200,
    "final_url": "https://github.com/vllm-project/recipes/blob/main/models/Qwen/Qwen3-14B.yaml",
    "bytes": 306643,
-   "sha256": "ab7b49eb8187a2cb8665da3d15fce0a66bb6d0fe6931dec00226b205e8c54cda",
+   "sha256": "be1f8f95c07939aa6e0aa80da54c81934e3cda9302fb3ffacb8d5755e87e7896",
    "description": "Common recipes to run vLLM. Contribute to vllm-project/recipes development by creating an account on GitHub.",
-   "checked_at": "2026-09-18T02:59:45Z",
+   "checked_at": "2026-09-18T03:29:38Z",
    "engine_markers": [
     "vllm",
     "tensor-parallel"
@@ -692,9 +714,9 @@
    "status": 200,
    "final_url": "https://github.com/vllm-project/recipes/blob/main/models/Qwen/Qwen3-8B.yaml",
    "bytes": 299338,
-   "sha256": "d1a9aafb54546910aa5adafb1235f3bf381faecdcea8494b446e06708348055d",
+   "sha256": "84c3dfbd8e847d8a2d0fb51abd32bb9297545ed7d8d880c101ff09dc13a48641",
    "description": "Common recipes to run vLLM. Contribute to vllm-project/recipes development by creating an account on GitHub.",
-   "checked_at": "2026-09-18T02:59:47Z",
+   "checked_at": "2026-09-18T03:29:40Z",
    "engine_markers": [
     "vllm",
     "tensor-parallel"
@@ -711,9 +733,9 @@
    "status": 200,
    "final_url": "https://github.com/vllm-project/recipes/blob/main/models/Qwen/Qwen3-4B.yaml",
    "bytes": 312445,
-   "sha256": "fea039669da8e9bd1ebbefcc1e1bb2a74dd941b5c95e51f8f69333e20fa8d372",
+   "sha256": "5f4e672d8f749caf4cfa56ab0de098f67e70a6d2137407d31f864589624a1335",
    "description": "Common recipes to run vLLM. Contribute to vllm-project/recipes development by creating an account on GitHub.",
-   "checked_at": "2026-09-18T02:59:48Z",
+   "checked_at": "2026-09-18T03:29:43Z",
    "engine_markers": [
     "vllm",
     "tensor-parallel"
@@ -731,9 +753,9 @@
    "status": 200,
    "final_url": "https://hf-mirror.com/deepseek-ai/DeepSeek-R1",
    "bytes": 328860,
-   "sha256": "35379c8c556634c72551e303eab085f7c56ab1a38c78f0a6abd8b08071d9bebf",
+   "sha256": "6f925f90b7b27c410d4f5454a66ae5d60eaec91fecc6d4b16dfbb46384d06c6e",
    "description": "We’re on a journey to advance and democratize artificial intelligence through open source and open science.",
-   "checked_at": "2026-09-18T02:59:49Z",
+   "checked_at": "2026-09-18T03:29:44Z",
    "engine_markers": [
     "vllm",
     "sglang",
@@ -754,9 +776,9 @@
    "status": 200,
    "final_url": "https://hf-mirror.com/deepseek-ai/DeepSeek-V3.1",
    "bytes": 299772,
-   "sha256": "fd3b054181385b464767ace8c7771565f1a7769fe938efebe30b879021dd37ae",
+   "sha256": "4d4538b74022cb6593d520285948bf9c1887722629cdd4cb6c49b1d717592b52",
    "description": "We’re on a journey to advance and democratize artificial intelligence through open source and open science.",
-   "checked_at": "2026-09-18T02:59:50Z",
+   "checked_at": "2026-09-18T03:29:45Z",
    "engine_markers": [
     "vllm",
     "sglang",
@@ -773,9 +795,9 @@
    "status": 200,
    "final_url": "https://hf-mirror.com/deepseek-ai/DeepSeek-V4-Flash-0731",
    "bytes": 289787,
-   "sha256": "9ed88c8cf519729df31e2f8091607e720124a1bc45f4e008dd38484a3e59716b",
+   "sha256": "c93d542306c141b490cf8987311d16650cb3efdda8d55d05acc86d01ceebb56c",
    "description": "We’re on a journey to advance and democratize artificial intelligence through open source and open science.",
-   "checked_at": "2026-09-18T02:59:51Z",
+   "checked_at": "2026-09-18T03:29:46Z",
    "engine_markers": [
     "vllm",
     "sglang",
@@ -790,12 +812,15 @@
    "kind": "model-card",
    "profiles": [],
    "revision": "fbbb5b93fb787c21338159b0af3318bb3f4d9768",
+   "recipe_ids": [
+    "deepseek-v4-flash-gguf-llamacpp"
+   ],
    "status": 200,
    "final_url": "https://hf-mirror.com/unsloth/DeepSeek-V4-Flash-0731-GGUF",
    "bytes": 288846,
    "sha256": "487f28b7f97e4319ebc079d49818ff494e98a988955cdf751d87860e5e884070",
    "description": "We’re on a journey to advance and democratize artificial intelligence through open source and open science.",
-   "checked_at": "2026-09-18T02:59:52Z",
+   "checked_at": "2026-09-18T03:29:47Z",
    "engine_markers": [
     "llama.cpp"
    ]
@@ -812,9 +837,9 @@
    "status": 200,
    "final_url": "https://hf-mirror.com/meta-llama/Llama-3.1-405B-Instruct",
    "bytes": 429984,
-   "sha256": "ce80a12accea065093f9216a37af87257f8806d470c0c9c01d25774dffd20a61",
+   "sha256": "1f7a07a6859d770f75f60687e80c7c03881cd15a3cdadcc10aa1d408db32b0b7",
    "description": "We’re on a journey to advance and democratize artificial intelligence through open source and open science.",
-   "checked_at": "2026-09-18T02:59:54Z",
+   "checked_at": "2026-09-18T03:29:48Z",
    "engine_markers": [
     "vllm",
     "sglang",
@@ -836,7 +861,7 @@
    "bytes": 378909,
    "sha256": "764c7e9e01ef729b284ebdde8876f190f8805ce88472053ca73e4eac570b28c3",
    "description": "We’re on a journey to advance and democratize artificial intelligence through open source and open science.",
-   "checked_at": "2026-09-18T02:59:55Z",
+   "checked_at": "2026-09-18T03:29:49Z",
    "engine_markers": [
     "vllm",
     "sglang",
@@ -856,9 +881,9 @@
    "status": 200,
    "final_url": "https://hf-mirror.com/cyankiwi/GLM-5.2-AWQ-INT4",
    "bytes": 223935,
-   "sha256": "825a5d9118a5e1877e16b5e344c11df4add5342d20a6c990a7ac3b10df5ee357",
+   "sha256": "0ea57d225329e5ae44124357164a852a40f62b37d5d58e9dea42f3d200de89a8",
    "description": "We’re on a journey to advance and democratize artificial intelligence through open source and open science.",
-   "checked_at": "2026-09-18T02:59:56Z",
+   "checked_at": "2026-09-18T03:29:50Z",
    "engine_markers": [
     "vllm",
     "sglang",
@@ -877,9 +902,9 @@
    "status": 200,
    "final_url": "https://hf-mirror.com/moonshotai/Kimi-K2.6",
    "bytes": 453859,
-   "sha256": "b4b53abe38f1112c903543cff3adff15947388009d6a8b736b08df41370f09de",
+   "sha256": "d0e3406cbe030bcff97c964b92548156cf4daae72d7f5c7d8723dd6b20e4827f",
    "description": "We’re on a journey to advance and democratize artificial intelligence through open source and open science.",
-   "checked_at": "2026-09-18T02:59:57Z",
+   "checked_at": "2026-09-18T03:29:51Z",
    "engine_markers": [
     "vllm",
     "sglang",
@@ -899,9 +924,9 @@
    "status": 200,
    "final_url": "https://hf-mirror.com/MiniMaxAI/MiniMax-M2.7",
    "bytes": 379756,
-   "sha256": "139a8274d33ccad827a94a9137976562c1f2bd2ef6448b43eb4d4b3689d0334a",
+   "sha256": "00a45101983a8bdfeb7fcf816c22c30fdb39a6f5826f3014605788036235046c",
    "description": "We’re on a journey to advance and democratize artificial intelligence through open source and open science.",
-   "checked_at": "2026-09-18T02:59:58Z",
+   "checked_at": "2026-09-18T03:29:53Z",
    "engine_markers": [
     "vllm",
     "sglang",
@@ -922,9 +947,9 @@
    "status": 200,
    "final_url": "https://hf-mirror.com/QuantTrio/MiniMax-M2.7-AWQ",
    "bytes": 227917,
-   "sha256": "69314e66b7b8f8a50072ce9c1a191369a1372e699dd67a609033a7dc7789ba6b",
+   "sha256": "fd4efb80fe73bd0d480dc9713f04ba6f050dfac81c9b59817739d2021c6623d2",
    "description": "We’re on a journey to advance and democratize artificial intelligence through open source and open science.",
-   "checked_at": "2026-09-18T02:59:59Z",
+   "checked_at": "2026-09-18T03:29:54Z",
    "engine_markers": [
     "vllm",
     "sglang",
@@ -947,7 +972,7 @@
    "bytes": 563531,
    "sha256": "7f6311ab0e0b5865cc113f6b3b8c06a4989e52b07c6082ba8b81bde85b400800",
    "description": "We’re on a journey to advance and democratize artificial intelligence through open source and open science.",
-   "checked_at": "2026-09-18T03:00:00Z",
+   "checked_at": "2026-09-18T03:29:55Z",
    "engine_markers": [
     "vllm",
     "sglang",
@@ -971,7 +996,7 @@
    "bytes": 352693,
    "sha256": "d672317c366d4500e62fcd8cbe7c062d83e8d7c77596c8cf75c68c2e1c3b4f02",
    "description": "We’re on a journey to advance and democratize artificial intelligence through open source and open science.",
-   "checked_at": "2026-09-18T03:00:02Z",
+   "checked_at": "2026-09-18T03:29:56Z",
    "engine_markers": [
     "vllm",
     "sglang",
@@ -994,7 +1019,7 @@
    "bytes": 508746,
    "sha256": "39a367d7b031059715a38c99eb7f96acf44aec0f8ee8ed839d4b8902d6fdd3cf",
    "description": "We’re on a journey to advance and democratize artificial intelligence through open source and open science.",
-   "checked_at": "2026-09-18T03:00:03Z",
+   "checked_at": "2026-09-18T03:29:58Z",
    "engine_markers": [
     "vllm",
     "sglang",
@@ -1017,7 +1042,7 @@
    "bytes": 333893,
    "sha256": "ee5d04d7fb10696af3fea6014c61be9b228a2c6e5d8e97db54198a51cad1d869",
    "description": "We’re on a journey to advance and democratize artificial intelligence through open source and open science.",
-   "checked_at": "2026-09-18T03:00:04Z",
+   "checked_at": "2026-09-18T03:29:59Z",
    "engine_markers": [
     "vllm",
     "sglang",
@@ -1040,7 +1065,7 @@
    "bytes": 310014,
    "sha256": "a06b3aaccf0ef7fa6882442ad164cd67a7a78fc42479c558fd03b4726bbe3ec6",
    "description": "We’re on a journey to advance and democratize artificial intelligence through open source and open science.",
-   "checked_at": "2026-09-18T03:00:06Z",
+   "checked_at": "2026-09-18T03:30:00Z",
    "engine_markers": [
     "vllm",
     "sglang",
@@ -1062,7 +1087,7 @@
    "bytes": 347011,
    "sha256": "4adbdc80bc488049933642876b03c2c874515d6c1843952a0c4db44fd03989b8",
    "description": "We’re on a journey to advance and democratize artificial intelligence through open source and open science.",
-   "checked_at": "2026-09-18T03:00:07Z",
+   "checked_at": "2026-09-18T03:30:00Z",
    "engine_markers": [
     "vllm",
     "sglang",
@@ -1084,7 +1109,7 @@
    "bytes": 313356,
    "sha256": "fba2e5ea66e4eee98794ecd36f4d51615580abeb2fc41338098f35c0d1333007",
    "description": "We’re on a journey to advance and democratize artificial intelligence through open source and open science.",
-   "checked_at": "2026-09-18T03:00:08Z",
+   "checked_at": "2026-09-18T03:30:01Z",
    "engine_markers": [
     "vllm",
     "sglang",
@@ -1107,7 +1132,7 @@
    "bytes": 308763,
    "sha256": "1879dd115fbad384fd63b095e26e3e0d3b4cad97e8b958b14121586f406d79f8",
    "description": "We’re on a journey to advance and democratize artificial intelligence through open source and open science.",
-   "checked_at": "2026-09-18T03:00:09Z",
+   "checked_at": "2026-09-18T03:30:02Z",
    "engine_markers": [
     "vllm",
     "sglang",
@@ -1129,7 +1154,7 @@
    "bytes": 293143,
    "sha256": "93fc3a5170f81fc983dcef8b69fa880b3e3c4e860f5b138e6f95bbe1c80b9ee7",
    "description": "We’re on a journey to advance and democratize artificial intelligence through open source and open science.",
-   "checked_at": "2026-09-18T03:00:10Z",
+   "checked_at": "2026-09-18T03:30:04Z",
    "engine_markers": [
     "vllm",
     "sglang",
@@ -1149,9 +1174,9 @@
    "status": 200,
    "final_url": "https://hf-mirror.com/unsloth/DeepSeek-R1-BF16",
    "bytes": 280012,
-   "sha256": "7d4b0b1a1a3b64a157919c58b394828d9695e99cc1d0ee2c3532e3ed4310ec8e",
+   "sha256": "a39f95494bac53c1bb537d2a26f8972fec03f09e23106b44546dd2567301d3d0",
    "description": "We’re on a journey to advance and democratize artificial intelligence through open source and open science.",
-   "checked_at": "2026-09-18T03:00:11Z",
+   "checked_at": "2026-09-18T03:30:05Z",
    "engine_markers": [
     "vllm",
     "sglang",
@@ -1172,9 +1197,9 @@
    "status": 200,
    "final_url": "https://hf-mirror.com/QuantTrio/DeepSeek-V3.1-AWQ",
    "bytes": 248110,
-   "sha256": "20188c9ce104a7d087e79f2280510915ac2d15b5c653502d193a636411a73ad5",
+   "sha256": "09b973e70659bc1cdcc53056812dc5e566018e7e286d3f2052f7a8d2ff8cbfd5",
    "description": "We’re on a journey to advance and democratize artificial intelligence through open source and open science.",
-   "checked_at": "2026-09-18T03:00:12Z",
+   "checked_at": "2026-09-18T03:30:06Z",
    "engine_markers": [
     "vllm",
     "sglang",
@@ -1196,7 +1221,7 @@
    "bytes": 230983,
    "sha256": "8dae2f32c4de012756561b37a8271b632fc50fd870b0ece1cfdf5049149b1637",
    "description": "We’re on a journey to advance and democratize artificial intelligence through open source and open science.",
-   "checked_at": "2026-09-18T03:00:12Z",
+   "checked_at": "2026-09-18T03:30:07Z",
    "engine_markers": [
     "vllm",
     "sglang",
@@ -1219,7 +1244,7 @@
    "bytes": 380945,
    "sha256": "1b0ba00200e60257d6cf973f39dfb19ab39f1b5736b1a1dd3ff4c52728663bd3",
    "description": "We’re on a journey to advance and democratize artificial intelligence through open source and open science.",
-   "checked_at": "2026-09-18T03:00:13Z",
+   "checked_at": "2026-09-18T03:30:08Z",
    "engine_markers": [
     "vllm",
     "sglang",
@@ -1241,7 +1266,7 @@
    "bytes": 440153,
    "sha256": "47a2c90fb8c6aa3f206ccecb3e478b3bb542a65e339fa6c1cc34d0861eb898ec",
    "description": "We’re on a journey to advance and democratize artificial intelligence through open source and open science.",
-   "checked_at": "2026-09-18T03:00:14Z",
+   "checked_at": "2026-09-18T03:30:09Z",
    "engine_markers": [
     "vllm",
     "sglang",
@@ -1263,7 +1288,7 @@
    "bytes": 235535,
    "sha256": "9332b644b281177bfe1ae3d4700549b111d66685a12350d969faac94f3bdad41",
    "description": "We’re on a journey to advance and democratize artificial intelligence through open source and open science.",
-   "checked_at": "2026-09-18T03:00:15Z",
+   "checked_at": "2026-09-18T03:30:10Z",
    "engine_markers": [
     "vllm",
     "sglang",
@@ -1286,7 +1311,7 @@
    "bytes": 245556,
    "sha256": "c9b9cb69046c01a14704df2443820635ea4149ffba875943db86eb5817f21d58",
    "description": "We’re on a journey to advance and democratize artificial intelligence through open source and open science.",
-   "checked_at": "2026-09-18T03:00:16Z",
+   "checked_at": "2026-09-18T03:30:10Z",
    "engine_markers": [
     "vllm",
     "sglang",
@@ -1307,7 +1332,7 @@
    "bytes": 249496,
    "sha256": "92225a3f68bfb862d5dd021b8264805987ff060e9d067ba143901e8d70afa465",
    "description": "We’re on a journey to advance and democratize artificial intelligence through open source and open science.",
-   "checked_at": "2026-09-18T03:00:16Z",
+   "checked_at": "2026-09-18T03:30:11Z",
    "engine_markers": [
     "vllm",
     "sglang",
@@ -1328,7 +1353,7 @@
    "bytes": 249351,
    "sha256": "35bd5467e4ca1828db3dd7fcf8e56be4a406a4bd56b5304b38f686e60e4ef021",
    "description": "We’re on a journey to advance and democratize artificial intelligence through open source and open science.",
-   "checked_at": "2026-09-18T03:00:17Z",
+   "checked_at": "2026-09-18T03:30:12Z",
    "engine_markers": [
     "vllm",
     "sglang",

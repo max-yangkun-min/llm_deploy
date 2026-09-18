@@ -78,7 +78,7 @@ deploy-portal/
 | `recipes.json` | 7 条部署方案 + 国内镜像策略 | 手工维护(有凭据要求) |
 | `deployments.json` | 3 个现场环境的台账 | 手工维护 |
 | `sources.json` | 抓取输入:2 端点 / 41 组织 / 28 关注仓库 / 37 文档源 | 手工维护 |
-| `doc-sources.json` | 65 个权威来源的可达性 + 内容指纹 | `tools/sync_docs.py`(联网) |
+| `doc-sources.json` | 66 个权威来源的可达性 + 内容指纹 | `tools/sync_docs.py`(联网) |
 | `hf-catalog.json` | HF 元数据快照(**19 MiB**,24412 条) | `tools/sync_hf.py`(联网,走 hf-mirror.com) |
 | `ascend-support-matrix.json` | 昇腾官方支持矩阵(10 张表 / 96 行能力)+ 31 份官方教程的部署命令,每条来源带 URL + 文档版本 + 抓取时间 + sha256 | `tools/sync_ascend.py`(联网,固定引 v0.23.0 稳定版) |
 

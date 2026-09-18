@@ -620,6 +620,14 @@ def check_memory_files(report):
     heads = [line for line in lines if line.startswith("## Previously active task")]
     if len(heads) > 1:
         problems.append("『## Previously active task』出现 %d 次" % len(heads))
+    # 上面那条挡的是「整段被复制」;这里挡的是更细的一种:新阶段段落插进去、旧的
+    # `Status:` 行忘了删,于是文件里同时躺着两个状态。2026-09-18 写阶段十时**真的
+    # 这样交过一次**(补丁把旧行当上下文留着、又加了一行新的),而当时 12 项门禁全绿。
+    # 只数当前任务那一段(到「## Previously active task」为止):后面那段有自己的 Status。
+    active_block = lines[:lines.index(heads[0])] if heads else lines
+    statuses = [line for line in active_block if line.startswith("Status: ")]
+    if len(statuses) != 1:
+        problems.append("当前任务段有 %d 条 `Status:` 行(应为 1)" % len(statuses))
     if not any(line.startswith("Last updated:") for line in lines):
         problems.append("没有 `Last updated:` 行")
     for line in lines:
@@ -633,6 +641,20 @@ def check_memory_files(report):
     else:
         report.add("任务记忆文件", "pass",
                    "ACTIVE_TASK.md 自洽:%d 条 Task ID、引用文件都在" % len(ids))
+
+
+def failure_detail(code, output, limit=200):
+    """失败的检查必须给出可判断的线索。
+
+    实测踩到过:子进程被硬杀时退出码非零而 **stdout/stderr 全空**,门禁只打出一个
+    FAIL 加空白细节,读的人完全不知道发生了什么(2026-09-18 那轮「在线:昇腾官方文档」
+    就是这样,复跑即通过)。空输出必须被明说,不能留白——留白和「跳过」一样,
+    会被误当成没事。
+    """
+    lines = [line.strip() for line in output.splitlines() if line.strip()]
+    if not lines:
+        return "退出码 %s,没有任何输出(像被硬杀或静默退出)" % code
+    return "退出码 %s;%s" % (code, " | ".join(lines[-3:])[:limit])
 
 
 def check_online(report):
@@ -654,7 +676,8 @@ def check_online(report):
         report.add("在线:GPU 厂商页核实", "pass", line.strip()[:120], seconds)
     else:
         bad = [item.strip() for item in output.splitlines() if "FAIL" in item]
-        report.add("在线:GPU 厂商页核实", "fail", "; ".join(bad[:3])[:200], seconds)
+        report.add("在线:GPU 厂商页核实", "fail",
+                   "; ".join(bad[:3])[:200] or failure_detail(code, output), seconds)
 
     code, output, seconds = run([sys.executable, "deploy-portal/tools/sync_docs.py", "--check"],
                                 timeout=1800)
@@ -665,7 +688,8 @@ def check_online(report):
         report.add("在线:权威文档可达性", "pass", line.strip()[:120], seconds)
     else:
         bad = [item.strip() for item in output.splitlines() if item.strip().startswith("FAIL")]
-        report.add("在线:权威文档可达性", "fail", "; ".join(bad[:3])[:200], seconds)
+        report.add("在线:权威文档可达性", "fail",
+                   "; ".join(bad[:3])[:200] or failure_detail(code, output), seconds)
 
     code, output, seconds = run([sys.executable, "deploy-portal/tools/sync_ascend.py", "--check"],
                                 timeout=1800)
@@ -676,7 +700,8 @@ def check_online(report):
         report.add("在线:昇腾官方文档", "pass", line.strip()[:120], seconds)
     else:
         bad = [item.strip() for item in output.splitlines() if item.strip().startswith("FAIL")]
-        report.add("在线:昇腾官方文档", "fail", "; ".join(bad[:3])[:200], seconds)
+        report.add("在线:昇腾官方文档", "fail",
+                   "; ".join(bad[:3])[:200] or failure_detail(code, output), seconds)
 
     touched = [name for name in watched if file_digest(ROOT / name) != before[name]]
     if touched:

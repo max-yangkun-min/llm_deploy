@@ -268,7 +268,11 @@ def main():
               all(item.get("sources") for item in recipes["recipes"]))
         check("镜像策略已登记", len(recipes["mirrors"]["entries"]) >= 5)
         details = [item for item in recipes["recipes"] if item.get("authoritative_docs")]
-        check("方案带权威来源", len(details) >= 5, "带权威来源的方案=%d" % len(details))
+        # R17 的验收标准一:每条方案都得能引到可公开核实的来源。以前这条只要求 >= 5,
+        # 于是「有两条压根没有公开依据」也能全绿。
+        check("每条方案都有可公开核实的依据",
+              len(details) == len(recipes["recipes"]),
+              "带公开依据的方案=%d/%d" % (len(details), len(recipes["recipes"])))
         check("权威来源都验证过状态",
               all(doc.get("status") == 200
                   for item in details for doc in item["authoritative_docs"]))
@@ -288,6 +292,46 @@ def main():
         check("无部署档的方案也有权威来源",
               bool(orphan) and all(item.get("authoritative_docs") for item in orphan),
               "无档方案=%d" % len(orphan))
+
+        # R17 的核心:依据必须**显式挂接**到这条方案上。改成显式挂接之前,没有部署档的
+        # GGUF 方案会兜底拿到 17 条「全局」条目,把 sglang / TensorRT-LLM / Triton /
+        # Ollama 的引擎总览全算成一条 llama.cpp 方案的依据——假归属比留空更坏。
+        other_engines = ("sglang-docs", "lmdeploy-docs", "tensorrt-llm-docs",
+                         "triton-docs", "ollama-docs")
+
+        def foreign_docs(item):
+            """这条方案的依据里,属于别的引擎的文档。"""
+            bound = bool(item.get("profile_id"))
+            bad = []
+            for doc in item.get("authoritative_docs") or []:
+                doc_id = str(doc.get("id") or "")
+                if doc_id in other_engines:
+                    bad.append(doc_id)
+                elif bound and doc_id.startswith("llamacpp-"):
+                    bad.append(doc_id)
+                elif not bound and doc_id.startswith("vllm"):
+                    bad.append(doc_id)
+            return bad
+
+        foreign = {item["id"]: foreign_docs(item) for item in recipes["recipes"]}
+        check("方案的公开依据不跨引擎",
+              not any(foreign.values()),
+              str({key: value for key, value in foreign.items() if value})[:200])
+
+        # 配置侧自洽:有部署档的方案靠 profiles 命中;没有部署档的必须被至少一条条目的
+        # recipe_ids 显式点名。recipe_ids 打错一个字就两条断言全红,不会静默变成空依据。
+        declared, known = set(), {item["id"] for item in recipes["recipes"]}
+        raw_sources = json.loads((PORTAL_DIR / "data" / "sources.json")
+                                 .read_text(encoding="utf-8"))
+        for entry in raw_sources["doc_sources"]:
+            declared.update(entry.get("recipe_ids") or [])
+        for repo in raw_sources["tracked_repos"]:
+            declared.update(repo.get("recipe_ids") or [])
+        check("recipe_ids 都指向真实方案", declared <= known,
+              "悬空引用=%s" % sorted(declared - known)[:6])
+        unbound = [item["id"] for item in recipes["recipes"]
+                   if not item.get("profile_id") and item["id"] not in declared]
+        check("没有部署档的方案都被 recipe_ids 点名", not unbound, str(unbound)[:160])
 
         status, catalog_snapshot = get_json("/api/hf-catalog?limit=20")
         summary = catalog_snapshot["summary"]

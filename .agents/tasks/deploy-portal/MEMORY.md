@@ -1,11 +1,12 @@
 # deploy-portal task memory
 
 Status: active
-Last updated: 2026-09-17 (Asia/Shanghai) - stage eight: the repository is
-published to github.com/max-yangkun-min/llm_deploy, and the first cloud CI run
-(which came back red) was diagnosed and fixed. Stage seven (Huawei Ascend dual-
-ecosystem support + continuous integration / scheduled checks) is recorded below
-and remains valid.
+Last updated: 2026-09-18 (Asia/Shanghai) - stage twelve: R17 done. A recipe's
+public basis is now attached explicitly (deployment profile, or a new
+`recipe_ids` key for recipes that have no profile), the blanket "all global
+docs" fallback was deleted because it misattributed other engines' docs, and the
+UI shows the two kinds of sources separately. Stages eight to eleven below remain
+valid.
 
 ## User objective
 
@@ -568,6 +569,71 @@ been accepted on real hardware yet** (`models/` still only holds
   11 pass / 0 fail / 1 skip; WSL Ubuntu (python 3.14.4) = 11 pass / 0 fail / 1 skip (the
   skip there is the C-drive check, since WSL cannot read `C:/`).
 
+## Stage twelve this session (2026-09-18): R17 - a recipe's public basis is explicit
+
+- User instruction this round: “接着做吧”, i.e. start the next item in `docs/ROADMAP.md`.
+  The top P1 item was **R17** (the same genericity gap as R2, on the CUDA side).
+- Measured the situation before changing anything, and it was **not** what the roadmap
+  text implied - two of the three acceptance criteria were already half-met:
+  - The 6 recipes **with** a `profile_id` already had 7-10 public sources attached in
+    `data/doc-sources.json` (vLLM official parallelism / quantization / tool-calling /
+    env-vars docs, `vllm-project/recipes` official recipe, official model cards). They
+    were simply never presented as "the basis".
+  - The only recipe **without** a profile (`deepseek-v4-flash-gguf-llamacpp`) fell back to
+    `engine.global_docs()` = all 17 entries with an empty `profiles` list. That put
+    **sglang / TensorRT-LLM / Triton / Ollama engine overviews onto a llama.cpp recipe**,
+    plus two model cards that do not belong to it. So the real defect was **attribution**,
+    not just "local paths".
+  - All 19 local `sources` paths exist (`os.path.isfile` each one, missing=0) - the
+    evidence was never missing, it just needed labelling.
+- Fix, in order:
+  1. `engine.docs_for_recipe(recipe)` is the single implementation: an entry counts as a
+     recipe's public basis only when the recipe's `profile_id` is in the entry's
+     `profiles`, or when the entry's `recipe_ids` names the recipe. It adds a `binding`
+     field saying which of the two it was. **`engine.global_docs()` was deleted** - its
+     only effect was manufactured attribution.
+  2. `data/sources.json` `doc_sources` / `tracked_repos` gained `recipe_ids`;
+     `sync_docs.py` copies `tracked_repos[].recipe_ids` onto the auto-generated model-card
+     entries. The GGUF recipe now has exactly 3 public sources: the llama.cpp repo, a
+     **newly added** `llamacpp-server`
+     (`https://github.com/ggml-org/llama.cpp/blob/master/tools/server/README.md`, measured
+     200 - note `examples/server/...` is 404, the path moved to `tools/server/`), and the
+     weight repo it actually uses, `model-card:unsloth/DeepSeek-V4-Flash-0731-GGUF`.
+     Sources 65 -> 66, all reachable.
+  3. UI: the detail page splits into “可公开核实的通用依据” (with a 归属 column reading
+     `部署档 xxx` / `本方案显式声明`) and “本工作区的现场记录(第三方打不开)”; the list page
+     labels each recipe `公开依据 N 条` / `暂无,只有现场记录`; when nothing is attached it
+     **degrades honestly** to “公开依据:暂无” instead of padding the table with another
+     engine's docs.
+- Assertions 109 -> 112, and one strengthened: “每条方案都有可公开核实的依据” (it used to
+  accept `>= 5`, so a recipe could have had **no** public basis and the suite stayed green).
+  New: “方案的公开依据不跨引擎”, “`recipe_ids` 都指向真实方案”, “没有部署档的方案都被
+  `recipe_ids` 点名”. **Both failure modes were reverse-verified for real**: attaching
+  `ollama-docs` to the GGUF recipe produced `FAIL 方案的公开依据不跨引擎
+  {'deepseek-v4-flash-gguf-llamacpp': ['ollama-docs']}`; misspelling a `recipe_ids` value
+  produced `FAIL recipe_ids 都指向真实方案`.
+- Measured: `sync_docs.py` = 66/66 reachable, 0 failed. `smoke_test.py` = 112/112.
+  Sandboxed `tools/ci.py` = 11 pass / 0 fail / 1 skip (WSL blocked -> shell syntax SKIP,
+  never counted as a pass). `tools/ci.py --online` = 16 pass / 0 fail / 0 skip
+  (GPU 15/15, docs 66/66, Ascend matrix sha unchanged, and the three `--check` runs left
+  all three data files byte-identical). Six views re-checked in a real browser: 0 console
+  errors; evidence `output/playwright/23-recipes-two-source-kinds.png`,
+  `24-recipe-public-basis.png`. Spec `.codex-specs/recipe-public-sources/`.
+- Fixed a third “check that says nothing” case, this time in the gate itself. One
+  `--online` run reported `FAIL 在线:昇腾官方文档` with **empty detail**; running
+  `sync_ascend.py --check` by hand exited 0 and the next full `--online` run passed
+  (200.4s) - i.e. a transient subprocess kill. The honest part of that story is not “it was
+  flaky” but that **the failure was unactionable**: a FAIL with a blank detail looks like
+  nothing happened. `tools/ci.py::failure_detail()` now reports the exit code and the tail
+  of the output, and says explicitly “退出码 X,没有任何输出(像被硬杀或静默退出)” when
+  there is none.
+- Fourth instance of the same family, and this one was self-inflicted: when writing the
+  stage-ten paragraph into `.agents/ACTIVE_TASK.md` I left the old `Status:` line in as
+  patch *context* and added a new one, so the file carried two statuses - and all 12 gates
+  stayed green. `check_memory_files` now also requires exactly one `Status:` line in the
+  current-task block (the `## Previously active task` block has its own, so the check only
+  counts up to that heading). Reverse-verified: injecting a duplicate produced
+  `FAIL 任务记忆文件 当前任务段有 2 条 Status: 行(应为 1)`.
 ## Next actions
 
 **待办清单只有一份:`docs/ROADMAP.md`。** 本节原先是一份手写列表,和

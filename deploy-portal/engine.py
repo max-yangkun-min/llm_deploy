@@ -163,7 +163,11 @@ def details_by_profile():
 
 
 def docs_by_profile():
-    """profile_id -> [权威文档],含只对全局生效(profiles 为空)的引擎文档。"""
+    """profile_id -> [显式挂到该档位的权威文档]。
+
+    只按条目的 profiles 归集:profiles 为空的引擎总览落在 "*" 名下,**不**自动
+    算作每个档位的依据——那会把别的引擎的文档挂到本条方案上(见 docs_for_recipe)。
+    """
     return _profile_indexes()[1]
 
 
@@ -784,6 +788,12 @@ def hf_detail(repo):
 
 
 def doc_sources(profile_id=""):
+    """来源注册表的清单(供 /api/docs 与来源台账展示)。
+
+    这是**注册表清单**,不是「某条方案的依据」:带 profile_id 时它会连 profiles 为空的
+    全局条目一起返回,因为台账要把注册表整个列出来。一条方案的可核实依据请用
+    `docs_for_recipe()`,那里只认显式挂接。
+    """
     data = load_doc_sources() or {}
     records = list(data.get("sources") or [])
     if profile_id:
@@ -801,13 +811,32 @@ def doc_sources(profile_id=""):
     }
 
 
-def global_docs():
-    """只对全局生效的来源(不绑定具体部署档)。
+def docs_for_recipe(recipe):
+    """一条方案可公开核实的依据:只取**显式挂接**到它的注册表条目。
 
-    没有 profile_id 的方案(如 GGUF 路径)用它拿到引擎级权威出处,而不是留空。
+    挂接方式只有两种,都在 data/doc-sources.json 这一个注册表里:
+    - 条目的 recipe_ids 含本方案 id——没有部署档的方案(如 GGUF 路径)用这条;
+    - 方案绑定了部署档时,条目的 profiles 含该档位。
+
+    刻意不做「profiles 为空就当成全局依据」的兜底:那会把 sglang、TensorRT-LLM、
+    Ollama 的引擎总览挂到一条 llama.cpp 方案上。假归属比留空更坏——留空时页面
+    会如实降级成「仅现场记录」。
     """
-    data = load_doc_sources() or {}
-    return [
-        item for item in (data.get("sources") or [])
-        if not (item.get("profiles") or [])
-    ]
+    if not isinstance(recipe, dict):
+        return []
+    recipe_id = recipe.get("id") or ""
+    profile_id = recipe.get("profile_id") or ""
+    if not recipe_id and not profile_id:
+        return []
+    picked = []
+    for item in (load_doc_sources() or {}).get("sources") or []:
+        if recipe_id and recipe_id in (item.get("recipe_ids") or []):
+            binding = "本方案显式声明"
+        elif profile_id and profile_id in (item.get("profiles") or []):
+            binding = "部署档 %s" % profile_id
+        else:
+            continue
+        record = dict(item)
+        record["binding"] = binding
+        picked.append(record)
+    return picked

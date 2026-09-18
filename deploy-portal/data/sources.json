@@ -1,7 +1,7 @@
 {
   "schema": 1,
-  "updated": "2026-09-16",
-  "note": "抓取来源配置。organizations 决定索引广度,tracked_repos 决定抓取深度的重点仓库,doc_sources 是部署方法的权威出处。所有内容都由 tools/sync_*.py 真实抓取,失败会记录在快照的 errors 里,不会被静默丢弃。 2026-09-16 起 tracked_repos 同时登记「量化部署档实际使用的 artifact」,使核对面板比较的是同一档位的仓库。",
+  "updated": "2026-09-18",
+  "note": "抓取来源配置。organizations 决定索引广度,tracked_repos 决定抓取深度的重点仓库,doc_sources 是部署方法的权威出处。所有内容都由 tools/sync_*.py 真实抓取,失败会记录在快照的 errors 里,不会被静默丢弃。 2026-09-16 起 tracked_repos 同时登记「量化部署档实际使用的 artifact」,使核对面板比较的是同一档位的仓库。 2026-09-18 起 doc_sources/tracked_repos 支持 recipe_ids:没有部署档的方案(如 GGUF 路径)用它显式声明自己的公开依据。只有显式挂接的文档才会出现在方案页上——profiles 为空的条目不再被当成所有方案的兜底依据。",
   "endpoints": [
     {
       "id": "hf-mirror",
@@ -250,7 +250,10 @@
       "repo": "unsloth/DeepSeek-V4-Flash-0731-GGUF",
       "profiles": [],
       "role": "GGUF 量化(llama.cpp 方案权重,含多档)",
-      "quant": "gguf"
+      "quant": "gguf",
+      "recipe_ids": [
+        "deepseek-v4-flash-gguf-llamacpp"
+      ]
     },
     {
       "repo": "meta-llama/Meta-Llama-3.1-405B-Instruct",
@@ -648,7 +651,20 @@
       "title": "llama.cpp 官方仓库(GGUF 本地推理实现)",
       "url": "https://github.com/ggml-org/llama.cpp",
       "kind": "engine-docs",
-      "profiles": []
+      "profiles": [],
+      "recipe_ids": [
+        "deepseek-v4-flash-gguf-llamacpp"
+      ]
+    },
+    {
+      "id": "llamacpp-server",
+      "title": "llama.cpp llama-server 官方文档(HTTP 服务与采样参数)",
+      "url": "https://github.com/ggml-org/llama.cpp/blob/master/tools/server/README.md",
+      "kind": "engine-docs",
+      "profiles": [],
+      "recipe_ids": [
+        "deepseek-v4-flash-gguf-llamacpp"
+      ]
     },
     {
       "id": "ollama-docs",

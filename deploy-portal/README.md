@@ -61,7 +61,7 @@ import recommend as core
 | --- | --- | --- |
 | `tools/sync_hf.py` | 抓取 41 个官方/量化组织的模型索引 + 28 个重点仓库的完整元数据 | `data/hf-catalog.json` |
 | `tools/apply_truth.py` | 按实测值订正 `models.csv` / `model-families.csv`(`--check` 只报差异,`--refresh` 重新抓取) | 两个 CSV + `data/catalog-verified.json` |
-| `tools/sync_docs.py` | 逐个真实请求验证 37 个权威来源与 19 个官方模型卡 | `data/doc-sources.json` |
+| `tools/sync_docs.py` | 逐个真实请求验证 38 个权威来源与 28 个官方模型卡 | `data/doc-sources.json` |
 | `tools/sync_gpus.py` | 逐张核实 GPU 的显存/类型/互联(命中厂商产品页正文)与算力(命中 NVIDIA 官方算力表) | `data/gpu-catalog.json` |
 
 ```powershell
@@ -180,9 +180,14 @@ python deploy-portal/tools/smoke_test.py
   不要改成凭记忆的数值**。
 - **扩大模型覆盖面**:在 `data/sources.json` 的 `organizations` 增加组织 id
   (先探测该组织在镜像上是否真有模型,空组织会拉低分面质量),再跑 `sync_hf.py`。
-- **新增权威来源**:在 `data/sources.json` 的 `doc_sources` 增加一条,`profiles` 为空表示
-  对所有部署档生效;填了 profile 就只在该档页面出现。加完必须跑 `sync_docs.py`,
-  只有确认返回 200 的链接才会进入已验证清单。
+- **新增权威来源**:在 `data/sources.json` 的 `doc_sources` 增加一条。填 `profiles` 表示
+  只在该部署档的页面出现;没有部署档的方案(如 GGUF 路径)用 `recipe_ids` 点名,
+  例如 `"recipe_ids": ["deepseek-v4-flash-gguf-llamacpp"]`。**不填这两个键的条目不会
+  出现在任何方案页上**——没有显式挂接的文档不等于所有方案的依据。
+  加完必须跑 `sync_docs.py`,只有确认返回 200 的链接才会进入已验证清单。
+- **新增方案用到的权重仓**:在 `tracked_repos` 里给该仓库加 `recipe_ids`,
+  `sync_docs.py` 会把它抄到自动生成的模型卡条目上(GGUF 方案就是这样挂上
+  `unsloth/DeepSeek-V4-Flash-0731-GGUF` 的)。
 
 ### 状态词汇(沿用 `models.csv`)
 

@@ -199,11 +199,10 @@ def recipes_payload(params):
         record = dict(item)
         profile_id = item.get("profile_id") or ""
         record["verification"] = engine.verification_for(profile_id) if profile_id else None
-        # 没有绑定部署档的方案(例如 GGUF 路径)也要给出全局权威来源,不能留空。
-        record["authoritative_docs"] = (
-            engine.doc_sources(profile_id).get("sources", []) if profile_id
-            else engine.global_docs()
-        )
+        # 只收**显式挂接**到本方案的条目:部署档 profiles 命中,或注册表条目的
+        # recipe_ids 命中。挂不上就返回空列表,页面如实降级成「仅现场记录」——
+        # 不再拿一堆别的引擎的全局文档来把这一栏填满。
+        record["authoritative_docs"] = engine.docs_for_recipe(item)
         enriched.append(record)
     return {
         "recipes": enriched,

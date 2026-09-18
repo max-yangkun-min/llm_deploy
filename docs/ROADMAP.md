@@ -19,7 +19,7 @@ Next actions),互相之间已经漂移——其中两处当时就过期了。现
 |---|---|---|---|---|
 | R1 | P0 | 交接/文档一致性收尾(4 处,其中 2 处是「报了假数」) | 无 | 已完成 2026-09-18 |
 | R2 | P1 | 昇腾方案改从**公开权威来源**建立(通用平台,不用本机资产) | 无(已按现有三张卡做完) | 已完成 2026-09-18 |
-| R17 | P1 | 现有 7 条方案的来源只有本工作区路径(与 R2 同一个通用性缺口) | 无 | 可开工 |
+| R17 | P1 | 现有 7 条方案的来源只有本工作区路径(与 R2 同一个通用性缺口) | 无 | 已完成 2026-09-18 |
 | R3 | P1 | KV 上限反向提示(这张卡最多能开多长) | 无 | 可开工 |
 | R4 | P1 | `--kv-cache-dtype fp8` 作为输入项 | 无 | 可开工 |
 | R5 | P2 | `quality_score` / `throughput_score` 仍是人工评分 | 需在目标卡跑基准 | 可开工(慢) |
@@ -161,7 +161,7 @@ max-model-len / MLP Weight Prefetch / Doc`。
 - **未做**:按官方 A2/A3 名单扩卡(需要先有厂商页可核实的对应产品名,不能硬塞);
   现场资产仍只以 `*-local` 存在。
 
-## R17 现有 7 条方案的来源只有本工作区路径(P1)
+## R17 现有 7 条方案的来源只有本工作区路径 — 已完成 2026-09-18
 
 > 放在 R2 后面:它和 R2 是**同一个缺口**的两半——R2 是「昇腾还没有通用方案」,
 > R17 是「已有方案的依据也不通用」。
@@ -186,6 +186,53 @@ max-model-len / MLP Weight Prefetch / Doc`。
 
 **不做什么**:不是把本地路径删掉——它们是有价值的落地记录(哪台机器、什么参数、
 踩过什么坑)。要改的是**标注与归属**,不是抹掉证据。
+
+**实际交付(2026-09-18)**
+
+先量了一下现状,发现验收标准一、二其实**已经满足了一半**,缺的是第三条和「挂接」:
+
+| 实测 | 结果 |
+|---|---|
+| 6 条有部署档的方案 | `doc-sources.json` 里本来就有 7–10 条按 `profiles` 挂好的公开来源(vLLM 官方并行/量化/工具调用/环境变量文档、`vllm-project/recipes` 官方配方、官方模型卡),**只是详情页没把它当成依据展示** |
+| 唯一没部署档的方案(`deepseek-v4-flash-gguf-llamacpp`) | 走的是 `engine.global_docs()` 兜底 = 17 条「profiles 为空」的全局条目,于是 **sglang / TensorRT-LLM / Triton / Ollama 的引擎总览全被算成一条 llama.cpp 方案的依据**,还夹着两条不属于本方案的模型卡 |
+| 19 个本地 `sources` 路径 | 逐条 `os.path.isfile` 验过,**missing=0**,全都在 |
+
+改的是归属,不是证据:
+
+1. **只认显式挂接。** 新增 `engine.docs_for_recipe(recipe)`:`profile_id` 命中条目的
+   `profiles`,或条目的 `recipe_ids` 明文点名本方案,才算这条方案的依据;
+   `global_docs()` 这个「谁都能用」的兜底**删除**(它存在的唯一作用就是制造假归属)。
+   6 条 vLLM 方案因此各留 7–10 条同引擎来源。
+2. **没有部署档的方案靠 `recipe_ids` 挂。** `data/sources.json` 的 `doc_sources` /
+   `tracked_repos` 支持 `recipe_ids`;`sync_docs.py` 把 `tracked_repos` 的 `recipe_ids`
+   抄到自动生成的模型卡条目上。GGUF 那条现在拿到 3 条:
+   `llamacpp-repo`、新增的 `llamacpp-server`
+   (`https://github.com/ggml-org/llama.cpp/blob/master/tools/server/README.md`,实测 200)、
+   以及它真正用的权重仓 `model-card:unsloth/DeepSeek-V4-Flash-0731-GGUF`。
+3. **前端分开两类来源,并写清归属。** 详情页变成「可公开核实的通用依据」(带 `归属` 列:
+   `部署档 xxx` / `本方案显式声明`)与「本工作区的现场记录(第三方打不开)」两块;
+   列表页每条方案直接标 `公开依据 N 条` / `暂无,只有现场记录`;
+   一条都挂不上时**如实降级**成「公开依据:暂无」,不拿别的引擎的文档凑数。
+
+验收(实测):
+
+- 自检 109 → **112** 项:每条方案都有可公开核实的依据(原来只要求 ≥5)、
+  方案的公开依据不跨引擎、`recipe_ids` 都指向真实方案、没有部署档的方案都被
+  `recipe_ids` 点名。**反向验证过两条**:给 `ollama-docs` 挂上 GGUF 方案 →
+  `FAIL 方案的公开依据不跨引擎 {'deepseek-v4-flash-gguf-llamacpp': ['ollama-docs']}`;
+  把 `recipe_ids` 打错一个字 → `FAIL recipe_ids 都指向真实方案`。
+- `sync_docs.py`:**66 / 66 可达,0 失败**(新增的 llama.cpp server 文档实测 200);
+  `--online` 的「在线:权威文档可达性」直接覆盖它们——方案引用的每条条目都是这份
+  注册表里被真实 HTTP 请求过的条目。
+- 规范:`.codex-specs/recipe-public-sources/spec.md`。
+
+> 收尾时踩到一次**假红**:同一轮 `--online` 报「可达 14/16」,细节是
+> `WinError 10054 远程主机强迫关闭了一个现有的连接`(github.com 上的 `llamacpp-repo` /
+> `llamacpp-server`),昇腾那项也一起抓取失败;**立刻重跑这两条即 66/66、0 失败**,矩阵
+> sha256 未漂移。这不是参考失效,是本机网络偶发——但它暴露了一个真实缺陷:**这一类
+> 失败原先只报一个 FAIL、细节空白**,读的人无从区分「链接死了」和「刚才没连上」。
+> `tools/ci.py::failure_detail()` 现在把退出码与输出片段一起打出来,`docs/CI.md` 写明
+> 「先看细节是取不到还是内容变了,取不到就原样重跑一次再下结论」。
 
 ## R3 KV 上限反向提示(P1)
 

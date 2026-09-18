@@ -70,21 +70,30 @@ def fetch(url, timeout=30, retries=3):
     return {"status": None, "error": str(last_error)[:200]}
 
 
-def model_card_entries():
-    """用真实抓到的重点仓库补充官方模型卡链接,不凭记忆编造 URL。"""
+def model_card_entries(tracked=None):
+    """用真实抓到的重点仓库补充官方模型卡链接,不凭记忆编造 URL。
+
+    recipe_ids 从 tracked_repos 原样抄过来:某条方案用的就是某个仓库的产物时,
+    这份模型卡才算那条方案的公开依据。没有部署档的 GGUF 方案靠它挂接。
+    """
     if not HF_CATALOG.is_file():
         return []
     catalog = json.loads(HF_CATALOG.read_text(encoding="utf-8"))
+    by_repo = {item.get("repo"): item for item in (tracked or [])}
     entries = []
     for repo, record in (catalog.get("details") or {}).items():
-        entries.append({
+        entry = {
             "id": "model-card:" + repo,
             "title": repo + " 官方模型卡",
             "url": "https://hf-mirror.com/" + repo,
             "kind": "model-card",
             "profiles": record.get("profiles") or [],
             "revision": record.get("revision"),
-        })
+        }
+        recipe_ids = (by_repo.get(repo) or {}).get("recipe_ids") or []
+        if recipe_ids:
+            entry["recipe_ids"] = list(recipe_ids)
+        entries.append(entry)
     return entries
 
 
@@ -99,7 +108,7 @@ def main(argv=None):
     sources = json.loads(SOURCES.read_text(encoding="utf-8"))
     targets = list(sources["doc_sources"])
     if not args.no_model_cards:
-        targets.extend(model_card_entries())
+        targets.extend(model_card_entries(sources.get("tracked_repos") or []))
 
     results, errors = [], []
     print("验证 %d 个权威来源…" % len(targets))
