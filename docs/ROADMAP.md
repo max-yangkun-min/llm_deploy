@@ -296,7 +296,7 @@ max-model-len / MLP Weight Prefetch / Doc`。
 - `python tools/ci.py` 离线 = 通过 11 · 失败 0 · 跳过 1(沙箱读不到 WSL,shell 语法报 SKIP);
   `--online` = 通过 16 · 失败 0 · 跳过 0(厂商页 15/15、权威文档 66/66、昇腾官方矩阵与
   31 份教程 sha256 未漂移)。
-- 云端 Actions 运行 #10(`eb75fb6`)成功。
+- 云端 Actions 运行 #10(`eb75fb6`)与 #11(`8ebd268`)成功(后者就是本次文档提交)。
 - 规范:`.codex-specs/kv-max-context/`。
 
 ## R4 `--kv-cache-dtype fp8` 作为输入项(P1)
