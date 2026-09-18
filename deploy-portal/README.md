@@ -64,6 +64,10 @@ import recommend as core
 | `tools/sync_docs.py` | 逐个真实请求验证 38 个权威来源与 28 个官方模型卡 | `data/doc-sources.json` |
 | `tools/sync_gpus.py` | 逐张核实 GPU 的显存/类型/互联(命中厂商产品页正文)与算力(命中 NVIDIA 官方算力表) | `data/gpu-catalog.json` |
 
+选型口径里的**上下文上限**是反算出来的:见 `model-selector/recommend.py` 的
+`max_context_for()`——把 KV 的线性公式倒过来求「这些卡最多能开到多少 K」。
+它与正向核算共用同一批系数;算不出时返回 `null` 并说明原因,不给一个看着精确的数。
+
 ```powershell
 python deploy-portal/tools/sync_hf.py            # 全量,约 15 分钟
 python deploy-portal/tools/sync_hf.py --repair   # 只补抓失败的组织与记录不完整的仓库
@@ -162,7 +166,7 @@ python deploy-portal/tools/smoke_test.py
 
 在进程内起服务并逐个断言全部接口,覆盖推荐、目录过滤、达标检查、快照分页与分面、
 权威文档可达性、参数校验、404 处理与目录穿越防护,以及**防「假数据」「假硬件」「死控件」
-与「整页静默失效」回归**的断言,共 75 项。
+与「整页静默失效」回归**的断言,共 120 项。
 
 ## 维护方式
 

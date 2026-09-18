@@ -27,7 +27,7 @@ KV cache 一律按 CUDA 栈的 2 字节口径算。这些假设对昇腾**全部
 
 ## 验收标准
 
-全部已实现并有断言(见 `deploy-portal/tools/smoke_test.py`,20 项昇腾断言)。
+全部已实现并有断言(见 `deploy-portal/tools/smoke_test.py`,23 条昇腾/双生态断言)。
 
 - [x] `gpu-catalog.json` 含 `vendor=huawei` / `ecosystem=cann` 的条目。
 - [x] 昇腾条目 `compute_capability` 为 `null`,且带 `compute_capability_basis` 说明口径。
@@ -84,5 +84,5 @@ KV cache 一律按 CUDA 栈的 2 字节口径算。这些假设对昇腾**全部
 
 | 日期 | 变更 |
 |---|---|
-| 2026-09-17 | 创建;目录条目、规则分支、前端口径、文档与 20 项断言一并完成 |
+| 2026-09-17 | 创建;目录条目、规则分支、前端口径、文档与 23 条昇腾/双生态断言一并完成 |
 | 2026-09-17 | 复审补漏:plan 卡片不再对昇腾显示 CUDA 栈/驱动下限;现场登记不再强制填算力 |

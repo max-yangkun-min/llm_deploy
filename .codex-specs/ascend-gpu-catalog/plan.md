@@ -16,7 +16,7 @@
 | 6 | `web/js/app.js` | `smLabel(null)` 返回 `—`;新增共享的 `isCudaGpu()` / `computeLabel()` / `stackLabel()` | 浏览器复跑 |
 | 7 | `web/js/views/recommend.js` | 下拉按厂商分组(未登记厂商兜底为「其他厂商」);换卡时同步停用无关控件;plan 卡片对非 CUDA 卡不显示 CUDA 栈与 NVIDIA 驱动下限;显示 `stack_note` | 浏览器复跑 |
 | 8 | `web/js/views/ledger.js` `about.js` | 统一用 `computeLabel`/`stackLabel`;about 加「昇腾口径不同」整节与厂商列 | 浏览器复跑 |
-| 9 | `deploy-portal/tools/smoke_test.py` | 新增 20 项昇腾断言 | 99/99 通过 |
+| 9 | `deploy-portal/tools/smoke_test.py` | 新增 23 条昇腾/双生态断言 | 99/99 通过 |
 | 10 | `DEVELOPMENT.md` `README.md` `model-selector/README.md` `about.js` | 口径与不收录原因 | 人工核对 |
 
 ## 验证

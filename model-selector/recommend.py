@@ -212,6 +212,92 @@ def kv_gib(row, context_k, dtype_bytes=KV_DTYPE_BYTES):
     return elems * layers * tokens * dtype_bytes / (1024 ** 3)
 
 
+def max_context_for(row, hw, dtype_bytes=KV_DTYPE_BYTES):
+    """反算「就这些卡、这个档,上下文最多能开到多长」。
+
+    kv_gib() 对上下文是**线性**的,所以同一条公式倒过来就能用:并行组的总可用显存
+    扣掉运行时余量与实测权重之后,剩下的 GiB 全给 KV,能换多少 K。
+
+    复用正向核算的同一批系数(PER_CARD_BUDGET / RUNTIME_OVERHEAD / dtype_bytes),
+    否则正算与反算会用两套假设,页面自相矛盾。
+
+    返回 dict:
+      value     上限(K);算不出时 None
+      note      为什么是这个值 / 为什么算不出
+      memory_k  显存反算出来的上限;算不出时 None
+      kv_budget_gib  扣掉权重与运行时余量后、真正能分给 KV 的显存;算不出时 None
+      model_k   该档自身标称的上下文上限(能取到时)
+      limit     真正的限制来自哪边:"memory" / "model" / ""
+    """
+    vram = number(hw.get("vram_per_gpu_gib"))
+    tp = max(1, int(number(row.get("min_gpu_count"), 1)))
+    weight = number(row.get("weight_gib"))
+    model_k = number(row.get("context_k"))
+    result = {"value": None, "note": "", "memory_k": None, "kv_budget_gib": None,
+              "model_k": model_k or None, "limit": ""}
+
+    def give_up(reason):
+        result["note"] = reason
+        return result
+
+    if not is_cuda(hw):
+        # 与 assess() 里 kv_gib 的处理同一个理由:昇腾的 KV 精度由
+        # --quantization ascend 的专有量化决定,没有可核实的公开公式。
+        # 拿 CUDA 的 2 字节口径反算会得出一个看着精确的错数,所以留空。
+        return give_up("昇腾的 KV cache 精度由 --quantization ascend 的专有量化决定,"
+                       "没有可核实的公开公式,无法反算上下文上限;这里只按权重下界核算")
+    if not vram:
+        return give_up("没有已核实的单卡显存,无法反算上下文上限")
+    if not weight:
+        return give_up("缺少实测权重,无法反算上下文上限")
+    elems = number(row.get("kv_elems_per_token_per_layer"))
+    layers = number(row.get("attention_layers"))
+    if not elems or not layers:
+        return give_up("attention 结构无法核实(config 取不到),无法反算上下文上限;"
+                       "这里只按下界(权重)核算")
+
+    # 并行组的可用显存 → 扣掉运行时余量与权重 → 剩下的全给 KV。
+    budget_total = vram * PER_CARD_BUDGET * tp
+    weight_and_kv = budget_total / (1 + RUNTIME_OVERHEAD)
+    kv_budget = weight_and_kv - weight
+    if kv_budget <= 0:
+        return give_up("权重(%.0fGiB)已经占满 %d 张卡扣掉余量后的可用显存,"
+                       "没有任何空间留给 KV cache" % (weight, tp))
+
+    # 1K token 的 KV 显存 = elems × layers × 1024 × dtype_bytes
+    kv_per_k_gib = elems * layers * 1024 * dtype_bytes / (1024 ** 3)
+    memory_k = kv_budget / kv_per_k_gib
+    result["memory_k"] = memory_k
+    result["kv_budget_gib"] = kv_budget
+    # 向下取整:反算值本来就是上界(未计 vLLM 的 KV block 粒度与显存碎片),
+    # 再向上取整就成了「保证开得到」的承诺,而它不是。
+    memory_limit = int(memory_k)
+
+    basis = row.get("attention_basis") or (row.get("attention_kind") or "已核实的 attention 结构")
+    if model_k and model_k <= memory_limit:
+        result["value"] = int(model_k)
+        result["limit"] = "model"
+        origin = "官方模型卡标称" if (row.get("context_source") or "") == "card" else "仓库 config"
+        result["note"] = ("显存侧可反算出约 %dK,但该档自身标称上下文 %sK(%s)更紧,取 %dK。"
+                          "反算按 %d 张卡共 %.0fGiB 可用显存、扣掉 %.0f%% 运行时余量与"
+                          "实测权重 %.0fGiB 后全给 KV;未计 vLLM 的 KV block 粒度与显存碎片,"
+                          "实际可开只会更低。"
+                          % (memory_limit, row.get("context_k"), origin, int(model_k),
+                             tp, vram * PER_CARD_BUDGET * tp, RUNTIME_OVERHEAD * 100, weight))
+    else:
+        result["value"] = memory_limit
+        result["limit"] = "memory"
+        detail = ""
+        if model_k:
+            detail = "该档自身标称 %sK 更高,不是限制。" % model_k
+        result["note"] = ("由显存反算:%d 张卡共 %.0fGiB 可用显存,扣掉 %.0f%% 运行时余量与"
+                          "实测权重 %.0fGiB 后剩 %.0fGiB 给 KV,按 %s 算出约 %dK。%s"
+                          "未计 vLLM 的 KV block 粒度与显存碎片,实际可开只会更低。"
+                          % (tp, vram * PER_CARD_BUDGET * tp, RUNTIME_OVERHEAD * 100,
+                             weight, kv_budget, basis, memory_limit, detail))
+    return result
+
+
 def assess(row, hw, preference):
     """按「选定的真实 GPU + 卡数」核算一个部署档能不能跑、跑起来浪费多少显存。
 
@@ -245,6 +331,11 @@ def assess(row, hw, preference):
         if not kv_note:
             kv_note = "官方仓库 gated,KV cache 结构无法核实;这里只按下界(权重)核算"
     needed = (weight + kv) * (1 + RUNTIME_OVERHEAD)
+
+    # 反算这张卡在这个档上的上下文上限。与上面的正算用的是同一条 KV 公式和同一批
+    # 系数,所以「填的上下文 = 反算上限」时正算正好卡在可用显存上。
+    max_context = max_context_for(row, hw)
+    max_k = max_context["value"]
 
     per_card = needed / tp if tp else needed
     engaged_vram = tp * vram
@@ -284,6 +375,21 @@ def assess(row, hw, preference):
                         % (row.get("min_disk_gib"), number(hw.get("disk_free_gib"))))
     if wanted_context and number(row.get("context_k")) < wanted_context:
         failures.append("此档上下文 %sK 低于需求 %gK" % (row.get("context_k"), wanted_context))
+    # 需求上下文超过**显存反算出来的**KV 上限时要单独说一句。原先这种情况只落到
+    # 「单卡需 X GiB…超过可用 Z GiB」,与「权重本身就装不下」共用同一句,读者分不清
+    # 该换卡还是该把上下文调短——这两件事的处置完全不同。
+    #
+    # 判据是 memory_k 而不是 max_k:max_k 可能被「该档自身标称上下文」压住(limit=model),
+    # 那时 max_k < memory_k,拿 max_k 作判据会把「其实显存够、是模型开不了那么长」
+    # 说成「KV 超了」——一句看着精确的错话。
+    memory_k = max_context["memory_k"]
+    if wanted_context and memory_k is not None and wanted_context > memory_k:
+        kv_wanted = kv_gib(row, wanted_context) or 0.0
+        failures.append("需求上下文 %gK 超出这张卡在此档的 KV 上限 %dK:"
+                        "该上下文要 %.0fGiB 的 KV cache,而扣除权重 %.0fGiB 与 %.0f%% 运行时余量后"
+                        "只剩 %.0fGiB 给 KV(这是 KV 超了,不是权重放不下)"
+                        % (wanted_context, int(memory_k), kv_wanted, weight,
+                           RUNTIME_OVERHEAD * 100, max(0.0, max_context["kv_budget_gib"] or 0.0)))
     if truthy(hw.get("require_multimodal")) and not truthy(row.get("multimodal")):
         failures.append("需求为多模态,但此档标记为纯文本")
     if truthy(hw.get("require_permissive_license")) and row.get("license_id") not in PERMISSIVE_LICENSE_IDS:
@@ -333,6 +439,13 @@ def assess(row, hw, preference):
             "replicas": replicas,
             "kv_verified": kv_known,
             "kv_note": kv_note,
+            # 反算的上下文上限。算不出时 value 必须是 None + note 说明原因,不许编一个数。
+            "max_context_k": max_k,
+            "max_context_note": max_context["note"],
+            "max_context_memory_k": (round(max_context["memory_k"], 1)
+                                     if max_context["memory_k"] is not None else None),
+            "max_context_model_k": max_context["model_k"],
+            "max_context_limit": max_context["limit"],
         },
     }
 

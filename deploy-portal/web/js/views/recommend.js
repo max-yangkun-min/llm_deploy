@@ -239,6 +239,15 @@ function verifySummary(verification) {
 function memoryHtml(memory) {
   if (!memory) return '';
   const usedPct = memory.utilization === null ? '—' : num(memory.utilization * 100, 0) + '%';
+  // 反算的上下文上限。算不出时必须说清为什么,不给一个看着精确的数。
+  const maxContext = memory.max_context_k === null || memory.max_context_k === undefined
+    ? '<span class="badge warn">无法反算</span>' +
+      (memory.max_context_note ? '<br><span class="muted small">' + esc(memory.max_context_note) + '</span>' : '')
+    : '约 ' + esc(memory.max_context_k) + 'K ' +
+      (memory.max_context_limit === 'model'
+        ? '<span class="badge info">受该档标称上下文限制</span>'
+        : '<span class="badge info">显存反算上限</span>') +
+      (memory.max_context_note ? '<br><span class="muted small">' + esc(memory.max_context_note) + '</span>' : '');
   const kv = memory.kv_gib === null
     ? '<span class="badge warn">KV 结构无法核实,只按权重下界核算</span>' +
       (memory.kv_note ? '<br><span class="muted small">' + esc(memory.kv_note) + '</span>' : '')
@@ -253,6 +262,7 @@ function memoryHtml(memory) {
       <dt>单卡需求</dt><dd>${esc(memory.per_card_gib)} GiB(TP=${esc(memory.tp)})</dd>
       <dt>显存占用</dt><dd>${usedPct} 已用(按并行组 ${esc(memory.tp)} 张卡共 ${esc(memory.engaged_vram_gib)} GiB)</dd>
       <dt>空闲显存</dt><dd>${esc(memory.waste_gib)} GiB${memory.replicas > 1 ? '(当前卡数可放 ' + esc(memory.replicas) + ' 个副本)' : ''}</dd>
+      <dt>最长上下文</dt><dd>${maxContext}</dd>
     </dl>
     ${memory.kv_basis ? '<p class="muted small" style="margin:0">KV 口径:' + esc(memory.kv_basis) + '</p>' : ''}`;
 }
@@ -462,14 +472,15 @@ function toMarkdown(data) {
     ' · 核算上下文:' + data.hardware.context_k + 'K · 偏好:' + data.preference, '');
   if (data.ecosystem_note) lines.push('> ' + data.ecosystem_note, '');
   lines.push('## 匹配到的部署方案', '');
-  lines.push('| 排名 | 模型 | 量化 | 布局 | 实测权重GiB | KV GiB | 合计GiB | 单卡GiB | 占用率 | 得分 |');
-  lines.push('|---:|---|---|---|---:|---:|---:|---:|---:|---:|');
+  lines.push('| 排名 | 模型 | 量化 | 布局 | 实测权重GiB | KV GiB | 合计GiB | 单卡GiB | 占用率 | 最长上下文K | 得分 |');
+  lines.push('|---:|---|---|---|---:|---:|---:|---:|---:|---:|---:|');
   data.plans.forEach((item, index) => {
     const p = item.profile;
     const m = item.memory || {};
     lines.push('| ' + (index + 1) + ' | ' + p.model_name + ' | ' + p.quantization +
       ' | ' + p.recommended_layout + ' | ' + m.weight_gib + ' | ' + (m.kv_gib === null ? '无法核实' : m.kv_gib) +
       ' | ' + m.needed_gib + ' | ' + m.per_card_gib + ' | ' + Math.round((m.utilization || 0) * 100) + '%' +
+      ' | ' + (m.max_context_k === null || m.max_context_k === undefined ? '无法反算' : m.max_context_k) +
       ' | ' + item.score + ' |');
   });
   lines.push('', '## 风险提示', '');

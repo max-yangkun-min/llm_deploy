@@ -142,7 +142,7 @@ KV 结构分三种口径(`mla` / `hybrid-linear` / `gqa`),**不能合并成一�
 
 改任何跟算力/FP8/驱动/KV 相关的代码前,先看 `deploy-portal/web/js/views/about.js`
 里的「华为昇腾:同一套页面上,口径不同」一节,以及 `DEVELOPMENT.md` 的对应章节。
-`tools/smoke_test.py` 里有 20 项昇腾反回归断言钉住这些差别。
+`tools/smoke_test.py` 里有一整段昇腾/双生态反回归断言(该段 `check(...)` 调用点现 34 条)钉住这些差别。
 
 ## 核实工具的用法
 
@@ -153,7 +153,7 @@ python deploy-portal/tools/sync_gpus.py --offline  # 沿用上次结果重建结
 python deploy-portal/tools/apply_truth.py --check  # 核对登记值 vs 实测值
 python deploy-portal/tools/sync_docs.py --check    # 只验证文档链接可达性
 python deploy-portal/tools/sync_hf.py --repos-only # 刷新 28 个关注仓库
-python deploy-portal/tools/smoke_test.py           # 冒烟测试(99 项)
+python deploy-portal/tools/smoke_test.py           # 冒烟测试(120 项)
 python tools/ci.py                                 # 全部门禁
 ```
 

@@ -1,12 +1,10 @@
 # deploy-portal task memory
 
 Status: active
-Last updated: 2026-09-18 (Asia/Shanghai) - stage twelve: R17 done. A recipe's
-public basis is now attached explicitly (deployment profile, or a new
-`recipe_ids` key for recipes that have no profile), the blanket "all global
-docs" fallback was deleted because it misattributed other engines' docs, and the
-UI shows the two kinds of sources separately. Stages eight to eleven below remain
-valid.
+Last updated: 2026-09-18 (Asia/Shanghai) - stage thirteen: R3 done. The
+context limit is now reverse-computed from the same KV formula the forward
+check uses, so the site can answer "how long can this card go". Stages eight
+to twelve below remain valid.
 
 ## User objective
 
@@ -645,6 +643,65 @@ been accepted on real hardware yet** (`models/` still only holds
   (`sha256` / `marker` drift is the latter); if it was a fetch failure, re-run that check
   once before concluding anything.
 - Pushed `a8d392e`; cloud Actions run #8 = **success**.
+## Stage thirteen this session (2026-09-18): R3 - context limit, reverse-computed
+
+- User asked for R3 next. The gap: context length was only ever an **input**
+  (`assess()` reads `hw["context_k"]` and computes KV forward), so "does not fit"
+  produced a message shared with "the weights alone do not fit" - it could not answer
+  "8x A100 on GLM-5.2-INT4, how long can I go?".
+- Key observation (no new data needed): `kv_gib()` is **linear** in context, so the same
+  formula inverts. New `recommend.max_context_for(row, hw)` is the single implementation,
+  called by `assess()`. It reuses the *same* coefficients (`PER_CARD_BUDGET` /
+  `RUNTIME_OVERHEAD` / `KV_DTYPE_BYTES`); using different ones would make forward and
+  reverse computation disagree on the same page.
+- `memory` gained `max_context_k` / `max_context_note` / `max_context_memory_k` /
+  `max_context_model_k` / `max_context_limit`. It takes the **smaller** of the memory-derived
+  value and the profile's own nominal context, and says which one binds.
+  Four branches measured: 1x RTX 4090-24 + `qwen3-coder-30b-awq` -> 46K (memory-bound);
+  8x A100-80 + `glm52-int4-a100` -> 1091.9K memory vs 1024K nominal -> 1024K (model-bound);
+  `deepseek-r1-bf16` -> null (weights 1275GiB already fill the cards);
+  `llama31-405b-bf16` -> null (structure unverifiable); all Ascend -> null (proprietary
+  KV quantization, no public formula).
+- The over-limit failure uses `max_context_memory_k`, **not** `max_context_k`. The latter can
+  be capped by the profile's nominal context, and using it would report "it is the KV that
+  overflowed" when actually the model cannot go that long - a precise-sounding falsehood.
+  Measured: on 8x A100, GLM at 1050K yields only "below requirement"; 1200K yields both.
+- UI: "最长上下文" row on the recommend plan card, plus a column in the Markdown export and
+  in the ledger's acceptance table.
+- Assertions 112 -> 120 (the R3 round added 8). The important one is **self-consistency**: feeding the engine's own
+  limit back must produce zero failures, and limit+1 must be reported as KV overflow.
+  **That assertion was written too weak the first time** - it only checked "no failure
+  mentioning KV", so multiplying the reverse formula by 2 (optimistic) left all 120 green;
+  tightening it to "the failure list must be empty" made the same change fail immediately
+  (`单卡需 27GiB..., 超过 24GiB 卡的可用 22GiB`). Both directions verified: x2 -> that
+  assertion fails; /2 -> `上下文上限是被标称上下文或显存卡住的` fails.
+- Three self-inflicted process failures worth remembering, all found by gates added in earlier
+  rounds:
+  1. **A generator that asserts and exits still leaves the previous patch file behind.**
+     I wrote `.tmp/r3-active.patch`, the generator aborted on an assertion *before* writing a
+     new one, and the next command applied `.tmp/r3-active.patch` anyway - the **stale** one.
+     It deleted the stage-nine and stage-eight paragraphs plus the whole `Task ID` /
+     `Memory` / `Inputs` / `Last updated` footer from `.agents/ACTIVE_TASK.md`, with exit
+     code 0. Recovered with `git restore`. Fix: the generator now writes the patch **and
+     applies it itself** (`subprocess.call`), so "apply whatever is lying in .tmp/" cannot
+     happen. Do not split generation and application across two commands.
+  2. **A replacement block that starts with `Status:` must not also emit a `+` line for the
+     old `Status:` line.** The first corrected attempt produced two statuses in the file; the
+     `check_memory_files` assertion added in stage twelve caught it immediately
+     (`当前任务段有 2 条 Status: 行(应为 1)`). That assertion has now paid for itself twice.
+  3. **A hand-counted assertion total was off by one.** `smoke_test.py` prints its
+     parenthesis-balance check *before* the `== 部署管理台冒烟测试 ==` header, so counting
+     the `PASS` lines by eye under the header gives 119 instead of 120. Count it
+     mechanically instead: `git show HEAD:deploy-portal/tools/smoke_test.py` -> 112,
+     current -> 120, so R3 added 8. Take the total from `tools/ci.py` output.
+     Related: the "20 项昇腾反回归断言" figure repeated across `AGENTS.md`, `PROJECT-MAP.md`,
+     the two ascend specs and `DEVELOPMENT.md` was never true either. Counted by `check(...)`
+     call site in the `# --- 华为昇腾` section: 23 at stage seven, 23 before R2, 34 now. Every
+     copy was replaced with the measured value for its own point in time.
+- Verified: `python tools/ci.py` = 11 pass / 0 fail / 1 skip (sandbox, WSL blocked -> shell
+  syntax SKIP). Six views re-checked in a real browser: 0 console errors; evidence
+  `output/playwright/25-ascend-max-context-null.png`, `26-max-context-cuda.png`.
+  Spec `.codex-specs/kv-max-context/`.
 ## Next actions
 
 **待办清单只有一份:`docs/ROADMAP.md`。** 本节原先是一份手写列表,和

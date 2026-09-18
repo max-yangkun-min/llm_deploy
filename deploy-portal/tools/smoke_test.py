@@ -484,6 +484,14 @@ def main():
                   for item in ascend_result["plans"]),
               str([(item["profile"]["model_id"], item["memory"]["kv_gib"])
                    for item in ascend_result["plans"]])[:160])
+        # R3:反算不出来的档必须留空 + 写明原因。昇腾没有可核实的 KV 公式,
+        # 套 CUDA 的 2 字节口径会给出一个看着精确的错数。
+        check("昇腾的上下文上限留空并说明原因",
+              all(item["memory"]["max_context_k"] is None
+                  and item["memory"]["max_context_note"]
+                  for item in ascend_result["plans"]),
+              str([(item["profile"]["model_id"], item["memory"]["max_context_k"])
+                   for item in ascend_result["plans"]])[:160])
         ascend_text = " ".join(text for item in ascend_result["plans"] + ascend_result["rejected"]
                                for text in item["failures"] + item["warnings"])
         check("昇腾不会被 NVIDIA 算力/驱动门槛卡住",
@@ -665,6 +673,76 @@ def main():
               all(item["memory"]["utilization"] <= 0.90 for item in result["plans"]),
               str([item["memory"]["utilization"] for item in result["plans"]]))
 
+        # R3:反算上下文上限。核心是**自洽**——上限必须放得下,上限+1K 必须放不下,
+        # 用的还是同一条 KV 公式。只断言「有个数」会放过一个方向算错的公式。
+        def max_context_of(gpu, count, context_k):
+            status, payload = post_json("/api/recommend", {
+                "hardware": {"gpu_id": gpu, "gpu_count": count, "context_k": context_k},
+                "preference": "balanced", "top": 5,
+            })
+            return status, payload
+
+        limits = {item["profile"]["model_id"]: item["memory"]["max_context_k"]
+                  for item in result["plans"]}
+        check("每条方案都给出上下文上限或说明为什么算不出",
+              all((item["memory"]["max_context_k"] is not None
+                   and item["memory"]["max_context_limit"] in ("memory", "model"))
+                  or item["memory"]["max_context_note"]
+                  for item in result["plans"]),
+              str(limits)[:160])
+        check("上下文上限是被标称上下文或显存卡住的",
+              all(item["memory"]["max_context_k"] == min(
+                      item["memory"]["max_context_model_k"] or float("inf"),
+                      int(item["memory"]["max_context_memory_k"]))
+                  for item in result["plans"]
+                  if item["memory"]["max_context_k"] is not None
+                  and item["memory"]["max_context_memory_k"] is not None),
+              str([(item["profile"]["model_id"], item["memory"]["max_context_k"],
+                    item["memory"]["max_context_memory_k"],
+                    item["memory"]["max_context_model_k"]) for item in result["plans"]])[:200])
+
+        # 自洽性:拿引擎自己给出的上限回填,必须仍然通过;+1K 必须被判超。
+        sample = next((item for item in result["plans"]
+                       if item["memory"]["max_context_k"]
+                       and item["memory"]["max_context_limit"] == "memory"), None)
+        if sample is None:
+            # 8 卡 A100 上,顶部方案大多是「标称上下文更紧」。换一个小显存配置,
+            # 让显存先到顶,才能测到 KV 上限那条分支。
+            status, small = max_context_of("rtx-4090-24", 1, 32)
+            sample = next((item for item in small["plans"]
+                           if item["memory"]["max_context_k"]
+                           and item["memory"]["max_context_limit"] == "memory"), None)
+        check("能取到「显存反算上限」型的样例",
+              sample is not None,
+              "用例里没有 limit=memory 的方案,这条断言等于没测")
+        if sample is not None:
+            model_id = sample["profile"]["model_id"]
+            limit = sample["memory"]["max_context_k"]
+            gpu_id = "rtx-4090-24" if sample["memory"]["tp"] <= 1 else "a100-sxm-80"
+            count = int(sample["memory"]["tp"]) * max(1, int(sample["memory"]["replicas"]))
+            status, at = max_context_of(gpu_id, count, limit)
+            status2, over = max_context_of(gpu_id, count, limit + 1)
+            at_plan = next((item for item in at["plans"] + at["rejected"]
+                            if item["profile"]["model_id"] == model_id), None)
+            over_plan = next((item for item in over["plans"] + over["rejected"]
+                              if item["profile"]["model_id"] == model_id), None)
+            # 必须是「一条失败都没有」,而不是「没有 KV 那条失败」。反算公式只要偏乐观
+            # (例如把 KV 按 1 字节算),上限就会大于真实可开值,那条请求会落到
+            # 「单卡需 X GiB 超过可用」上——只查 KV 那条的话它会漏过去。
+            # 这里特意不传 driver/host_ram/disk,那几项缺失时引擎本就不参与判定,
+            # 于是这一条请求里唯一可能失败的来源就是显存核算本身。
+            check("引擎给出的上下文上限确实放得下",
+                  at_plan is not None and at_plan["failures"] == [],
+                  str(at_plan["failures"])[:200] if at_plan else "没找到该方案")
+            check("超过上限 1K 就被判 KV 超了",
+                  over_plan is not None
+                  and any("KV 上限" in text for text in over_plan["failures"]),
+                  str(over_plan["failures"])[:200] if over_plan else "没找到该方案")
+            check("KV 超限的说明不与「权重放不下」混为一谈",
+                  over_plan is not None
+                  and any("不是权重放不下" in text for text in over_plan["failures"]),
+                  str(over_plan["failures"])[:200] if over_plan else "没找到该方案")
+
         status, throttled = post_json("/api/recommend", {
             "hardware": {"gpu_id": "a100-sxm-80", "gpu_count": 1, "driver_version": "570.124.06"},
             "preference": "throughput",
@@ -678,6 +756,12 @@ def main():
             "profile_id": "glm52-int4-a100",
         })
         check("达标检查(应通过)", status == 200 and checked["pass"] is True)
+        check("达标检查也返回上下文上限",
+              checked["memory"]["max_context_k"] == 1024
+              and checked["memory"]["max_context_limit"] == "model"
+              and checked["memory"]["max_context_note"],
+              str([checked["memory"]["max_context_k"],
+                   checked["memory"]["max_context_limit"]])[:80])
 
         status, checked = post_json("/api/check", {
             "hardware": {"gpu_id": "a100-sxm-80", "gpu_count": 8, "driver_version": "470.82.01"},

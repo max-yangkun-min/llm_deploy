@@ -284,6 +284,7 @@
 | 阶段八 | 仓库发布到 GitHub + 云端 CI 首次实测转绿(见 5.9) | ✅ 完成并验收 |
 | 阶段九 | 昇腾部署方法改从**公开权威来源**建立(R2,见 5.9.1) | ✅ 完成并验收 |
 | 阶段十 | 方案的公开依据按**归属**显式挂接(R17,见 5.9.2) | ✅ 完成并验收 |
+| 阶段十一 | 上下文上限**反算**(R3,见 5.9.3) | ✅ 完成并验收 |
 | 待办 | 其余人工评分项(quality/throughput)实测化等 | 见 `docs/ROADMAP.md`(单一真源) |
 
 ### 5.2 阶段一:网站骨架(已完成)
@@ -712,6 +713,39 @@ sha256、推荐条数落在 3-5、结果内模型不重复、每条方案都带�
 | `python tools/ci.py --online` | 通过 16 · 失败 0 · 跳过 0(文档 66/66;三个 `--check` 都没改数据文件) |
 | 云端 Actions | 运行 #8(`a8d392e`)**success**;联网核实不在云端跑,仍由 `llm-ci-weekly` 按周触发 |
 
+#### 5.9.3 阶段十一:上下文上限反算(R3)
+
+**依据**:上下文一直是**输入**。`assess()` 读 `hw["context_k"]` 正算出 KV,于是「放不下」
+只说得出「单卡超过可用显存」,和「权重本身就装不下」共用一句;而选型的人真正要问的是
+「8 张 A100 跑 GLM-5.2-INT4 最多能开多长」——那是容量规划,不是填表校验。
+
+关键观察:`kv_gib()` 对上下文是**线性**的,所以同一条公式倒过来就能用,不需要新的实测数据。
+
+| 项 | 内容 |
+|---|---|
+| 实现 | 新增 `recommend.max_context_for(row, hw)`,唯一实现,`assess()` 直接调用。可用显存 `vram × PER_CARD_BUDGET × TP` 扣掉运行时余量与实测权重,剩下的 GiB 全给 KV,再除以「1K token 的 KV 显存」。**复用正向核算的同一批系数**(`PER_CARD_BUDGET` / `RUNTIME_OVERHEAD` / `KV_DTYPE_BYTES`),否则正算与反算会用两套假设,页面自相矛盾 |
+| 字段 | `memory.max_context_k` / `max_context_note` / `max_context_memory_k` / `max_context_model_k` / `max_context_limit` |
+| 取小 | 显存反算值与「该档自身标称上下文」取小,并写明是哪一边在限制(`limit=memory` / `model`) |
+| 留空 | 昇腾(专有 KV 量化、无公开公式)、KV 结构未核实、权重已占满、缺显存/权重 → `null` + `max_context_note` 说明原因,**不编数** |
+| 超限判定 | 新增独立失败信息,点明「这是 KV 超了,不是权重放不下」 |
+
+实测四个分支(数字见 `docs/ROADMAP.md` 的 R3 一节):1×RTX4090-24 的
+`qwen3-coder-30b-awq` → 46K(`limit=memory`);8×A100-80 的 `glm52-int4-a100` →
+显存侧 1091.9K、标称 1024K → 1024K(`limit=model`);`deepseek-r1-bf16` → `null`
+(权重 1275GiB 已占满);`llama31-405b-bf16` → `null`(结构缺失);昇腾 → 全部 `null`。
+
+**一个刻意的判据选择**:超限判定用 `max_context_memory_k` 而不是 `max_context_k`。
+后者可能被标称上下文压住,拿它当判据会把「其实显存够、是模型开不了那么长」说成
+「KV 超了」——一句看着精确的错话。实测 8×A100 上 GLM 填 1050K 只出「低于需求」,
+填 1200K 才两条都出。
+
+反回归(112→120):新增 8 条。核心是**自洽性**——拿引擎自己给出的上限回填必须一条失败
+都没有,`+1K` 必须被判 KV 超。**这条断言第一次写错了**:最初只查「没有 KV 那条失败」,
+于是把反算公式乘 2(偏乐观)之后 120 项全绿;改成「失败列表必须为空」后,同一个改动立刻报
+`FAIL 引擎给出的上下文上限确实放得下 ['单卡需 27GiB(权重+KV+余量),超过 24GiB 卡的可用 22GiB']`。
+两个方向都验:乘 2 → 该条 FAIL;除 2 → `FAIL 上下文上限是被标称上下文或显存卡住的`。
+规范见 `.codex-specs/kv-max-context/`。
+
 ### 5.10 未完成事项(Backlog)
 
 > 本节原先是一份手写清单。问题是同一批待办同时出现在三处(`ACTIVE_TASK.md`、
@@ -732,7 +766,7 @@ sha256、推荐条数落在 3-5、结果内模型不重复、每条方案都带�
 | ~~无 CI~~ **已解决 2026-09-17** | `tools/ci.py` 是唯一实现,本机定时任务与云端 workflow 都跑它 | 剩下的债:在线核实(厂商页 / 文档可达性)不在云端跑,仍需按周触发 |
 | 订正依赖核实缓存 | `apply_truth.py` 从 `data/catalog-verified.json` 取值,缓存过期需 `--refresh` 重抓 | 数值不会凭空变化,但上游改版后需手动刷新 |
 | `quality_score` / `throughput_score` 是人工评分 | 属于排序权重,不是实测 | 与「不展示假数据」不冲突(页面标为评分),但终究应换成实测基准 |
-| KV 按 2 字节(fp16/bf16)固定核算 | `--kv-cache-dtype fp8` 可减半,当前未作为输入项 | 长上下文场景会偏保守;偏保守不会导致选错卡,但可能低估可承载的并发 |
+| KV 按 2 字节(fp16/bf16)固定核算 | `--kv-cache-dtype fp8` 可减半,当前未作为输入项 | 长上下文场景会偏保守;偏保守不会导致选错卡,但可能低估可承载的并发。**反算上限(R3)与正算同口径**,所以它同样偏保守——开 fp8 KV 时实际可开更长 |
 | 余量系数与利用率阈值是工程判断 | `1.10` / `0.92` / 45% / 90% 均未在目标卡上实测标定 | 影响排序名次,不影响「放得下 / 放不下」的硬判定 |
 
 ---
@@ -787,10 +821,12 @@ sha256、推荐条数落在 3-5、结果内模型不重复、每条方案都带�
 
 | 日期 | 版本 | 变更 |
 | --- | --- | --- |
+| 2026-09-18 | 1.8.1 | 文档订正(不涉及代码):上一条把自检项数写成 119——`smoke_test.py` 的第一条断言(`前端模块括号配平`)打印在 `== 部署管理台冒烟测试 ==` 标题**之前**,眼睛只数标题下面的 `PASS` 行就会少一条。按机械计数:`git show HEAD:deploy-portal/tools/smoke_test.py` = 112、当前 = 120,所以 R3 实际新增 **8** 条(不是 7)。同时清掉一批更早遗留的过期计数:`README.md`「冒烟测试(109 项)」、`docs/PROJECT-MAP.md`「冒烟测试(99 项)」、`deploy-portal/README.md`「共 75 项」一律改为 120;反复出现的「20 项昇腾反回归断言」从未成立过——该段 `check(...)` 调用点实测为阶段七 23 条、现在 34 条,各文档按各自所属时点改成实测值 |
+| 2026-09-18 | 1.8 | 阶段十一(R3):上下文上限**反算**。新增 `recommend.max_context_for(row, hw)`(唯一实现),把正向核算同一条 KV 线性公式倒过来——并行组可用显存扣掉运行时余量与实测权重后全给 KV,再换成多少 K;**复用同一批系数**,否则正反算会用两套假设。`/api/recommend` 与 `/api/check` 的 `memory` 新增 `max_context_k` / `max_context_note` / `max_context_memory_k` / `max_context_model_k` / `max_context_limit`:显存反算值与「该档自身标称上下文」取小并写明是哪边在限制;昇腾(专有 KV 量化无公开公式)、KV 结构未核实、权重已占满一律 `null` + 说明,不编数;需求上下文超过**显存反算值**时新增独立失败信息,点明「这是 KV 超了,不是权重放不下」(判据用 `max_context_memory_k` 而非 `max_context_k`,后者可能被标称上下文压住,会把「模型开不了那么长」误报成 KV 超)。界面:推荐计划卡新增「最长上下文」一行、Markdown 导出与台账达标检查表各加一列。自检 112→120 项,核心是自洽性断言(上限回填必须零失败、+1K 必须判超);**这条断言第一版写弱了**(只查 KV 那条失败,于是反算公式乘 2 后全绿),改强后同一改动立刻红,两个方向都反向验证过。规范 `.codex-specs/kv-max-context/` |
 | 2026-09-18 | 1.7 | 阶段十(R17):方案的公开依据改成**只认显式挂接**。新增 `engine.docs_for_recipe()`(`profile_id` 命中条目的 `profiles`,或条目的 `recipe_ids` 明文点名本方案),**删除** `engine.global_docs()` 这个导致假归属的全局兜底——它曾把 sglang / TensorRT-LLM / Triton / Ollama 的引擎总览算成一条 llama.cpp 方案的依据。`data/sources.json` 的 `doc_sources`/`tracked_repos` 新增 `recipe_ids`,`sync_docs.py` 把它抄到自动生成的模型卡条目上;GGUF 方案据此拿到 llama.cpp 官方仓库、新增的 `llamacpp-server` 官方文档与它真正用的权重模型卡(来源 65→66,实测 66/66 可达)。前端详情页与列表页把「可公开核实的通用依据」(带归属列)与「本工作区的现场记录(第三方打不开)」分开,一条都挂不上时如实降级。自检 109→112 项(新增「不跨引擎」「`recipe_ids` 都指向真实方案」「没有部署档的方案都被点名」并强化「每条方案都有依据」),反向验证过两条;另修掉门禁自身的空白失败细节(`tools/ci.py::failure_detail`)。规范 `.codex-specs/recipe-public-sources/` |
 | 2026-09-18 | 1.6 | 阶段九(R2):昇腾的部署方法改为**只来自公开权威来源**,不参考本机现场资产(用户明确「要做一个通用的平台」)。新增 `tools/sync_ascend.py`,从 vllm-ascend 官方文档**稳定版 v0.23.0** 抓取支持矩阵(10 张表 / 96 行能力)与矩阵 `Doc` 列引用的 31 份逐模型教程,每条来源留痕 URL + 文档版本 + 抓取时间 + sha256 + 字节数,落成 `data/ascend-support-matrix.json`(只由工具写入)。新增 `engine.official_family_match`(卡名必须逐字含官方硬件族名;归一化后不足 4 字符的族不参与匹配)与 `engine.ascend_official`,推荐结果对昇腾卡返回 `official_matrix`:命中族给官方能力表与官方教程里对应 tab 的部署命令(逐字、折叠展示、带原文链接),未命中族**如实报不匹配并给矩阵链接**(实测 `Atlas 300I DUO` 命中,`Ascend 950PR` 不匹配,官方文档无对应表述)。改掉一处「文档说已忽略、实际没忽略」:`output/ci/*.json` 一直被 git 跟踪而 `docs/CI.md` 写着已 gitignore,现加入 `.gitignore` 并移出索引。门禁新增离线「昇腾官方矩阵」与联网「在线:昇腾官方文档」(sha256 漂移即报)、以及「检查模式不改仓库」(修掉 `sync_docs.py --check` 先写盘再打印「未写入」的缺陷,见 5.9.1),离线 11→12 项、联网 2→4 项;自检 99→109 项;浏览器六视图复核 0 报错,证据 `output/playwright/21-ascend-official-matrix.png`、`22-ascend-official-commands.png`;规范 `.codex-specs/ascend-official-recipes/` |
 | 2026-09-18 | 1.5 | 阶段八:仓库发布到 github.com/max-yangkun-min/llm_deploy,并让云端 workflow 首次实测转绿。修掉首次云端 CI 变红的原因——`apply_patch.py` 只认 Windows 的 `codex.exe`,Linux 上「改文件工具」门禁必然红;现改为双后端(优先用真能跑起来的 codex,否则用内置严格补丁引擎,见 `.codex-specs/ci-portability/`),`tools/apply_patch.py` 由字节相同的第二份副本改为转发入口。门禁新增「Shell 脚本行尾」「任务记忆文件」两项,并修正两处「检查自己报假数」:规范计数把 `_TEMPLATE/spec.md` 算成一份、离线项数历来写错。待办清单收敛到 `docs/ROADMAP.md`(单一真源) |
-| 2026-09-17 | 1.4 | 阶段七完成:GPU 目录新增**华为昇腾**(Atlas 350 / Atlas 300I Duo 96GB·48GB,逐字命中华为官方产品页),目录 12→15 张卡;昇腾**不做 sm 映射**(`compute_capability=null` + `compute_capability_basis`),FP8 改读厂商页标称值,算力门槛与 NVIDIA 驱动下限加 `cuda` 守卫,KV cache 因专有量化只按权重下界核算;`hardware_from_gpu()` 支持 `compute_capability=None`;方案按生态分组(`recipes_grouped`)并返回 `recipes_other_ecosystem`,不把 CUDA 栈方案挂到昇腾卡上;现场登记改为「不填算力就必须写明 ecosystem」;前端下拉按厂商分组、`smLabel(null)` 返回 `—`、新增共享 `computeLabel`/`stackLabel`、计划卡片不再对昇腾显示 CUDA 栈与 NVIDIA 驱动下限;台账对 KV 未计入的档显示「下界通过」;自检 75→99 项(昇腾反回归 20 项)。同版新增**持续集成**:`tools/ci.py`(离线 8 项 + 联网 2 项)、`scripts/ci/run-ci.ps1`、`scripts/ci/register-scheduled-task.ps1`(已注册 llm-ci-daily/llm-ci-weekly 并验证 `LastTaskResult=0`)、`.github/workflows/ci.yml`、`docs/CI.md`、`docs/PROJECT-MAP.md`、`.codex-specs/` 规范层;修掉 `whole_file_replace.py` 两个缺陷(首行被改动时丢新首行、回滚用 Python 3.8 不支持的 `write_text(newline=)`) |
+| 2026-09-17 | 1.4 | 阶段七完成:GPU 目录新增**华为昇腾**(Atlas 350 / Atlas 300I Duo 96GB·48GB,逐字命中华为官方产品页),目录 12→15 张卡;昇腾**不做 sm 映射**(`compute_capability=null` + `compute_capability_basis`),FP8 改读厂商页标称值,算力门槛与 NVIDIA 驱动下限加 `cuda` 守卫,KV cache 因专有量化只按权重下界核算;`hardware_from_gpu()` 支持 `compute_capability=None`;方案按生态分组(`recipes_grouped`)并返回 `recipes_other_ecosystem`,不把 CUDA 栈方案挂到昇腾卡上;现场登记改为「不填算力就必须写明 ecosystem」;前端下拉按厂商分组、`smLabel(null)` 返回 `—`、新增共享 `computeLabel`/`stackLabel`、计划卡片不再对昇腾显示 CUDA 栈与 NVIDIA 驱动下限;台账对 KV 未计入的档显示「下界通过」;自检 75→99 项(昇腾反回归 23 条)。同版新增**持续集成**:`tools/ci.py`(离线 8 项 + 联网 2 项)、`scripts/ci/run-ci.ps1`、`scripts/ci/register-scheduled-task.ps1`(已注册 llm-ci-daily/llm-ci-weekly 并验证 `LastTaskResult=0`)、`.github/workflows/ci.yml`、`docs/CI.md`、`docs/PROJECT-MAP.md`、`.codex-specs/` 规范层;修掉 `whole_file_replace.py` 两个缺陷(首行被改动时丢新首行、回滚用 Python 3.8 不支持的 `write_text(newline=)`) |
 | 2026-09-17 | 1.3 | 阶段六完成:新增 `tools/sync_gpus.py` 与 `data/gpu-catalog.json`(12 张卡,显存/算力逐字命中厂商页与 NVIDIA 官方算力表);`sync_hf.py` 新增真实 attention 结构抓取(KV 分 MLA / 混合线性 / GQA 三种口径);`recommend.py` 新增 `assess()` / `kv_gib()`,权重与 KV 按实测核算,`/api/presets` 改为 `/api/gpus` 且推荐必须传 `gpu_id`;删除按 `validation_status` 的本地方案偏袒,新增显存利用率评分项;新增 `tools/whole_file_replace.py`;修复 `recommend.js` 缺右括号导致整页停在「加载中」的缺陷;自检 63→75 项 |
 | 2026-09-16 | 1.2 | 阶段五完成:`models.csv` / `model-families.csv` 按 artifact 实测值订正(权重、参数量、上下文、许可),新增 `verified_*` / `artifact_params_b` / `license_id` / `context_source` 溯源列;新增 `tools/apply_truth.py` 与 `data/catalog-verified.json`;修复 `deepseek-r1-bf16` 的档位对照缺陷;宽松许可改按机器可读 id 判定;核对面板改为漂移检查;自检 57→63 项 |
 | 2026-09-15 | 1.1 | 新增 4.2「最小功能开发」硬规则并补充 5.5 阶段四进度;修复 6 个死控件(筛选字段缺失、无翻页、键名冲突、过滤范围不符、`favicon.ico` 404);自检 45→57 项;5.x 小节编号顺延 |

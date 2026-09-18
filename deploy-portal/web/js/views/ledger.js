@@ -16,14 +16,30 @@ function checkTable(rows) {
       ? '<span class="badge warn">下界通过</span><br><span class="muted small">KV 未计入</span>'
       : '<span class="badge ok">通过</span>';
   };
+  // 反算的上下文上限。这条信息对台账尤其有用:验收本来就是「这台机器能不能上这个档」,
+  // 而「最多能开多长」正是上线前要跟业务对齐的那个数。算不出时如实留空并给原因。
+  const longestContext = (row) => {
+    const memory = row.memory || {};
+    if (memory.max_context_k === null || memory.max_context_k === undefined) {
+      return '<span class="badge warn">无法反算</span>' +
+        (memory.max_context_note
+          ? '<br><span class="muted small">' + esc(memory.max_context_note) + '</span>'
+          : '');
+    }
+    return '约 ' + esc(memory.max_context_k) + 'K ' +
+      (memory.max_context_limit === 'model'
+        ? '<span class="badge info">受该档标称上下文限制</span>'
+        : '<span class="badge info">显存反算上限</span>');
+  };
   return `
   ${caveat}
   <div class="table-wrap"><table>
-    <thead><tr><th>部署档</th><th>结果</th><th>缺口 / 风险</th></tr></thead>
+    <thead><tr><th>部署档</th><th>结果</th><th>最长上下文</th><th>缺口 / 风险</th></tr></thead>
     <tbody>${rows.map((row) => `
       <tr>
         <td>${esc(row.profile.model_name)}<br><span class="muted small">${esc(row.profile.profile)}</span></td>
         <td>${verdict(row)}</td>
+        <td class="small">${longestContext(row)}</td>
         <td>
           ${row.failures.length ? '<ul class="fail-list">' + row.failures.map((text) => '<li>' + esc(text) + '</li>').join('') + '</ul>' : ''}
           ${row.warnings.length ? '<ul class="warn-list">' + row.warnings.map((text) => '<li>' + esc(text) + '</li>').join('') + '</ul>' : ''}

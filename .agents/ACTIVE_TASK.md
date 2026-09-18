@@ -1,20 +1,23 @@
 # Active task pointer
 
-Status: 大模型部署管理台已完成十阶段,下一步工作已收敛到 `docs/ROADMAP.md`(单一真源)。
-阶段十(2026-09-18,对应 R17)=方案的**公开依据按归属显式挂接**。原先只有有部署档的方案才
-能引到公开来源,而唯一没有部署档的 GGUF 方案走 `engine.global_docs()` 兜底——那等于把
-sglang / TensorRT-LLM / Triton / Ollama 的引擎总览全算成一条 llama.cpp 方案的依据,
-**假归属比留空更坏**,所以兜底直接删除:新增 `engine.docs_for_recipe()`(只认 `profiles`
-命中或 `recipe_ids` 明文点名),`sources.json` 的 `doc_sources`/`tracked_repos` 新增
-`recipe_ids`,`sync_docs.py` 把它抄到自动生成的模型卡条目上,GGUF 方案据此拿到 llama.cpp
-官方仓库、新增的 `llamacpp-server` 官方文档与它真正用的权重模型卡(65→66,实测 66/66 可达)。
-前端详情页与列表页把「可公开核实的通用依据」(带归属列)与「本工作区的现场记录(第三方打不开)」
-分开,挂不上时如实降级成「公开依据:暂无」;**19 个本地来源路径全部保留**,不删证据。
-门禁:自检 109→112 项(新增不跨引擎、`recipe_ids` 都指向真实方案、无档方案都被点名,
-并强化「每条方案都有依据」——原来只要 ≥5 条就能全绿),两条坏法都**实测反向验证过**;
-另修掉门禁自身「失败却没有任何细节」的缺陷(`tools/ci.py::failure_detail`)。
-实测:`tools/ci.py --online` = 通过 16 · 失败 0 · 跳过 0;沙箱离线 = 通过 11 · 失败 0 · 跳过 1。
-已推送 `a8d392e`,云端 Actions 运行 #8 = success。
+Status: 大模型部署管理台已完成十一阶段,下一步工作已收敛到 `docs/ROADMAP.md`(单一真源)。
+阶段十一(2026-09-18,对应 R3)=**上下文上限反算**。上下文此前只是输入:填 `context_k`
+正算 KV,于是「放不下」与「权重本身就装不下」共用同一句,回答不出「这些卡最多能开多长」。
+新增 `recommend.max_context_for(row, hw)`(唯一实现,`assess()` 直接调用),把同一条 KV
+线性公式倒过来:`vram × PER_CARD_BUDGET × TP` 扣掉运行时余量与实测权重后全给 KV,再换成
+多少 K;**复用正向核算的同一批系数**,否则正反算会用两套假设。`/api/recommend` 与
+`/api/check` 的 `memory` 增 `max_context_k`/`max_context_note`/`max_context_memory_k`/
+`max_context_model_k`/`max_context_limit`:显存反算值与「该档自身标称上下文」取小并写明
+是哪边在限制。实测四个分支:1×RTX4090-24 的 qwen3-coder-30b-awq → 46K(显存限制);
+8×A100-80 的 glm52-int4-a100 → 显存侧 1091.9K、标称 1024K → 取 1024K(标称限制);
+deepseek-r1-bf16 → null(权重 1275GiB 已占满);llama31-405b-bf16 → null(结构缺失);
+昇腾 → 全部 null(专有 KV 量化无公开公式)。超限时新增独立失败信息点明「这是 KV 超了,
+不是权重放不下」——判据用**显存反算值**而非 `max_context_k`,后者可能被标称上下文压住,
+会把「模型开不了那么长」误报成 KV 超。界面:推荐计划卡、Markdown 导出、台账达标检查表
+各加「最长上下文」。门禁:自检 112→120 项,核心是自洽性断言(上限回填必须零失败、
++1K 必须判超),**这条断言第一版写弱了**(只查 KV 那一条失败,于是把反算公式乘 2 后
+120 项全绿),改强后同一改动立刻报红,两个方向都反向验证过。
+实测:`tools/ci.py` 沙箱离线 = 通过 11 · 失败 0 · 跳过 1。
 阶段九(2026-09-18,对应 R2)=按用户「不要参考本地的真实资产,是要做一个通用的平台」的要求,
 把昇腾的部署方法改成**只来自公开权威来源**:新增 `deploy-portal/tools/sync_ascend.py`,
 从 vllm-ascend 官方**稳定版 v0.23.0** 抓支持矩阵(10 张表 / 96 行能力)与矩阵 `Doc` 列引用的
@@ -50,7 +53,7 @@ codex 会 `exec: node: not found`)+ 内置严格引擎(逐字匹配、不认识�
 Task ID: deploy-portal
 Memory: `.agents/tasks/deploy-portal/MEMORY.md`
 Inputs: `.agents/tasks/deploy-portal/INPUTS.md`
-Last updated: 2026-09-18 (Asia/Shanghai) — 阶段十(R17 方案的公开依据按归属显式挂接)已完成并验证
+Last updated: 2026-09-18 (Asia/Shanghai) — 阶段十一(R3 上下文上限反算)已完成并验证
 
 ## Previously active task
 
