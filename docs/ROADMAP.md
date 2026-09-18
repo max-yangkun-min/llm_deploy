@@ -18,7 +18,8 @@ Next actions),互相之间已经漂移——其中两处当时就过期了。现
 | 编号 | 优先级 | 事项 | 前置条件 | 状态 |
 |---|---|---|---|---|
 | R1 | P0 | 交接/文档一致性收尾(4 处,其中 2 处是「报了假数」) | 无 | 已完成 2026-09-18 |
-| R2 | P1 | 昇腾的第一条部署方案 | 见 R2(需决策,可能需真机) | 等决策 |
+| R2 | P1 | 昇腾方案改从**公开权威来源**建立(通用平台,不用本机资产) | 需定:是否按官方 A2/A3 产品名单扩卡 | 可开工 |
+| R17 | P1 | 现有 7 条方案的来源只有本工作区路径(与 R2 同一个通用性缺口) | 无 | 可开工 |
 | R3 | P1 | KV 上限反向提示(这张卡最多能开多长) | 无 | 可开工 |
 | R4 | P1 | `--kv-cache-dtype fp8` 作为输入项 | 无 | 可开工 |
 | R5 | P2 | `quality_score` / `throughput_score` 仍是人工评分 | 需在目标卡跑基准 | 可开工(慢) |
@@ -62,46 +63,105 @@ ACTIVE_TASK.md 自洽」;`docs/CI.md` 的检查表含这两项。
 
 ---
 
-## R2 昇腾的第一条部署方案(P1,价值最高)
+## R2 昇腾部署方案改从公开权威来源建立(通用平台方向)
 
-**现状(实测)**:`gpu-catalog.json` 有 15 张卡(12 NVIDIA + 3 昇腾),而
-`recipes.json` 的 7 条方案里 `ecosystem` 字段**根本不存在**,
-`engine.py::recipe_ecosystem()` 因此一律按 `cuda` 处理 —— 所以昇腾卡的方案列表是空的
-(比挂一条 CUDA 方案上去更诚实,但确实是缺口)。
+**方向(用户 2026-09-18 明确)**:这条不是「把某台机器的现场做法搬进网站」。
+平台是**通用**的:**不参考本机现场资产**,昇腾的部署方法必须来自**可公开核实的权威来源**。
 
-**已有的真实资产**(在工作区里,不是设想):`deepseekv4-flash/offline-dsv4-0731/`
+**现状(实测)**
 
-| 项 | 实测值 | 出处 |
+- `gpu-catalog.json` 15 张卡(12 NVIDIA + 3 昇腾:`ascend-950pr-atlas350`、
+  `ascend-300i-duo-96`、`ascend-300i-duo-48`)。
+- `recipes.json` 的 7 条方案里**没有 `ecosystem` 字段**,`engine.py::recipe_ecosystem()`
+  因此一律按 `cuda` 处理 → 昇腾卡的方案列表是空的。
+- `doc-sources.json` 65 条来源里,**昇腾相关 0 条**。
+- 现有 7 条方案的 `sources` **全是工作区本地路径**(如 `kty5l/...`),第三方无法核实;
+  详情页把它们渲染成「本工作区来源文档」——这正是通用平台要补的另一半。
+
+**可用的公开权威来源(2026-09-18 实测可达)**
+
+| 来源 | URL | 实测 |
 |---|---|---|
-| 目标机 | 8×Ascend 910B4-1(每卡 64 GiB),ARM64 | `README.md` |
-| 模型 | DeepSeek-V4-Flash-0731 W8A8,权重约 293 GiB(不在包内) | `README.md` |
-| 并行/量化 | `--tensor-parallel-size 8`、`--enable-expert-parallel`、`--quantization ascend` | `scripts/run-server.sh` |
-| 上下文/并发 | `--max-model-len 65536`、`--max-num-seqs 4`、`--max-num-batched-tokens 4096`、`--gpu-memory-utilization 0.90` | 同上 |
-| 投机解码 | `--speculative-config {method: dspark, num_speculative_tokens: 7}` | 同上 |
-| 镜像 | `quay.io/ascend/vllm-ascend` 经 `m.daocloud.io` 代理;OCI index `sha256:ade04e75aa4a…`、arm64 manifest `sha256:8dd01aa0e0e5…` | `README.md` |
-| 运行时 | vLLM 0.26.0 + CANN 9.0.1(DSpark) | `README.md` |
-| 本地镜像 tar | 6,364,067,840 B,sha256 `57bbe948bec21654…`(另有 amd64 6.57 GB,ARM64 机上不可用) | `README.md` |
-| 上游验证范围 | **只记录了 Atlas A3 验证**;910B4/A2 必须先做真实启动、首 token、稳定性验收 | `README.md` |
+| vLLM Ascend 官方文档 | `https://docs.vllm.ai/projects/ascend/en/latest/` | 200,90,501 B |
+| 同上·可固定版本 | `.../en/v0.23.0/user_guide/support_matrix/supported_models.html` | 200(可引带版本 URL,满足「离线构建可复现」) |
+| `vllm-ascend.readthedocs.io/en/latest/` | 重定向到上面的 `docs.vllm.ai` 域名 | 200 |
+| 官方仓库 | `https://github.com/vllm-project/vllm-ascend` | 200 |
+| 华为官方文档 | `https://www.hiascend.com/document` | 200 |
+| 华为加速卡页(已在用) | `https://www.hiascend.com/hardware/accelerator-card` | 200 |
+| ~~`gitee.com/ascend/vllm-ascend`~~ | | **404,不引用** |
+| ~~`.../en/stable/`~~、~~`.../en/v0.25.0/`~~ | | **404,不引用** |
 
-**两个必须先定的问题**(这就是它为什么不是「直接做」):
+**关键发现:官方支持矩阵就是一张机器可读的能力表。**
+`user_guide/support_matrix/supported_models.html` 按硬件分表:
+`Ascend 950 Products`(4 个模型)、`Ascend 950DT`(3)、`A2/A3`(20 + 12)、
+`Atlas 300I DUO`(2 + 9)、Pooling 模型(8 + 7)。列名:
+`Model / Support / Note / BF16 / Supported Hardware / W8A8 / Chunked Prefill /
+Automatic Prefix Cache / LoRA / Speculative Decoding / Async Scheduling /
+Tensor Parallel / Pipeline Parallel / Expert Parallel / Data Parallel /
+Prefill-decode Disaggregation / Piecewise AclGraph / Fullgraph AclGraph /
+max-model-len / MLP Weight Prefetch / Doc`。
 
-1. **卡本身不在目录里。** 目录里的昇腾卡是 950PR / 300I Duo;910B 经尽力核实无厂商页
-   逐字证据(官网已换代),所以要么先找到可引用的官方归档页,要么让这条方案走台账的
-   「现场登记(未核实)」路径。**不能**为了让方案挂上去而把 910B 塞进目录。
-2. **方案状态取哪一种。** 两种都合规,但含义不同:
-   - 按 `provisional-local` 登记(与现有 3 条同规格),并在方案里**显式写明**
-     「上游只记录 Atlas A3 验证;910B4 未真机验收」。好处:昇腾卡不再是空的;
-     代价:必须把未验收写在同一屏里,不能靠状态字段暗示。
-   - 等 910B4 真机验收(见 R15)后按 `validated` 登记。更慢,但结论最硬。
+- **`Atlas 300I DUO` 与 `Ascend 950` 正是目录里已有的卡** → 这两张卡与模型的匹配
+  可以直接用官方口径,不需要任何本机证据。
+- `A2/A3` 是官方在列的硬件族,但目录里没有对应卡(见下面的待定项)。
+- `Doc` 列链到官方逐模型教程(如 `tutorials/models/DeepSeek-V4-Flash.html`),
+  里面是真实的启动命令(`--quantization ascend`、TP/EP、`--speculative-config` 等)。
 
-**验收标准**(无论走哪条):
+**做法**:像 `apply_truth.py` 对待 `models.csv` 那样处理昇腾能力事实——
+从官方矩阵抓取并留痕(**URL + 版本 + 抓取时间 + sha256**),不在代码或 JSON 里手写;
+方案正文引用官方逐模型教程作为部署方法;方案归 `ecosystem: cann`。
 
-- 昇腾卡请求 `/api/recommend` 时 `recipes` 非空(或明确为空并给出原因文案),
-  且每条昇腾方案的 `hardware` 块**不含** NVIDIA 专有字段(`min_driver` / `sm_*`);
-- 方案的「验收事实」与 `README.md` 里那句「只记录 Atlas A3」一致,不许写成已验证;
-- `smoke_test.py` 增加对应反回归断言(现在有 20 项昇腾断言,新增这条要挂在同一处)。
+**边界(不可削弱)**
 
----
+- **不把本机现场资产当通用方案。** `deepseekv4-flash/offline-dsv4-0731/` 那类包是
+  某台机器的交付记录:只能以 `*-local` 状态存在,并写明「本工作区现场记录,不是通用方法」;
+  **不得据它生成通用的昇腾方案。**
+- 不把某台机器的具体配置(如「8×910B4」)写成平台对所有昇腾卡的推荐;
+  卡与模型的匹配只能来自官方支持矩阵的硬件列。
+- 昇腾方案不含 NVIDIA 专有字段(`min_driver` / `sm_*`)。
+- 来源只取官方/厂商域;上表标 404 的地址不引用。
+
+**验收标准**
+
+- 至少一条 `ecosystem: cann` 的方案,`sources` **全是公开 URL**,且
+  `python tools/ci.py --online` 的「权威文档可达性」覆盖到它们(离线跑时该项报 SKIP,
+  不冒充通过);
+- 能力事实(W8A8 / TP / EP / max-model-len 等)**逐字来自官方支持矩阵**,并有断言
+  钉住「不是手写值」;
+- 昇腾卡请求 `/api/recommend` 不再返回空方案;若某张卡在官方矩阵里确实没有对应模型,
+  必须明确说明并给出矩阵链接(而不是留一个没有解释的空列表);
+- 新增断言挂进 `smoke_test.py`,与现有 20 项昇腾反回归放在一起。
+
+**需要你定的一件事(已收窄)**:目录要不要按官方 `A2/A3` 产品名单扩卡。
+官方矩阵覆盖 A2/A3 族,而目录里没有对应条目;不扩也能先做现有三张卡
+(950PR 与 Atlas 300I Duo 都在官方矩阵内)。**扩卡也只能按官方文档里出现过的产品名加**,
+不能为了让某条方案挂上去而把 910B 之类硬塞进目录。
+
+## R17 现有 7 条方案的来源只有本工作区路径(P1)
+
+> 放在 R2 后面:它和 R2 是**同一个缺口**的两半——R2 是「昇腾还没有通用方案」,
+> R17 是「已有方案的依据也不通用」。
+
+**依据(实测)**:`recipes.json` 的 7 条方案,`sources` **全部**是工作区本地路径
+(如 `kty5l/GLM-5.2-部署步骤-8xA100.md`、`kty5l/offline-glm52/start.sh`),
+详情页把它们渲染成「本工作区来源文档」。第三方打不开、也核实不了。
+`doc-sources.json` 里那 65 条权威来源是按 profile 挂在 NVIDIA 侧的引擎文档与模型卡上,
+**与这些方案并没有连起来**。
+
+**问题**:这等于平台当前给出的部署方法,依据只有本机证据。通用平台要能回答
+「你凭什么这么说」,而且答案得是任何人都能自己打开的东西。
+
+**验收标准**
+
+- 每条方案在本地出处之外,能引到**可公开核实**的权威来源(引擎官方文档 / 官方模型卡 /
+  官方教程),并且 `python tools/ci.py --online` 的「权威文档可达性」覆盖到它们;
+- 确实拿不到权威来源的条目:要么降级为「现场记录」并在页面上明说,
+  要么从通用方案里移出;
+- 前端把两类来源**分开显示**(可公开核实的通用依据 / 本工作区的现场记录),
+  不再混在一个「来源」列表里。
+
+**不做什么**:不是把本地路径删掉——它们是有价值的落地记录(哪台机器、什么参数、
+踩过什么坑)。要改的是**标注与归属**,不是抹掉证据。
 
 ## R3 KV 上限反向提示(P1)
 
@@ -198,7 +258,11 @@ ACTIVE_TASK.md 自洽」;`docs/CI.md` 的检查表含这两项。
 
 任务记忆:`.agents/tasks/deepseekv4-flash-910b4/MEMORY.md`(自 2026-08-06 起挂着)。
 包已经就绪(`deepseekv4-flash/offline-dsv4-0731/`),缺的是机器上的启动、首 token 与
-并发 4 下的稳定性验收。**它同时是 R2 的解锁条件。**
+并发 4 下的稳定性验收。
+
+注意:它**不再**是 R2 的解锁条件——R2 已改为从公开权威来源建立通用方案,
+不依赖这台机器。这条任务线现在的价值是「现场交付验收」本身,与目录里的
+通用昇腾方案互不阻塞。
 
 ## R16 现场硬件 JSON 进来后的流程(独立任务线)
 

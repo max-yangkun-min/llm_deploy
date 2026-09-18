@@ -481,6 +481,46 @@ been accepted on real hardware yet** (`models/` still only holds
   shell-syntax check, which cannot reach WSL from inside the agent sandbox. When WSL is
   reachable all 11 offline checks run.
 
+## Stage ten this session (2026-09-18): Ascend recipes must come from public sources
+
+- User direction: for the Ascend work, **do not reference the local real assets** - the
+  platform is meant to be **generic**. So `deepseekv4-flash/offline-dsv4-0731/` (a
+  delivery record for one machine) must not be the basis of an Ascend recipe.
+- R2 in `docs/ROADMAP.md` was rewritten accordingly, and the boundary is now in
+  `AGENTS.md` twice: as a definition in section 2 ("the platform is generic") and as a
+  prohibition in section 7 ("do not promote a site asset into a generic recipe").
+- Verified the public source landscape by fetching it (not from memory):
+  - `https://docs.vllm.ai/projects/ascend/en/latest/` -> 200, 90,501 B. Note
+    `vllm-ascend.readthedocs.io/en/latest/` redirects to this same `docs.vllm.ai` domain.
+  - Versioned URLs exist: `.../en/v0.23.0/user_guide/support_matrix/supported_models.html`
+    -> 200, so a citation can pin a version (the project requires reproducible sources).
+    `.../en/stable/` and `.../en/v0.25.0/` are **404** - do not cite them.
+  - `https://github.com/vllm-project/vllm-ascend` -> 200.
+  - `https://www.hiascend.com/document` -> 200; `/hardware/accelerator-card` -> 200
+    (already used by `sync_gpus.py`).
+  - `https://gitee.com/ascend/vllm-ascend` -> **404**; do not cite.
+- The important structural finding: the official **support matrix is a machine-readable
+  capability table**, split per hardware family - `Ascend 950 Products` (4 models),
+  `Ascend 950DT` (3), `A2/A3` (20 + 12), `Atlas 300I DUO` (2 + 9), pooling (8 + 7) - with
+  columns `Model / Support / Note / BF16 / Supported Hardware / W8A8 / Chunked Prefill /
+  Automatic Prefix Cache / LoRA / Speculative Decoding / Async Scheduling / Tensor
+  Parallel / Pipeline Parallel / Expert Parallel / Data Parallel / Prefill-decode
+  Disaggregation / Piecewise AclGraph / Fullgraph AclGraph / max-model-len / MLP Weight
+  Prefetch / Doc`. The `Doc` column links to an official per-model tutorial
+  (`tutorials/models/<Model>.html`) that contains the real launch commands.
+- **`Atlas 300I DUO` and `Ascend 950` are both in that matrix** and both are already in our
+  GPU catalog, so card-to-model matching for them needs no local evidence at all. `A2/A3`
+  is documented but has no catalog card yet - that is the one open decision (whether to add
+  cards from the official A2/A3 product list; an unverifiable 910B still must not be forced
+  in).
+- R15 (`deepseekv4-flash-910b4`) is explicitly decoupled: it is no longer described as
+  "R2's unlock condition". It is a site-delivery acceptance task, orthogonal to the
+  generic Ascend recipe work.
+- Approach chosen for the implementation (mirrors `apply_truth.py`): read the capability
+  facts from the official matrix with provenance recorded (URL + version + fetch time +
+  sha256) instead of hand-writing them into code or JSON, and cite the official per-model
+  tutorial as the deployment method, tagged `ecosystem: cann`.
+
 ## Next actions
 
 **待办清单只有一份:`docs/ROADMAP.md`。** 本节原先是一份手写列表,和

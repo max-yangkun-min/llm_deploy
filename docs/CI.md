@@ -90,7 +90,7 @@ output/ci/ci-latest.log      最新一次
 output/ci/ci-latest.json     最新一次
 ```
 
-`output/` 已在 `.gitignore` 里,所以这些留痕不会污染提交。
+`output/ci/` 已在 `.gitignore` 里,所以这些留痕不会污染提交。
 
 ## 云端 CI
 

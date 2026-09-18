@@ -30,7 +30,7 @@
 ### 不进提交的内容
 
 `.gitignore` 已经挡住:镜像 `*.tar`、权重(`.safetensors`/`.gguf`/…)、`.deb`/`.rpm`/`.whl`、
-`__pycache__/`、`*.log`、`output/playwright/`、`.tmp/`。
+`__pycache__/`、`*.log`、`output/ci/`、`output/playwright/`、`.tmp/`。
 
 根目录保持干净的约定:临时脚本放 `.tmp/`,不要在根目录留 `.tmp_*.py`。
 CI 会检查这一点(只报 `WARN`,不动用户的文件)。
