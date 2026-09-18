@@ -634,6 +634,17 @@ been accepted on real hardware yet** (`models/` still only holds
   current-task block (the `## Previously active task` block has its own, so the check only
   counts up to that heading). Reverse-verified: injecting a duplicate produced
   `FAIL 任务记忆文件 当前任务段有 2 条 Status: 行(应为 1)`.
+
+- Second instance of "a FAIL you cannot act on", and the detail fix from above is what
+  caught it: the final `--online` of the round reported `可达 14/16` with
+  `URLError: <urlopen error [WinError 10054] 远程主机强迫关闭了一个现有的连接。>` on the two
+  github.com sources, and the Ascend fetch failed too. Re-running those two checks
+  immediately gave 66/66 pass / 0 fail and an unchanged Ascend sha256 - transient network,
+  not reference rot. `docs/CI.md` now says the decision order: read the detail first and
+  ask "could we not fetch it" vs "we fetched it and the content changed"
+  (`sha256` / `marker` drift is the latter); if it was a fetch failure, re-run that check
+  once before concluding anything.
+- Pushed `a8d392e`; cloud Actions run #8 = **success**.
 ## Next actions
 
 **待办清单只有一份:`docs/ROADMAP.md`。** 本节原先是一份手写列表,和

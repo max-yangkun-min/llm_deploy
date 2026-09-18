@@ -225,6 +225,8 @@ max-model-len / MLP Weight Prefetch / Doc`。
   `--online` 的「在线:权威文档可达性」直接覆盖它们——方案引用的每条条目都是这份
   注册表里被真实 HTTP 请求过的条目。
 - 规范:`.codex-specs/recipe-public-sources/spec.md`。
+- 已推送:`a8d392e`,云端 Actions 运行 #8 **success**(`.github/workflows/ci.yml`
+  跑离线门禁;联网核实仍按周在 `llm-ci-weekly` 上跑)。
 
 > 收尾时踩到一次**假红**:同一轮 `--online` 报「可达 14/16」,细节是
 > `WinError 10054 远程主机强迫关闭了一个现有的连接`(github.com 上的 `llamacpp-repo` /

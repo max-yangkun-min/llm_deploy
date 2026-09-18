@@ -710,6 +710,7 @@ sha256、推荐条数落在 3-5、结果内模型不重复、每条方案都带�
 | `python deploy-portal/tools/smoke_test.py` | **112/112** |
 | `python tools/ci.py` | 沙箱内:通过 11 · 失败 0 · 跳过 1(读不到 WSL → shell 语法 SKIP,不算通过) |
 | `python tools/ci.py --online` | 通过 16 · 失败 0 · 跳过 0(文档 66/66;三个 `--check` 都没改数据文件) |
+| 云端 Actions | 运行 #8(`a8d392e`)**success**;联网核实不在云端跑,仍由 `llm-ci-weekly` 按周触发 |
 
 ### 5.10 未完成事项(Backlog)
 

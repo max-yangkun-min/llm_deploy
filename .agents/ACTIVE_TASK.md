@@ -14,6 +14,7 @@ sglang / TensorRT-LLM / Triton / Ollama 的引擎总览全算成一条 llama.cpp
 并强化「每条方案都有依据」——原来只要 ≥5 条就能全绿),两条坏法都**实测反向验证过**;
 另修掉门禁自身「失败却没有任何细节」的缺陷(`tools/ci.py::failure_detail`)。
 实测:`tools/ci.py --online` = 通过 16 · 失败 0 · 跳过 0;沙箱离线 = 通过 11 · 失败 0 · 跳过 1。
+已推送 `a8d392e`,云端 Actions 运行 #8 = success。
 阶段九(2026-09-18,对应 R2)=按用户「不要参考本地的真实资产,是要做一个通用的平台」的要求,
 把昇腾的部署方法改成**只来自公开权威来源**:新增 `deploy-portal/tools/sync_ascend.py`,
 从 vllm-ascend 官方**稳定版 v0.23.0** 抓支持矩阵(10 张表 / 96 行能力)与矩阵 `Doc` 列引用的
