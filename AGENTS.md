@@ -128,8 +128,8 @@ python tools/ci.py --online       # 联网核实,分钟级(收尾跑)
 ```
 
 CI 会跑语法检查、冒烟测试(99 项)、实测值核对、shell 语法与入库行尾、GPU 目录
-自洽、改文件工具的三条链路(含内置补丁引擎)、根目录残留物,并检查工作流骨架文件
-还在不在。详见 `docs/CI.md`。
+自洽、改文件工具的三条链路(含内置补丁引擎)、根目录残留物,并检查工作流骨架文件与
+跨会话交接文件(`.agents/ACTIVE_TASK.md`)还在不在、是否自洽。详见 `docs/CI.md`。
 
 **`SKIP` 不等于 `PASS`。** 一项检查没跑起来时会报 `SKIP`,它不阻塞 CI,但会
 单独列出来。不要让「跳过」看起来像「通过」。
@@ -208,6 +208,7 @@ CI 会跑语法检查、冒烟测试(99 项)、实测值核对、shell 语法与
 | 规则、边界、禁止事项 | 本文件 |
 | 模块、入口、数据文件、双生态差别 | `docs/PROJECT-MAP.md` |
 | CI 与定时任务 | `docs/CI.md` |
+| **接下来要做什么**(唯一一份待办清单) | `docs/ROADMAP.md` |
 | 管理台设计(技术栈、阶段进度、已知缺陷、backlog) | `deploy-portal/DEVELOPMENT.md` |
 | 选型规则与硬件 JSON 格式 | `model-selector/README.md` |
 | 某个功能「要解决什么、不做什么」 | `.codex-specs/<feature-id>/spec.md` |

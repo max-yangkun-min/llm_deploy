@@ -21,7 +21,8 @@
 
 ## 验证
 
-- `python tools/ci.py` → 通过 8 · 失败 0(离线 6 项 + 联网 2 项)
+- `python tools/ci.py` → 当时记录为「通过 8 · 失败 0」,但这个项数写错了(实际是 11 项
+  离线 + 2 项联网);以 `docs/CI.md` 的检查表为准
 - `python deploy-portal/tools/smoke_test.py` → 99/99
 - `python deploy-portal/tools/sync_gpus.py --check` → 15/15
 - `python tools/ci.py --online` → 在线 65/65 文档可达

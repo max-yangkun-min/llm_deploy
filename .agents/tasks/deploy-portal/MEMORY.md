@@ -437,29 +437,63 @@ been accepted on real hardware yet** (`models/` still only holds
   the file; reversed order makes the later hunk report "expected lines not found"
   even though the text is right there. That cost one rejected `docs/CI.md` patch.
 
+## Stage nine this session (2026-09-18): work list consolidated, two "checks that lied" fixed
+
+- The user asked to organise the outstanding work. The same backlog turned out to live in
+  three places (`ACTIVE_TASK.md`, `DEVELOPMENT.md` 5.10/5.11, this file's Next actions),
+  and two of the three had already gone stale. The list now lives in exactly one place:
+  **`docs/ROADMAP.md`**, with per-item evidence (measured numbers or code locations),
+  acceptance criteria and preconditions. The other two places are pointers now.
+- Four consistency defects were fixed, two of which were **CI reporting a false number** -
+  worse than having no check, because people believe it:
+  1. `.agents/ACTIVE_TASK.md` had the whole "Task ID / Memory / Inputs / Last updated"
+     block plus "## Previously active task" duplicated (lines 40-54 repeating 25-39), and
+     its Last-updated still said stage seven. This is the file **every session reads
+     first**, so a corrupted copy breaks the handoff silently - and CI was fully green.
+     New assertion `tools/ci.py::check_memory_files` pins: no duplicate Task ID, at most
+     one "## Previously active task", a `Last updated:` line, and every `Memory:` /
+     `Inputs:` path must exist. Negative controls were run: duplicate Task ID -> FAIL,
+     missing referenced file -> FAIL, missing `Last updated` -> FAIL.
+  2. `check_project_files` counted specs with a `*/spec.md` glob, which swallowed
+     `.codex-specs/_TEMPLATE/spec.md` - it reported 3 live specs when there were 2.
+     Directories starting with `_` are now excluded.
+  3. `DEVELOPMENT.md` 5.10 numbered its list 1..8, then restarted at `7.`, `8.`.
+  4. `DEVELOPMENT.md` 5.11 still carried a `| 无 CI |` tech-debt row even though CI had
+     existed since 2026-09-17 and the cloud workflow was already green.
+- A number that had been wrong since stage seven is corrected everywhere: the gate is
+  **11 offline checks + 2 online**, not "8 + 2". That mis-count had been copy-pasted into
+  `DEVELOPMENT.md`, the ascend plan and this file.
+- `docs/ROADMAP.md` is now part of the required workflow skeleton, so deleting it fails CI.
+- Highest-value remaining item is **R2, the Ascend recipe gap**. Evidence gathered rather
+  than restated: `recipes.json` has no `ecosystem` key at all, so
+  `engine.py::recipe_ecosystem()` defaults all 7 recipes to cuda and the three Ascend cards
+  get an empty recipe list. The real assets in `deepseekv4-flash/offline-dsv4-0731/` are:
+  8x Ascend 910B4-1 (64 GiB each, ARM64); DeepSeek-V4-Flash-0731 W8A8 (weights ~293 GiB,
+  not in the package); TP8 + EP; `--quantization ascend`; `--max-model-len 65536`;
+  `--max-num-seqs 4`; DSpark with 7 speculative tokens; image `quay.io/ascend/vllm-ascend`
+  via the `m.daocloud.io` mirror, OCI index `sha256:ade04e75aa4a...`, arm64 manifest
+  `sha256:8dd01aa0e0e5...`, vLLM 0.26.0 + CANN 9.0.1. The package itself states the 0731
+  weights only ever recorded **Atlas A3** validation and that 910B4/A2 still needs a real
+  start / first-token / stability run. Two decisions block it: 910B is not in the GPU
+  catalog (no verifiable vendor page), and whether to register as `provisional-local` with
+  the A3-only caveat spelled out on the same screen, or wait for real-machine validation.
+- Verified: local `python tools/ci.py` -> 10 pass / 0 fail / 1 skip; the skip is the
+  shell-syntax check, which cannot reach WSL from inside the agent sandbox. When WSL is
+  reachable all 11 offline checks run.
+
 ## Next actions
 
-1. **Run `python tools/ci.py` after every change** (seconds, offline) and
-   `python tools/ci.py --online` before wrapping up. Both scheduled tasks
-   already do this; see `docs/CI.md`.
-2. Optional: `python deploy-portal/tools/sync_hf.py --repos-only` to refresh the
-   28 tracked repositories, then `apply_truth.py --refresh` to re-derive values.
-3. Decide whether `deepseek-ai/DeepSeek-V4.1-Flash` should replace the tracked
-   `DeepSeek-V4-Flash-0731`.
-4. If the user gives real hardware JSON, run it through the hardware page and then
-   verify the chosen candidate's exact domestic-mirror artifact before promoting
-   its recipe status.
-5. Optional, only if asked: decouple `hf-catalog.json` size from first paint,
-   add an `organization_kind` filter, add a hardware comparison view.
-6. Documentation is up to date at v1.4 (`DEVELOPMENT.md`), plus `docs/CI.md`
-   and `docs/PROJECT-MAP.md`. If you change behaviour, the rule is: update the
-   spec (`.codex-specs/<feature-id>/`) and add an assertion, not just the prose.
-7. Backlog worth doing when asked: derive the maximum context a card can hold at
-   a given model (currently the user supplies context and there is no warning
-   when KV is near the VRAM ceiling), and expose `--kv-cache-dtype fp8`
-   (KV is currently always costed at 2 bytes).
-8. If a GPU whose vendor page has gone offline must be supported (A800 / H800),
-   find an official archived spec page first; do not add it from memory.
+**待办清单只有一份:`docs/ROADMAP.md`。** 本节原先是一份手写列表,和
+`ACTIVE_TASK.md`、`DEVELOPMENT.md` 5.10 的三份副本互相漂移(2026-09-18 整理时确认
+其中两处已经过期),所以改成指针,不再单独维护条目。
+
+每轮固定动作(不随清单变化):
+
+1. 改完就跑 `python tools/ci.py`(离线,秒级);收尾跑 `python tools/ci.py --online`。
+   两个定时任务已经在做这件事,见 `docs/CI.md`。
+2. 改行为时:更新 `.codex-specs/<feature-id>/` 规范并**补断言**,不能只改散文。
+3. 结束本轮前更新本文件的进度记录与 `.agents/ACTIVE_TASK.md`。
+
 
 ## Do not repeat
 

@@ -460,6 +460,7 @@ def check_project_files(report):
         "AGENTS.md": "项目宪法:规则、边界、禁止事项",
         "docs/PROJECT-MAP.md": "项目地图:模块、入口、数据文件清单",
         "docs/CI.md": "持续集成与定时检查说明",
+        "docs/ROADMAP.md": "接下来要做的工作(单一真源)",
         "tools/ci.py": "CI 门禁本体",
         "scripts/ci/run-ci.ps1": "CI 包装脚本(留痕到 output/ci/)",
         "scripts/ci/register-scheduled-task.ps1": "定时任务注册脚本",
@@ -471,13 +472,67 @@ def check_project_files(report):
         return
 
     # 规范层的活规范:没有 spec 的 SDD 目录等于只有模板,形同虚设。
-    specs = sorted((ROOT / ".codex-specs").glob("*/spec.md")) if (ROOT / ".codex-specs").is_dir() else []
+    #
+    # `_TEMPLATE/spec.md` 是模板,不是一份规范。用 `*/spec.md` 通配会把它算进去,
+    # 于是 2 份真规范被报成 3 份——一个专门用来报真实值的检查,自己报了假数。
+    # 下划线开头的目录一律不算活规范。
+    specs = sorted(path for path in (ROOT / ".codex-specs").glob("*/spec.md")
+                   if not path.parent.name.startswith("_")) \
+        if (ROOT / ".codex-specs").is_dir() else []
     if not specs:
         report.add("工作流骨架文件", "warn",
                    "%d 个工作流文件齐全,但 .codex-specs/ 下还没有 spec.md" % len(required))
     else:
         report.add("工作流骨架文件", "pass",
                    "%d 个文件齐全,规范 %d 份" % (len(required), len(specs)))
+
+
+def check_memory_files(report):
+    """跨会话交接文件必须能被下一个会话读懂。
+
+    为什么单列一项:`.agents/ACTIVE_TASK.md` 是**每次交互第一个被读的文件**,
+    它坏掉等于交接断线。2026-09-18 实测过一次——一次整文件替换把
+    「Task ID / Memory / Inputs / Last updated」连同「## Previously active task」
+    整段复制成了两份(第 40-54 行重复第 25-39 行),末次更新时间还停在上一阶段,
+    而 CI 全绿:没有任何检查看得见这种坏法。
+
+    这里只做机械可判的事:Task ID 不许重复、『## Previously active task』最多一个、
+    必须有 Last updated、Memory/Inputs 指向的文件必须真的存在。
+    """
+    pointer = ROOT / ".agents" / "ACTIVE_TASK.md"
+    if not pointer.is_file():
+        report.add("任务记忆文件", "fail",
+                   "缺少 .agents/ACTIVE_TASK.md(AGENTS.md 规定每次交互先读它)")
+        return
+    try:
+        lines = pointer.read_text(encoding="utf-8").split("\n")
+    except OSError as error:
+        report.add("任务记忆文件", "fail", "读不出 .agents/ACTIVE_TASK.md:%s" % error)
+        return
+
+    problems = []
+    ids = [line.split(":", 1)[1].strip() for line in lines if line.startswith("Task ID:")]
+    duplicated = sorted({value for value in ids if ids.count(value) > 1})
+    if duplicated:
+        problems.append("Task ID 重复出现(整段被复制过?):%s" % "、".join(duplicated))
+    if not ids:
+        problems.append("一个 Task ID 都没有")
+    heads = [line for line in lines if line.startswith("## Previously active task")]
+    if len(heads) > 1:
+        problems.append("『## Previously active task』出现 %d 次" % len(heads))
+    if not any(line.startswith("Last updated:") for line in lines):
+        problems.append("没有 `Last updated:` 行")
+    for line in lines:
+        for prefix in ("Memory: ", "Inputs: "):
+            if line.startswith(prefix):
+                target = line[len(prefix):].strip().strip("`").strip()
+                if target and not (ROOT / target).is_file():
+                    problems.append("%s 指向的文件不存在:%s" % (prefix.rstrip(": "), target))
+    if problems:
+        report.add("任务记忆文件", "fail", ";".join(problems)[:200])
+    else:
+        report.add("任务记忆文件", "pass",
+                   "ACTIVE_TASK.md 自洽:%d 条 Task ID、引用文件都在" % len(ids))
 
 
 def check_online(report):
@@ -534,6 +589,7 @@ def main(argv=None):
     check_replace_tool(report)
     check_residue(report)
     check_project_files(report)
+    check_memory_files(report)
     if args.online:
         check_online(report)
 

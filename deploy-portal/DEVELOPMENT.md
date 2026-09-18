@@ -2,11 +2,11 @@
 
 | 项目 | 内容 |
 | --- | --- |
-| 文档版本 | 1.4 |
-| 最后更新 | 2026-09-17 (Asia/Shanghai) |
+| 文档版本 | 1.5 |
+| 最后更新 | 2026-09-18 (Asia/Shanghai) |
 | 代码位置 | `deploy-portal/` |
 | 配套文档 | `README.md` 面向使用者(怎么启动、有哪些接口);本文件面向开发者(技术栈、边界、进度、坑) |
-| 当前状态 | 阶段一至七已完成并通过验证;持续集成与定时检查已落地(`tools/ci.py`);无阻塞项 |
+| 当前状态 | 阶段一至八已完成并通过验证;持续集成已落地(`tools/ci.py`)且云端 workflow 已实测转绿;无阻塞项;待办清单见 `docs/ROADMAP.md` |
 
 ---
 
@@ -599,11 +599,13 @@ sha256、推荐条数落在 3-5、结果内模型不重复、每条方案都带�
 
 #### 持续集成与定时检查(用户「固化为定时任务」的要求)
 
-- `tools/ci.py` 是**唯一**的门禁实现:离线 8 项 + 联网 2 项,退出码 = 失败项数。
+- `tools/ci.py` 是**唯一**的门禁实现:离线 11 项 + 联网 2 项,退出码 = 失败项数。
+  此前这里一直写「离线 8 项」,与实际不符。检查项数不再靠手写:以 `docs/CI.md` 的检查表为准。
 - `scripts/ci/run-ci.ps1` 调用它并把结果留痕到 `output/ci/`。
 - `scripts/ci/register-scheduled-task.ps1` 注册 `llm-ci-daily`(每天离线)与
   `llm-ci-weekly`(每周联网)。已验证:`LastTaskResult = 0`。
-- `.github/workflows/ci.yml` 云端跑离线门禁(**尚未在真实 runner 上验证**)。
+- `.github/workflows/ci.yml` 云端跑离线门禁。已实测:首次推送 `17331d0` 为 failure
+  (门禁依赖本机 `codex.exe`),修复后 `8b03239` 运行 #2 与 `5cd30d6` 运行 #3 均为 success。
 - 设计原则:`SKIP` 单独列出,不算通过;第三方源码目录(如 `.vendor-fetch-*`、
   `source-cache`)不进门禁——它们常年红只会让人学会忽略结果。
 
@@ -620,36 +622,12 @@ sha256、推荐条数落在 3-5、结果内模型不重复、每条方案都带�
 
 ### 5.10 未完成事项(Backlog)
 
-按优先级:
-
-1. **把 `deepseek-ai/DeepSeek-V4.1-Flash` 纳入追踪**—— 是否需要评估替换 0731。
-2. **`databricks/dbrx-instruct` 的许可未能核实**—— 官方仓库 gated,需人工确认 Databricks 许可条款后再定。
-3. **`quality_score` / `throughput_score` 仍是人工评分**—— 这是排序权重、不是实测数据,
-   若要变成事实,需要在目标 GPU 上跑吞吐与质量基准后回填。
-4. **核对索引质量分布**—— 当前 24,412 条索引含大量社区 GGUF 量化仓库
-   (`mradermacher` 8,436 / `TheBloke` 3,863 / `bartowski` 2,452),
-   "广"但"深"不足;可考虑增加 `organization_kind` 过滤或按"可部署档"分层。
-5. **`meta-llama/Meta-Llama-3.1-405B-Instruct` 的 KV 结构仍无法核实**(官方仓库与
-   NousResearch / alpindale / unsloth 等镜像全部 401)。该档上下文已用官方模型卡标称的
-   128K 并记 `context_source=card`,KV 一栏留空并注明"只按权重下界核算";若能拿到
-   官方 config,应回填真实 KV 结构。
-6. **GPU 目录覆盖 15 张卡(12 NVIDIA + 3 华为昇腾)**,都仍能引到厂商产品页。
-   A800 / H800 / L20 / A10 / A30 / V100 已从厂商产品页下线,因此不进目录;
-   工作区里真实存在的这类机器只能走台账的「现场登记(未核实)」路径。
-   昇腾的 910B / 310P 同样不收录,原因见 5.9(现官网已换代,逐字 0 命中);
-   若要核实,需要先找到可引用的官方规格归档页。
-7. **昇腾还没有一条已记录的部署方案**。`recipes.json` 里没有 `ecosystem: cann` 的条目,
-   所以昇腾卡的「查看部署方案」是空的(这比挂一个 CUDA 方案上去更诚实)。
-   工作区里 `deepseekv4-flash/offline-dsv4-0731/` 有真实的昇腾部署资产
-   (TP8+EP、`--quantization ascend`、`--max-model-len 65536`、CANN 9.0.1、
-   镜像 `quay.io/ascend/vllm-ascend:nightly-main`),但 **910B4 尚未真机验收**,
-   且 910B 不在目录内,要登记为方案还需先拿到真机验收结果与可核实的厂商页依据。
-8. **昇腾的 KV 精度仍无公开公式**。`--quantization ascend` 的 KV 量化是华为专有实现,
-   所以昇腾档一律 `kv_gib = null`、只按权重下界核算。若日后有可核实的公开口径,
-   应回填并撤掉下界说明。
-7. **KV cache 上限口径**:当前按用户填的上下文 K 核算,不会反过来提示"这张卡最多能开多长
-   上下文"。长上下文场景应补一条 KV 是否已接近显存上限的明确告警。
-8. 可选增强(仅在明确要求时做):硬件方案对比视图、台账导出 Markdown。
+> 本节原先是一份手写清单。问题是同一批待办同时出现在三处(`ACTIVE_TASK.md`、
+> `DEVELOPMENT.md`、`.agents/tasks/*/MEMORY.md` 的 Next actions),三份会各自过期——
+> 2026-09-18 整理时确认其中两处已经过期。
+>
+> 现在待办清单**只有一份**:`docs/ROADMAP.md`。本节不再维护条目,以免又出现两个真源。
+> 那份文档保留了每项的依据(实测数字或代码位置)、验收标准和前置条件,并按优先级排序。
 
 ### 5.11 已知技术债
 
@@ -659,7 +637,7 @@ sha256、推荐条数落在 3-5、结果内模型不重复、每条方案都带�
 | 索引过滤在前端做全量扫描 | `hf_query()` 在 Python 内对 24,412 条做线性过滤 | 当前耗时无感;超过 10 万条需建反向索引 |
 | 无并发写保护 | 同步工具直接覆盖 `data/*.json` | 单用户场景可接受;多人同时同步会互相覆盖 |
 | 权威来源需手动重跑校验 | `doc-sources.json` 是快照,URL 失效不会被自动发现 | 自检的"文档全部可达"断言可兜底,但需人工触发 |
-| 无 CI | 自检靠手工执行 | 依赖开发者自觉 |
+| ~~无 CI~~ **已解决 2026-09-17** | `tools/ci.py` 是唯一实现,本机定时任务与云端 workflow 都跑它 | 剩下的债:在线核实(厂商页 / 文档可达性)不在云端跑,仍需按周触发 |
 | 订正依赖核实缓存 | `apply_truth.py` 从 `data/catalog-verified.json` 取值,缓存过期需 `--refresh` 重抓 | 数值不会凭空变化,但上游改版后需手动刷新 |
 | `quality_score` / `throughput_score` 是人工评分 | 属于排序权重,不是实测 | 与「不展示假数据」不冲突(页面标为评分),但终究应换成实测基准 |
 | KV 按 2 字节(fp16/bf16)固定核算 | `--kv-cache-dtype fp8` 可减半,当前未作为输入项 | 长上下文场景会偏保守;偏保守不会导致选错卡,但可能低估可承载的并发 |
@@ -717,6 +695,7 @@ sha256、推荐条数落在 3-5、结果内模型不重复、每条方案都带�
 
 | 日期 | 版本 | 变更 |
 | --- | --- | --- |
+| 2026-09-18 | 1.5 | 阶段八:仓库发布到 github.com/max-yangkun-min/llm_deploy,并让云端 workflow 首次实测转绿。修掉首次云端 CI 变红的原因——`apply_patch.py` 只认 Windows 的 `codex.exe`,Linux 上「改文件工具」门禁必然红;现改为双后端(优先用真能跑起来的 codex,否则用内置严格补丁引擎,见 `.codex-specs/ci-portability/`),`tools/apply_patch.py` 由字节相同的第二份副本改为转发入口。门禁新增「Shell 脚本行尾」「任务记忆文件」两项,并修正两处「检查自己报假数」:规范计数把 `_TEMPLATE/spec.md` 算成一份、离线项数历来写错。待办清单收敛到 `docs/ROADMAP.md`(单一真源) |
 | 2026-09-17 | 1.4 | 阶段七完成:GPU 目录新增**华为昇腾**(Atlas 350 / Atlas 300I Duo 96GB·48GB,逐字命中华为官方产品页),目录 12→15 张卡;昇腾**不做 sm 映射**(`compute_capability=null` + `compute_capability_basis`),FP8 改读厂商页标称值,算力门槛与 NVIDIA 驱动下限加 `cuda` 守卫,KV cache 因专有量化只按权重下界核算;`hardware_from_gpu()` 支持 `compute_capability=None`;方案按生态分组(`recipes_grouped`)并返回 `recipes_other_ecosystem`,不把 CUDA 栈方案挂到昇腾卡上;现场登记改为「不填算力就必须写明 ecosystem」;前端下拉按厂商分组、`smLabel(null)` 返回 `—`、新增共享 `computeLabel`/`stackLabel`、计划卡片不再对昇腾显示 CUDA 栈与 NVIDIA 驱动下限;台账对 KV 未计入的档显示「下界通过」;自检 75→99 项(昇腾反回归 20 项)。同版新增**持续集成**:`tools/ci.py`(离线 8 项 + 联网 2 项)、`scripts/ci/run-ci.ps1`、`scripts/ci/register-scheduled-task.ps1`(已注册 llm-ci-daily/llm-ci-weekly 并验证 `LastTaskResult=0`)、`.github/workflows/ci.yml`、`docs/CI.md`、`docs/PROJECT-MAP.md`、`.codex-specs/` 规范层;修掉 `whole_file_replace.py` 两个缺陷(首行被改动时丢新首行、回滚用 Python 3.8 不支持的 `write_text(newline=)`) |
 | 2026-09-17 | 1.3 | 阶段六完成:新增 `tools/sync_gpus.py` 与 `data/gpu-catalog.json`(12 张卡,显存/算力逐字命中厂商页与 NVIDIA 官方算力表);`sync_hf.py` 新增真实 attention 结构抓取(KV 分 MLA / 混合线性 / GQA 三种口径);`recommend.py` 新增 `assess()` / `kv_gib()`,权重与 KV 按实测核算,`/api/presets` 改为 `/api/gpus` 且推荐必须传 `gpu_id`;删除按 `validation_status` 的本地方案偏袒,新增显存利用率评分项;新增 `tools/whole_file_replace.py`;修复 `recommend.js` 缺右括号导致整页停在「加载中」的缺陷;自检 63→75 项 |
 | 2026-09-16 | 1.2 | 阶段五完成:`models.csv` / `model-families.csv` 按 artifact 实测值订正(权重、参数量、上下文、许可),新增 `verified_*` / `artifact_params_b` / `license_id` / `context_source` 溯源列;新增 `tools/apply_truth.py` 与 `data/catalog-verified.json`;修复 `deepseek-r1-bf16` 的档位对照缺陷;宽松许可改按机器可读 id 判定;核对面板改为漂移检查;自检 57→63 项 |

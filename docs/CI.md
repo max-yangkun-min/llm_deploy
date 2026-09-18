@@ -43,7 +43,8 @@ python tools/ci.py --online --json output/ci/report.json
 | `GPU 目录自洽` | 离线 | `gpu-catalog.json` 里没有 `verification.status != ok` 的条目,并统计厂商分布 |
 | `改文件工具` | 离线 | 真跑三条链路:整文件替换(默认后端)、整文件替换(内置引擎)、新增文件(内置引擎),每条都逐字节校验。内置引擎用环境变量强制,所以本机即使有 codex,它也被真的跑过 |
 | `根目录残留物` | 离线 | 临时脚本 / 待办文件 / 散落日志,只报 `WARN`,**不删用户的东西** |
-| `工作流骨架文件` | 离线 | `AGENTS.md`、`.codex-specs/`、`tools/ci.py`、`scripts/ci/*`、`docs/*`、`.github/workflows/ci.yml` 还在不在,规范目录里有没有活的 `spec.md` |
+| `工作流骨架文件` | 离线 | `AGENTS.md`、`docs/PROJECT-MAP.md`、`docs/CI.md`、`docs/ROADMAP.md`、`tools/ci.py`、`scripts/ci/*`、`.github/workflows/ci.yml` 还在不在,规范目录里有没有活的 `spec.md`(`_TEMPLATE/` 不算) |
+| `任务记忆文件` | 离线 | `.agents/ACTIVE_TASK.md` 这份跨会话交接:Task ID 不许重复、『## Previously active task』最多一个、必须有 `Last updated:`、`Memory:`/`Inputs:` 指向的文件必须真的存在 |
 | `在线:GPU 厂商页核实` | `--online` | 15 张卡的显存/类型/互联是否还能在厂商页逐字命中;NVIDIA 卡另外对官方算力表核 |
 | `在线:权威文档可达性` | `--online` | 65 个权威来源链接是否还活着 |
 
