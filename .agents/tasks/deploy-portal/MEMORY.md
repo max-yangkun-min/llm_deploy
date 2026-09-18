@@ -702,6 +702,9 @@ been accepted on real hardware yet** (`models/` still only holds
   syntax SKIP). Six views re-checked in a real browser: 0 console errors; evidence
   `output/playwright/25-ascend-max-context-null.png`, `26-max-context-cuda.png`.
   Spec `.codex-specs/kv-max-context/`.
+  `python tools/ci.py --online` = 16 pass / 0 fail / 0 skip (GPU vendor pages 15/15,
+  66/66 docs reachable, ascend matrix + 31 tutorials sha256 unchanged). Cloud Actions
+  run #10 on `eb75fb6`: success.
 ## Next actions
 
 **待办清单只有一份:`docs/ROADMAP.md`。** 本节原先是一份手写列表,和

@@ -745,6 +745,15 @@ sha256、推荐条数落在 3-5、结果内模型不重复、每条方案都带�
 `FAIL 引擎给出的上下文上限确实放得下 ['单卡需 27GiB(权重+KV+余量),超过 24GiB 卡的可用 22GiB']`。
 两个方向都验:乘 2 → 该条 FAIL;除 2 → `FAIL 上下文上限是被标称上下文或显存卡住的`。
 规范见 `.codex-specs/kv-max-context/`。
+**验证证据(阶段十一当轮)**
+
+| 项 | 结果 |
+|---|---|
+| `python deploy-portal/tools/smoke_test.py` | **120/120**(同目录的 `git show HEAD` 旧版为 112,即 R3 新增 8 条) |
+| `python tools/ci.py` | 沙箱内:通过 11 · 失败 0 · 跳过 1(读不到 WSL → shell 语法 SKIP,不算通过) |
+| `python tools/ci.py --online` | 通过 16 · 失败 0 · 跳过 0(厂商页 15/15;权威文档 66/66;昇腾官方矩阵与 31 份教程 sha256 未漂移) |
+| 云端 Actions | 运行 #10(`eb75fb6`)**success**;联网核实不在云端跑,仍由 `llm-ci-weekly` 按周触发 |
+| 六视图浏览器复核 | 0 控制台报错;证据 `output/playwright/25-ascend-max-context-null.png`、`26-max-context-cuda.png` |
 
 ### 5.10 未完成事项(Backlog)
 
