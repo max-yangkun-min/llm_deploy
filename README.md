@@ -133,7 +133,7 @@ pwsh -File scripts\ci\run-ci.ps1                       # 结果留痕到 output/
 pwsh -File scripts\ci\register-scheduled-task.ps1      # 注册每日离线 + 每周联网任务
 ```
 
-门禁覆盖:磁盘余量(C: 低于 20 GiB 直接失败)、Python 语法、冒烟测试(120 项)、
+门禁覆盖:磁盘余量(C: 低于 20 GiB 直接失败)、Python 语法、冒烟测试(135 项)、
 实测值核对、shell 语法与入库行尾(不得 CRLF)、GPU 目录自洽、改文件工具的三条链路
 (整文件替换·默认后端 / 整文件替换·内置引擎 / 新增文件·内置引擎)、根目录残留物、
 工作流骨架文件、昇腾官方支持矩阵(来源必须公开可核实),以及联网的厂商页、

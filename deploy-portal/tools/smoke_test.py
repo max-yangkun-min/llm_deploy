@@ -743,6 +743,140 @@ def main():
                   and any("不是权重放不下" in text for text in over_plan["failures"]),
                   str(over_plan["failures"])[:200] if over_plan else "没找到该方案")
 
+        # R4:KV 精度作为输入项。默认必须与改动前逐字一致(auto = 2 字节),
+        # 开了 fp8 要真的减半,开不了的时候必须说开不了而不是静默按 2 字节算。
+        def with_dtype(gpu, count, context_k, dtype, profile=None):
+            hardware = {"gpu_id": gpu, "gpu_count": count, "context_k": context_k}
+            if dtype is not None:
+                hardware["kv_cache_dtype"] = dtype
+            if profile:
+                status, payload = post_json("/api/check", {"hardware": hardware,
+                                                           "profile_id": profile})
+                return status, payload
+            status, payload = post_json("/api/recommend", {"hardware": hardware,
+                                                           "preference": "balanced", "top": 5})
+            return status, payload
+
+        status, auto = with_dtype("rtx-4090-24", 1, 32, None)
+        check("KV 精度默认是 auto 且按 2 字节核算",
+              status == 200
+              and auto["kv_cache_dtype"]["requested"] == "auto"
+              and auto["kv_cache_dtype"]["bytes_per_element"] == 2.0
+              and auto["kv_cache_dtype"]["effective"] is True
+              and all(item["memory"]["kv_cache_dtype"] == "auto"
+                      and item["memory"]["kv_cache_dtype_bytes"] == 2.0
+                      for item in auto["plans"]),
+              str(auto.get("kv_cache_dtype"))[:160])
+        check("KV 精度选项由后端给出并带官方出处",
+              len(auto["kv_cache_dtype"]["options"]) >= 3
+              and any(option["value"] == "fp8_e4m3" for option in auto["kv_cache_dtype"]["options"])
+              and auto["kv_cache_dtype"]["source"].startswith("https://docs.vllm.ai/"),
+              str(auto["kv_cache_dtype"].get("options"))[:160])
+
+        # sm_89+ 的卡:减半必须真的发生,而且反算上限要同步变长(同一批系数的同一条公式)。
+        status, fp8 = with_dtype("rtx-4090-24", 1, 32, "fp8_e4m3")
+        auto_kv = {item["profile"]["model_id"]: item for item in auto["plans"]}
+        fp8_kv = {item["profile"]["model_id"]: item for item in fp8["plans"]}
+        shared = sorted(set(auto_kv) & set(fp8_kv))
+        check("fp8 KV 在算力达标的卡上真的减半",
+              bool(shared)
+              and all(abs(fp8_kv[key]["memory"]["kv_gib"] * 2
+                          - auto_kv[key]["memory"]["kv_gib"]) < 0.2 for key in shared)
+              and all(item["memory"]["kv_cache_dtype_bytes"] == 1.0
+                      and item["memory"]["kv_cache_dtype_effective"] is True
+                      for item in fp8["plans"]),
+              str([(key, auto_kv[key]["memory"]["kv_gib"], fp8_kv[key]["memory"]["kv_gib"])
+                   for key in shared])[:200])
+        check("fp8 KV 让可开的上下文变长而不是变短",
+              bool(shared)
+              and all((fp8_kv[key]["memory"]["max_context_k"] or 0)
+                      >= (auto_kv[key]["memory"]["max_context_k"] or 0) for key in shared)
+              and any((fp8_kv[key]["memory"]["max_context_k"] or 0)
+                      > (auto_kv[key]["memory"]["max_context_k"] or 0) for key in shared),
+              str([(key, auto_kv[key]["memory"]["max_context_k"],
+                    fp8_kv[key]["memory"]["max_context_k"]) for key in shared])[:200])
+
+        # 算力不足的卡:A100(sm_80)现场实测开 fp8 KV 是启动即报错,所以必须判失败。
+        status, low = with_dtype("a100-sxm-80", 8, 32, "fp8_e4m3")
+        low_failures = [text for item in low["rejected"] for text in item["failures"]]
+        check("算力不足的卡上要 fp8 KV 被判失败而不是静默按 2 字节算",
+              status == 200
+              and low["kv_cache_dtype"]["effective"] is False
+              and low["plans_total"] == 0
+              and any("sm_89" in text and "NotImplementedError" in text for text in low_failures),
+              str(low.get("kv_cache_dtype", {}).get("note"))[:180])
+        check("fp8 KV 不生效时说明非空且点明处置",
+              bool(low["kv_cache_dtype"]["note"])
+              and "auto" in low["kv_cache_dtype"]["note"],
+              str(low["kv_cache_dtype"].get("note"))[:180])
+        status, low_auto = with_dtype("a100-sxm-80", 8, 32, None)
+        check("不生效时数字必须是 2 字节口径(没有偷偷减半)",
+              all(item["memory"]["kv_cache_dtype_bytes"] == 2.0
+                  for item in low["rejected"] + low["plans"])
+              and any(item["memory"]["kv_gib"] == low_auto["plans"][0]["memory"]["kv_gib"]
+                      for item in low["rejected"] + low["plans"]),
+              "不生效却按 1 字节算会低估显存")
+
+        # 昇腾:该参数不属于那套栈。不生效,但必须说明,且不能判失败。
+        status, cann = with_dtype("ascend-300i-duo-96", 8, 32, "fp8_e4m3")
+        check("昇腾请求 fp8 KV 时不生效并如实说明",
+              status == 200
+              and cann["kv_cache_dtype"]["effective"] is False
+              and "不生效" in cann["kv_cache_dtype"]["note"]
+              and "ascend" in cann["kv_cache_dtype"]["note"],
+              str(cann.get("kv_cache_dtype", {}).get("note"))[:180])
+        check("昇腾不因为 KV 精度参数被判失败(那是生态问题不是参数问题)",
+              cann["plans_total"] > 0
+              and all(not any("kv-cache-dtype" in text for text in item["failures"])
+                      for item in cann["plans"] + cann["rejected"]))
+
+        # 取值必须可核实:打错了要当场 400,不能悄悄回落成 auto。
+        status, bad = post_json("/api/recommend", {
+            "hardware": {"gpu_id": "rtx-4090-24", "gpu_count": 1, "kv_cache_dtype": "fp4"},
+        })
+        check("未知的 KV 精度取值被拒绝而不是回落",
+              status == 400 and "kv_cache_dtype" in json.dumps(bad, ensure_ascii=False),
+              "status=%s %s" % (status, str(bad)[:120]))
+
+        # 反算与精度同口径:fp8 下的上限回填也必须零失败,+1K 必须判 KV 超。
+        status, fp8_small = with_dtype("rtx-4090-24", 1, 32, "fp8_e4m3")
+        fp8_sample = next((item for item in fp8_small["plans"]
+                           if item["memory"]["max_context_k"]
+                           and item["memory"]["max_context_limit"] == "memory"), None)
+        check("fp8 下也能取到显存反算上限的样例",
+              fp8_sample is not None,
+              "没有 limit=memory 的样例,下面两条等于没测")
+        if fp8_sample is not None:
+            fp8_limit = fp8_sample["memory"]["max_context_k"]
+            fp8_model = fp8_sample["profile"]["model_id"]
+            status, at = with_dtype("rtx-4090-24", 1, fp8_limit, "fp8_e4m3")
+            status, over = with_dtype("rtx-4090-24", 1, fp8_limit + 1, "fp8_e4m3")
+            at_plan = next((item for item in at["plans"] + at["rejected"]
+                            if item["profile"]["model_id"] == fp8_model), None)
+            over_plan = next((item for item in over["plans"] + over["rejected"]
+                              if item["profile"]["model_id"] == fp8_model), None)
+            check("fp8 下的上下文上限确实放得下(反算与正算同口径)",
+                  at_plan is not None and at_plan["failures"] == [],
+                  str(at_plan["failures"])[:200] if at_plan else "没找到该方案")
+            check("fp8 下超过上限 1K 仍被判 KV 超",
+                  over_plan is not None
+                  and any("KV 上限" in text for text in over_plan["failures"]),
+                  str(over_plan["failures"])[:200] if over_plan else "没找到该方案")
+
+        # 台账路径也要带同一份口径,否则「现场机器能不能上这个档」看不到 KV 精度。
+        status, checked = with_dtype("h100-sxm-80", 8, 32, "fp8_e5m2", profile="glm52-int4-a100")
+        check("台账达标检查也返回 KV 精度口径",
+              status == 200
+              and checked["kv_cache_dtype"]["requested"] == "fp8_e5m2"
+              and checked["memory"]["kv_cache_dtype"] == "fp8_e5m2"
+              and checked["memory"]["kv_cache_dtype_bytes"] == 1.0,
+              str(checked.get("kv_cache_dtype"))[:160])
+        check("官方支持面更窄的取值会点出后端差异",
+              "FlashAttention" in (checked["kv_cache_dtype"]["note"] or "")
+              and "e5m2" in (checked["kv_cache_dtype"]["note"] or ""),
+              str(checked["kv_cache_dtype"].get("note"))[:200])
+
+
         status, throttled = post_json("/api/recommend", {
             "hardware": {"gpu_id": "a100-sxm-80", "gpu_count": 1, "driver_version": "570.124.06"},
             "preference": "throughput",

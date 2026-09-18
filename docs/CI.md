@@ -36,7 +36,7 @@ python tools/ci.py --online --json output/ci/report.json
 |---|---|---|
 | `C: 盘可用空间` | 离线 | 低于 20 GiB 直接失败。这是 `AGENTS.md` 的硬约束:离线包、镜像 tar、权重动辄十几 GB,先看清磁盘再动手 |
 | `Python 语法检查` | 离线 | `tools/` `deploy-portal/` `model-selector/` 全部 `.py`。语法错误会让后面每项都失败,先隔离出来最省时间 |
-| `冒烟测试` | 离线 | `deploy-portal/tools/smoke_test.py` 的 120 项断言:接口、数据自洽、前端模块括号平衡、死控件、目录穿越、昇腾官方口径、方案的公开依据是否按归属显式挂接、上下文上限的正反算自洽 |
+| `冒烟测试` | 离线 | `deploy-portal/tools/smoke_test.py` 的 135 项断言:接口、数据自洽、前端模块括号平衡、死控件、目录穿越、昇腾官方口径、方案的公开依据是否按归属显式挂接、上下文上限的正反算自洽、KV cache 精度是否真的生效(含生效/不生效/低算力判失败/非法取值四条支路) |
 | `实测值核对` | 离线 | `models.csv` / `model-families.csv` 有没有被手改。每个值都要带 40 位 `verified_revision`,所以必须来自 `apply_truth.py` |
 | `Shell 脚本语法` | 离线 | 仓库自有的 21 个 `.sh` 做 `bash -n`(只解析不执行)。第三方源码目录(如 `.vendor-fetch-*`、`source-cache`)不在门禁范围 |
 | `Shell 脚本行尾` | 离线 | `.sh` 的**入库内容**不能带 CRLF——带 CRLF 的脚本在 Linux 上会成片报 `$'\r': command not found`。查索引而不是工作区:本机 `core.autocrlf=true` 会把工作区换行还原成 CRLF,查工作区必然误报 |

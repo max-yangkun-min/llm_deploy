@@ -58,6 +58,11 @@ NUMERIC_HARDWARE_KEYS = ("gpu_count", "vram_per_gpu_gib", "compute_capability",
 VERIFIED_ONLY_KEYS = ("vram_per_gpu_gib", "compute_capability", "compute_capability_basis",
                       "gpu_name", "vendor", "ecosystem", "fp8_supported", "fp8_basis")
 
+#: KV 精度是个部署选择,不是厂商页字段,所以允许调用方传;但取值必须可核实,
+#: 打错了要当场 400,不能悄悄回落到 auto —— 那会让「我明明开了 fp8」和
+#: 「数字怎么没变」同时成立。
+KV_CACHE_DTYPE_KEY = "kv_cache_dtype"
+
 
 def build_hardware(raw, require_verified=True):
     """把前端提交的「选中的 GPU + 卡数 + 现场参数」变成推荐引擎的硬件描述。
@@ -101,6 +106,12 @@ def build_hardware(raw, require_verified=True):
         hw = dict(raw)
         hw.setdefault("ecosystem", ecosystem or "cuda")
         hw["hardware_verified"] = False
+    dtype = str(hw.get(KV_CACHE_DTYPE_KEY) or "").strip().lower()
+    if dtype:
+        choices = sorted(engine.core.KV_CACHE_DTYPES)
+        if dtype not in choices:
+            raise ApiError("kv_cache_dtype 只支持 %s,收到 %r" % (" / ".join(choices), dtype))
+        hw[KV_CACHE_DTYPE_KEY] = dtype
     for key in NUMERIC_HARDWARE_KEYS:
         value = hw.get(key)
         if isinstance(value, str) and value.strip():
@@ -244,6 +255,8 @@ def handle_check(body):
     # 台账里可能是厂商页上没有的改装卡,如实把核实状态带回前端。
     result["hardware_verified"] = bool(hw.get("hardware_verified"))
     result["hardware_gpu_name"] = hw.get("gpu_name")
+    # 与 /api/recommend 同一份口径说明,台账里也能看到「这次按什么 KV 精度核算的」。
+    result["kv_cache_dtype"] = engine.kv_cache_dtype_block(hw)
     return result
 
 

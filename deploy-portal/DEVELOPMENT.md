@@ -285,6 +285,7 @@
 | 阶段九 | 昇腾部署方法改从**公开权威来源**建立(R2,见 5.9.1) | ✅ 完成并验收 |
 | 阶段十 | 方案的公开依据按**归属**显式挂接(R17,见 5.9.2) | ✅ 完成并验收 |
 | 阶段十一 | 上下文上限**反算**(R3,见 5.9.3) | ✅ 完成并验收 |
+| 阶段十二 | KV cache 精度作为输入项(R4,见 5.9.4) | ✅ 完成并验收 |
 | 待办 | 其余人工评分项(quality/throughput)实测化等 | 见 `docs/ROADMAP.md`(单一真源) |
 
 ### 5.2 阶段一:网站骨架(已完成)
@@ -755,6 +756,42 @@ sha256、推荐条数落在 3-5、结果内模型不重复、每条方案都带�
 | 云端 Actions | 运行 #10(`eb75fb6`)与 #11(`8ebd268`)**success**;联网核实不在云端跑,仍由 `llm-ci-weekly` 按周触发 |
 | 六视图浏览器复核 | 0 控制台报错;证据 `output/playwright/25-ascend-max-context-null.png`、`26-max-context-cuda.png` |
 
+#### 5.9.4 阶段十二:KV cache 精度作为输入项(R4)
+
+**依据**:KV 一直按 2 字节(fp16/bf16)固定核算。`--kv-cache-dtype fp8` 能把它减半,
+对长上下文场景不是小数点后的差别,而是「这条方案在不在候选集里」的差别。
+
+| 项 | 内容 |
+|---|---|
+| 取值 | `auto` / `float16` / `bfloat16` / `fp8` / `fp8_e4m3` / `fp8_e5m2`,默认 `auto`;未知取值 400,不静默回落 |
+| 依据 | 官方文档 `features/quantization/quantized_kvcache/`(写明 `fp8_e4m3` = CUDA 11.8+ 与 ROCm、`fp8_e5m2` = CUDA 11.8+);门槛取 vLLM 源码 `platforms/cuda.py` 的 `supports_fp8() = has_device_capability(89)` |
+| 字段 | `memory.kv_cache_dtype` / `kv_cache_dtype_bytes` / `kv_cache_dtype_effective` / `kv_cache_dtype_note`;响应顶层另有 `kv_cache_dtype`(含可选值、来源链接、默认值与门槛) |
+| 生效 | 算力 ≥ 8.9 → 按 1 字节核算,反算上限同步变长(R3 的反算与正算同口径) |
+| 判失败 | 算力已核实且 < 8.9。现场实测 A100/A40 开 fp8 KV 是启动即 `NotImplementedError`,给警告然后照样按 1 字节算出「放得下」等于推荐跑不起来的方案 |
+| 只给警告 | 算力未登记(现场登记路径允许不填):按 2 字节保守核算,要求上线前核实 |
+| 不判失败但必须说明 | 非 CUDA 生态。昇腾的 KV 精度由 `--quantization ascend` 决定,`--kv-cache-dtype` 不是那套栈的参数;判失败会把「参数开不了」和「生态选错」混成一件事 |
+
+`fp8` 与 `fp8_e4m3` 在 vLLM 的 `CacheDType` 里是**两个分别列出的取值**,我没找到可核实的
+等价映射,所以不声称它们等价(只是字节数相同)。`fp8_e5m2` 虽然在官方文档里,但
+`vllm/v1/attention/backends/flash_attn.py` 的 `supported_kv_cache_dtypes` 里**没有**它,
+说明里点出这处差异,让人自己确认后端,而不是替他把一个官方支持的取值删掉。
+
+**回归基线**:默认 `auto` 时必须与改动前**逐字一致**——对拍 8 个用例(含昇腾、
+`llama31-405b-bf16` 的结构缺失分支)的 `memory` / `failures` / `warnings` 全部 0 差异。
+改默认值会把现有全部推荐结果静默改掉。
+
+**验证证据(阶段十二当轮)**
+
+| 项 | 结果 |
+|---|---|
+| 默认口径对拍 | 8 用例 0 差异(脚本 `.tmp/r4_parity.py` 对 `git show HEAD` 版 `recommend.py`) |
+| 减半实测 | RTX 4090 + `qwen3-coder-30b-awq`:KV 3.0 → 1.5 GiB,最长上下文 46K → 93K;A100 不变 |
+| 拦截实测 | 8×A100 要 `fp8_e4m3` → 19 个方案全不进候选,失败信息含 `sm_89` 与 `NotImplementedError` |
+| 昇腾实测 | 8×Atlas 300I Duo 要 `fp8_e4m3` → 不生效 + 说明,方案照常给出 |
+| `python deploy-portal/tools/smoke_test.py` | **135/135**(R3 为 120,即本次新增 15 条) |
+| `python tools/ci.py` | 沙箱内:通过 11 · 失败 0 · 跳过 1(读不到 WSL → shell 语法 SKIP,不算通过) |
+| 反向验证 | 两个方向都当场报红:fp8 字节数改回 2 → 3 条 FAIL;不生效分支仍返回 1 字节 → 「不生效时数字必须是 2 字节口径」FAIL |
+| 六视图浏览器复核 | 0 控制台报错;证据 `output/playwright/27-kv-dtype-fp8-blocked-a100.png`、`28-kv-dtype-fp8-effective-4090.png` |
 ### 5.10 未完成事项(Backlog)
 
 > 本节原先是一份手写清单。问题是同一批待办同时出现在三处(`ACTIVE_TASK.md`、
@@ -776,7 +813,7 @@ sha256、推荐条数落在 3-5、结果内模型不重复、每条方案都带�
 | 订正依赖核实缓存 | `apply_truth.py` 从 `data/catalog-verified.json` 取值,缓存过期需 `--refresh` 重抓 | 数值不会凭空变化,但上游改版后需手动刷新 |
 | `quality_score` / `throughput_score` 是人工评分 | 属于排序权重,不是实测 | 与「不展示假数据」不冲突(页面标为评分),但终究应换成实测基准 |
 | KV 按 2 字节(fp16/bf16)固定核算 | `--kv-cache-dtype fp8` 可减半,当前未作为输入项 | 长上下文场景会偏保守;偏保守不会导致选错卡,但可能低估可承载的并发。**反算上限(R3)与正算同口径**,所以它同样偏保守——开 fp8 KV 时实际可开更长 |
-| 余量系数与利用率阈值是工程判断 | `1.10` / `0.92` / 45% / 90% 均未在目标卡上实测标定 | 影响排序名次,不影响「放得下 / 放不下」的硬判定 |
+| ~~KV 按 2 字节固定核算~~ **已解决 2026-09-18(R4)** | `--kv-cache-dtype` 现在是输入项(`auto` / `fp16` / `bf16` / `fp8` / `fp8_e4m3` / `fp8_e5m2`),正算与反算同口径 | 剩下的债:`fp8` 与 `fp8_e4m3` 的关系没有可核实的官方映射,按两个独立取值处理;不同后端支持的取值不完全一样(如 FlashAttention 不收 `fp8_e5m2`),目前只在说明里点出 |
 
 ---
 
@@ -830,6 +867,7 @@ sha256、推荐条数落在 3-5、结果内模型不重复、每条方案都带�
 
 | 日期 | 版本 | 变更 |
 | --- | --- | --- |
+| 2026-09-18 | 1.9 | 阶段十二(R4):KV cache 精度作为**输入项**。新增 `KV_CACHE_DTYPES`(`auto` / `float16` / `bfloat16` / `fp8` / `fp8_e4m3` / `fp8_e5m2`,默认 `auto`)与 `kv_cache_dtype_check(hw)`:生效则按 1 字节核算,否则**不减半**并说明原因。判定分三档,门槛依据 vLLM 源码 `platforms/cuda.py` 的 `supports_fp8() = has_device_capability(89)`:算力已核实且 < 8.9 **判失败**(现场实测 A100/A40 开 fp8 KV 启动即 `NotImplementedError`,只给警告然后照样按 1 字节算出「放得下」等于推荐跑不起来的方案);算力未登记只给警告并保守按 2 字节;非 CUDA 生态不判失败但必须写明不生效(昇腾的 KV 精度由 `--quantization ascend` 决定,判失败会把「参数开不了」和「生态选错」混成一件事)。`memory` 增 4 个字段,响应顶层增 `kv_cache_dtype` 块(可选值 / 字节数 / 是否生效 / 来源链接 / 默认值与门槛);`server.build_hardware()` 对未知取值当场 400,不静默回落。R3 的反算与正算同口径——请求 fp8 时 `max_context_k` 一并按 1 字节重算。**回归基线**:默认 `auto` 与改动前逐字一致,对拍 8 个用例(含昇腾与 405B 的结构缺失分支)的 `memory` / `failures` / `warnings` 0 差异。实测:4090 上 KV 3.0→1.5 GiB、最长上下文 46K→93K;8×A100 要 fp8 → 19 个方案全被拦;昇腾不生效 + 说明。界面:推荐页新增 KV 精度下拉(选项由后端给出,带官方出处)、计划卡与台账各加一行/一列、Markdown 导出一列,非 CUDA 卡在下拉旁直接提示不生效。自检 120→135 项;反向验证两个方向都当场报红(字节数改回 2 → 3 条 FAIL;不生效仍返回 1 字节 → 1 条 FAIL)。规范 `.codex-specs/kv-cache-dtype/` |
 | 2026-09-18 | 1.8.1 | 文档订正(不涉及代码):上一条把自检项数写成 119——`smoke_test.py` 的第一条断言(`前端模块括号配平`)打印在 `== 部署管理台冒烟测试 ==` 标题**之前**,眼睛只数标题下面的 `PASS` 行就会少一条。按机械计数:`git show HEAD:deploy-portal/tools/smoke_test.py` = 112、当前 = 120,所以 R3 实际新增 **8** 条(不是 7)。同时清掉一批更早遗留的过期计数:`README.md`「冒烟测试(109 项)」、`docs/PROJECT-MAP.md`「冒烟测试(99 项)」、`deploy-portal/README.md`「共 75 项」一律改为 120;反复出现的「20 项昇腾反回归断言」从未成立过——该段 `check(...)` 调用点实测为阶段七 23 条、现在 34 条,各文档按各自所属时点改成实测值 |
 | 2026-09-18 | 1.8 | 阶段十一(R3):上下文上限**反算**。新增 `recommend.max_context_for(row, hw)`(唯一实现),把正向核算同一条 KV 线性公式倒过来——并行组可用显存扣掉运行时余量与实测权重后全给 KV,再换成多少 K;**复用同一批系数**,否则正反算会用两套假设。`/api/recommend` 与 `/api/check` 的 `memory` 新增 `max_context_k` / `max_context_note` / `max_context_memory_k` / `max_context_model_k` / `max_context_limit`:显存反算值与「该档自身标称上下文」取小并写明是哪边在限制;昇腾(专有 KV 量化无公开公式)、KV 结构未核实、权重已占满一律 `null` + 说明,不编数;需求上下文超过**显存反算值**时新增独立失败信息,点明「这是 KV 超了,不是权重放不下」(判据用 `max_context_memory_k` 而非 `max_context_k`,后者可能被标称上下文压住,会把「模型开不了那么长」误报成 KV 超)。界面:推荐计划卡新增「最长上下文」一行、Markdown 导出与台账达标检查表各加一列。自检 112→120 项,核心是自洽性断言(上限回填必须零失败、+1K 必须判超);**这条断言第一版写弱了**(只查 KV 那条失败,于是反算公式乘 2 后全绿),改强后同一改动立刻红,两个方向都反向验证过。规范 `.codex-specs/kv-max-context/` |
 | 2026-09-18 | 1.7 | 阶段十(R17):方案的公开依据改成**只认显式挂接**。新增 `engine.docs_for_recipe()`(`profile_id` 命中条目的 `profiles`,或条目的 `recipe_ids` 明文点名本方案),**删除** `engine.global_docs()` 这个导致假归属的全局兜底——它曾把 sglang / TensorRT-LLM / Triton / Ollama 的引擎总览算成一条 llama.cpp 方案的依据。`data/sources.json` 的 `doc_sources`/`tracked_repos` 新增 `recipe_ids`,`sync_docs.py` 把它抄到自动生成的模型卡条目上;GGUF 方案据此拿到 llama.cpp 官方仓库、新增的 `llamacpp-server` 官方文档与它真正用的权重模型卡(来源 65→66,实测 66/66 可达)。前端详情页与列表页把「可公开核实的通用依据」(带归属列)与「本工作区的现场记录(第三方打不开)」分开,一条都挂不上时如实降级。自检 109→112 项(新增「不跨引擎」「`recipe_ids` 都指向真实方案」「没有部署档的方案都被点名」并强化「每条方案都有依据」),反向验证过两条;另修掉门禁自身的空白失败细节(`tools/ci.py::failure_detail`)。规范 `.codex-specs/recipe-public-sources/` |

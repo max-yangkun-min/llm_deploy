@@ -1,7 +1,9 @@
 # deploy-portal task memory
 
 Status: active
-Last updated: 2026-09-18 (Asia/Shanghai) - stage thirteen: R3 done. The
+Last updated: 2026-09-18 (Asia/Shanghai) - stage fourteen: R4 done. KV cache
+precision is now an input (`--kv-cache-dtype`), with a compute gate of sm_89
+taken from vLLM source. Stages eight to thirteen below remain valid.
 context limit is now reverse-computed from the same KV formula the forward
 check uses, so the site can answer "how long can this card go". Stages eight
 to twelve below remain valid.
@@ -705,6 +707,56 @@ been accepted on real hardware yet** (`models/` still only holds
   `python tools/ci.py --online` = 16 pass / 0 fail / 0 skip (GPU vendor pages 15/15,
   66/66 docs reachable, ascend matrix + 31 tutorials sha256 unchanged). Cloud Actions
   runs #10 (`eb75fb6`) and #11 (`8ebd268`): success.
+## Stage fourteen this session (2026-09-18): R4 - KV cache precision as an input
+
+- The KV cache was hard-wired to 2 bytes/element (fp16/bf16) via `KV_DTYPE_BYTES`.
+  `--kv-cache-dtype fp8` halves it, so the precision is now an input:
+  `auto` / `float16` / `bfloat16` / `fp8` / `fp8_e4m3` / `fp8_e5m2`, default `auto`.
+  Unknown values are a 400 in `server.build_hardware()` - never a silent fallback to
+  `auto`, which would make "I turned fp8 on" and "why did nothing change" both true.
+- **Grounding.** Official doc `features/quantization/quantized_kvcache/` states
+  `fp8_e4m3` = "Supported on CUDA 11.8+ and ROCm (AMD GPUs)" and `fp8_e5m2` =
+  "Supported on CUDA 11.8+". The compute gate comes from vLLM source,
+  `vllm/platforms/cuda.py`: `supports_fp8()` returns `has_device_capability(89)`.
+  `vllm/config/cache.py` lists `fp8` and `fp8_e4m3` as **separate** `CacheDType`
+  literals and I found no verifiable equivalence, so the code does not claim they
+  are the same (only that the byte count matches). `fp8_e5m2` is in the official
+  doc but **not** in `FlashAttentionBackend.supported_kv_cache_dtypes`
+  (`auto/float16/bfloat16/fp8/fp8_e4m3`); the note says so and keeps the option
+  rather than deleting a value the official doc lists.
+- **Three outcomes, deliberately different.** Compute verified and < 8.9 -> the
+  request **fails**. Live evidence: A100 sm_80 and A40 sm_86 raise
+  `NotImplementedError` on startup with fp8 KV (workspace records). Warning-only
+  would have let the page compute "it fits" at 1 byte and recommend something that
+  cannot boot. Compute not recorded -> warning only, stay at 2 bytes (do not pretend
+  to know, do not sentence it either). Non-CUDA (Ascend) -> **not** a failure but the
+  response must say it has no effect: Ascend KV precision comes from
+  `--quantization ascend`, `--kv-cache-dtype` is not a flag of that stack. Failing it
+  would conflate "your flag cannot work" with "you picked the wrong ecosystem".
+  Both non-effective cases return 2 bytes, i.e. they do **not** halve.
+- Reverse-compute (R3) stays in the same units: `max_context_for(row, hw, dtype_bytes)`
+  is called with the effective byte count, so a fp8 request lengthens `max_context_k`
+  too. Two different assumptions in the two directions would make the page contradict
+  itself.
+- **Regression baseline**: with the default `auto` the numbers must be byte-identical
+  to before. Parity-tested 8 cases (incl. Ascend and `llama31-405b-bf16`, whose config
+  is gated) on `memory` / `failures` / `warnings`: **0 differences**. Changing the
+  default would silently rewrite every existing recommendation.
+- Measured: RTX 4090 + `qwen3-coder-30b-awq` KV 3.0 -> 1.5 GiB, longest context
+  46K -> 93K; A100 unchanged. 8x A100 asking for `fp8_e4m3` -> all 19 profiles
+  rejected with a message naming `sm_89` and `NotImplementedError`. 8x Atlas 300I Duo
+  -> no effect + explanation, plans still returned.
+- Assertions 120 -> 135 (15 added). Both directions reverse-verified: setting the fp8
+  byte count back to 2 turns "really halves", "limit gets longer" and "low compute
+  fails" red; making the non-effective branch return 1 byte turns "not effective means
+  2 bytes" red. Six views: 0 console errors. Evidence
+  `output/playwright/27-kv-dtype-fp8-blocked-a100.png`,
+  `28-kv-dtype-fp8-effective-4090.png`. Spec `.codex-specs/kv-cache-dtype/`.
+- Process note: I hit the documented hunk-ordering trap **twice** this round - the
+  `@@` blocks in one patch must be sorted by their position in the file, and I had
+  put the `KV_CACHE_DTYPES` edit before a later edit but the third block before the
+  second. The built-in engine's message ("找不到上下文") is accurate; sort by index
+  programmatically instead of by hand.
 ## Next actions
 
 **待办清单只有一份:`docs/ROADMAP.md`。** 本节原先是一份手写列表,和

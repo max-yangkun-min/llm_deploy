@@ -195,6 +195,86 @@ KV_DTYPE_BYTES = 2.0
 RUNTIME_OVERHEAD = 0.10
 PER_CARD_BUDGET = 0.92
 
+# vLLM `--kv-cache-dtype`
+#   官方文档 https://docs.vllm.ai/en/latest/features/quantization/quantized_kvcache/
+#     auto      = 用模型自己的默认精度
+#     fp8_e4m3  = Supported on CUDA 11.8+ and ROCm (AMD GPUs)
+#     fp8_e5m2  = Supported on CUDA 11.8+
+#   vLLM 源码 vllm/config/cache.py 的 CacheDType 字面量:auto / float16 / bfloat16 /
+#     fp8 / fp8_e4m3 / fp8_e5m2(还有若干更新、更专有的档位,本平台不涉及)。
+#   但后端支持面更窄:vllm/v1/attention/backends/flash_attn.py 的
+#     supported_kv_cache_dtypes = auto / float16 / bfloat16 / fp8 / fp8_e4m3 —— **没有 e5m2**。
+#   算力门槛:vllm/platforms/cuda.py 的 supports_fp8() = has_device_capability(89)。
+#   fp8 与 fp8_e4m3 在源码里是**两个分别列出的取值**,我没找到可核实的等价映射,
+#   所以不声称它们等价(只是字节数相同)。
+KV_CACHE_DTYPES = {
+    "auto": {"bytes": 2.0, "label": "auto(模型默认精度,本目录的档都是 bf16)"},
+    "float16": {"bytes": 2.0, "label": "float16"},
+    "bfloat16": {"bytes": 2.0, "label": "bfloat16"},
+    "fp8": {"bytes": 1.0, "label": "fp8"},
+    "fp8_e4m3": {"bytes": 1.0, "label": "fp8_e4m3"},
+    "fp8_e5m2": {"bytes": 1.0, "label": "fp8_e5m2"},
+}
+KV_CACHE_DEFAULT = "auto"
+KV_CACHE_FP8_MIN_COMPUTE = 8.9
+#: FP8 KV 的官方出处,写进响应里让人能自己复核。
+KV_CACHE_FP8_SOURCE = ("https://docs.vllm.ai/en/latest/features/quantization/"
+                       "quantized_kvcache/")
+
+
+def kv_cache_dtype_name(hw):
+    """归一化请求的 KV 精度。未知取值回落到默认——拦 400 由 API 层负责。"""
+    name = str(hw.get("kv_cache_dtype") or "").strip().lower()
+    return name if name in KV_CACHE_DTYPES else KV_CACHE_DEFAULT
+
+
+def kv_cache_dtype_check(hw):
+    """返回 (每元素字节数, 是否真的按该精度生效, 说明)。
+
+    这里只回答「在你的卡上这个请求算不算数」,不减半就说不减半。三种不生效的情形
+    必须分开说,因为处置完全不同:
+      - 非 CUDA 生态:参数根本不属于那套栈(昇腾由 --quantization ascend 决定 KV 精度)
+      - 算力已核实但 < 8.9:开得起来才有鬼,vLLM 直接报错(现场实测过 A100/A40)
+      - 算力未登记:不知道,所以按 2 字节保守算,并要求上线前核对
+    """
+    name = kv_cache_dtype_name(hw)
+    info = KV_CACHE_DTYPES[name]
+    if not name.startswith("fp8"):
+        return info["bytes"], True, ""
+    if not is_cuda(hw):
+        return KV_DTYPE_BYTES, False, (
+            "KV 精度参数在 %s 生态不生效:%s 的 KV cache 精度由 --quantization ascend "
+            "的专有量化决定,--kv-cache-dtype 不是那套栈的参数。这里不减半,"
+            "KV 仍只按权重下界核算"
+            % (str(hw.get("ecosystem") or "").strip().upper() or "非 CUDA",
+               hw.get("gpu_name") or "所选卡"))
+    cc = number(hw.get("compute_capability"))
+    if cc in (None, 0):
+        return KV_DTYPE_BYTES, False, (
+            "所选卡的算力等级未登记,无法确认能不能开 FP8 KV cache:"
+            "vLLM 的 CUDA 平台把 FP8 支持定为算力 ≥ %.1f(supports_fp8()),"
+            "这里按默认的 2 字节保守核算,上线前必须先核实"
+            % KV_CACHE_FP8_MIN_COMPUTE)
+    if cc < KV_CACHE_FP8_MIN_COMPUTE:
+        return KV_DTYPE_BYTES, False, (
+            "FP8 KV cache 需要算力 ≥ sm_%s,当前 sm_%s:vLLM 的 CUDA 平台把 FP8 支持定为 "
+            "has_device_capability(89),更低算力的卡上开它启动即报错"
+            "(本工作区实测 A100 sm_80 与 A40 sm_86 均为 NotImplementedError)。"
+            "本次核算仍按默认的 2 字节;处置是保持 --kv-cache-dtype auto,"
+            "或改用 sm_%s 及以上的卡"
+            % (str(KV_CACHE_FP8_MIN_COMPUTE).replace(".", ""),
+               str(hw.get("compute_capability")).replace(".", ""),
+               str(KV_CACHE_FP8_MIN_COMPUTE).replace(".", "")))
+    note = ("FP8 KV cache 生效:每元素 1 字节而不是 2 字节,依据 %s"
+            "(fp8_e4m3 标注 Supported on CUDA 11.8+ and ROCm)"
+            % KV_CACHE_FP8_SOURCE)
+    if name == "fp8_e5m2":
+        # 不替调用方删掉官方支持的取值,但也别让他以为所有后端都认。
+        note += ("。注意:vLLM 的 FlashAttention 后端 supported_kv_cache_dtypes 里"
+                 "没有 fp8_e5m2(只有 auto/float16/bfloat16/fp8/fp8_e4m3),"
+                 "用它之前先确认所选后端支持")
+    return info["bytes"], True, note
+
 # 单实例的健康占用区间。低于 LOW_UTILIZATION 说明这个档配这些卡太奢侈
 # (该换更大的档,或把卡拿去跑更多副本),高于 HIGH_UTILIZATION 说明没给长
 # 上下文和并发留余量。这两个阈值同时用于告警和排序,避免两处说法不一致。
@@ -274,15 +354,21 @@ def max_context_for(row, hw, dtype_bytes=KV_DTYPE_BYTES):
     memory_limit = int(memory_k)
 
     basis = row.get("attention_basis") or (row.get("attention_kind") or "已核实的 attention 结构")
+    # 反算与正算必须同口径:用户开了 fp8 KV 时,这里的 1K token 显存也按 1 字节算,
+    # 否则同一个档在两个地方会给出互相矛盾的数字。
+    dtype_note = ""
+    if dtype_bytes != KV_DTYPE_BYTES:
+        dtype_note = ("KV 精度按 %.0f 字节/元素(fp8)而不是默认的 %.0f 字节;"
+                      % (dtype_bytes, KV_DTYPE_BYTES))
     if model_k and model_k <= memory_limit:
         result["value"] = int(model_k)
         result["limit"] = "model"
         origin = "官方模型卡标称" if (row.get("context_source") or "") == "card" else "仓库 config"
-        result["note"] = ("显存侧可反算出约 %dK,但该档自身标称上下文 %sK(%s)更紧,取 %dK。"
+        result["note"] = ("%s显存侧可反算出约 %dK,但该档自身标称上下文 %sK(%s)更紧,取 %dK。"
                           "反算按 %d 张卡共 %.0fGiB 可用显存、扣掉 %.0f%% 运行时余量与"
                           "实测权重 %.0fGiB 后全给 KV;未计 vLLM 的 KV block 粒度与显存碎片,"
                           "实际可开只会更低。"
-                          % (memory_limit, row.get("context_k"), origin, int(model_k),
+                          % (dtype_note, memory_limit, row.get("context_k"), origin, int(model_k),
                              tp, vram * PER_CARD_BUDGET * tp, RUNTIME_OVERHEAD * 100, weight))
     else:
         result["value"] = memory_limit
@@ -290,10 +376,10 @@ def max_context_for(row, hw, dtype_bytes=KV_DTYPE_BYTES):
         detail = ""
         if model_k:
             detail = "该档自身标称 %sK 更高,不是限制。" % model_k
-        result["note"] = ("由显存反算:%d 张卡共 %.0fGiB 可用显存,扣掉 %.0f%% 运行时余量与"
+        result["note"] = ("%s由显存反算:%d 张卡共 %.0fGiB 可用显存,扣掉 %.0f%% 运行时余量与"
                           "实测权重 %.0fGiB 后剩 %.0fGiB 给 KV,按 %s 算出约 %dK。%s"
                           "未计 vLLM 的 KV block 粒度与显存碎片,实际可开只会更低。"
-                          % (tp, vram * PER_CARD_BUDGET * tp, RUNTIME_OVERHEAD * 100,
+                          % (dtype_note, tp, vram * PER_CARD_BUDGET * tp, RUNTIME_OVERHEAD * 100,
                              weight, kv_budget, basis, memory_limit, detail))
     return result
 
@@ -316,7 +402,9 @@ def assess(row, hw, preference):
     weight = number(row.get("weight_gib"))
     tp = max(1, int(number(row.get("min_gpu_count"), 1)))
     context_used = wanted_context or number(row.get("context_k"))
-    kv = kv_gib(row, context_used)
+    # KV 精度由输入决定(默认 auto = 2 字节)。不生效的请求不减半,理由写进 note。
+    dtype_bytes, dtype_effective, dtype_note = kv_cache_dtype_check(hw)
+    kv = kv_gib(row, context_used, dtype_bytes)
     kv_note = ""
     if kv is not None and not cuda:
         # 昇腾走 --quantization ascend 的专有 KV 量化,没有可核实的公开公式,
@@ -334,7 +422,7 @@ def assess(row, hw, preference):
 
     # 反算这张卡在这个档上的上下文上限。与上面的正算用的是同一条 KV 公式和同一批
     # 系数,所以「填的上下文 = 反算上限」时正算正好卡在可用显存上。
-    max_context = max_context_for(row, hw)
+    max_context = max_context_for(row, hw, dtype_bytes)
     max_k = max_context["value"]
 
     per_card = needed / tp if tp else needed
@@ -359,6 +447,20 @@ def assess(row, hw, preference):
                            str(cc).replace(".", "")))
     if truthy(row.get("fp8_required")) and not fp8_capable:
         failures.append(fp8_failure_reason(hw, fp8_capable))
+    # 用户要求 fp8 KV 时,「能不能生效」必须说出来:
+    #   算力已核实但 < 8.9 → 判失败。现场实测那是启动即报错(NotImplementedError),
+    #     给个警告然后照样按 1 字节算出「放得下」,等于推荐一个跑不起来的方案。
+    #   算力未登记 → 只给警告。目录里每张卡都有核实过的算力,但现场登记路径可以不填,
+    #     那时不能假装知道,也不能替它判死刑。
+    #   非 CUDA 生态 → 不判失败(KV 精度由 --quantization ascend 决定,不是这个参数),
+    #     说明放在 memory.kv_cache_dtype_note 与响应顶层的 kv_cache_dtype 里。
+    dtype_requested = kv_cache_dtype_name(hw)
+    if dtype_requested.startswith("fp8") and cuda:
+        dtype_cc = number(hw.get("compute_capability"))
+        if dtype_cc and dtype_cc < KV_CACHE_FP8_MIN_COMPUTE:
+            failures.append(dtype_note)
+        elif not dtype_cc:
+            warnings.append(dtype_note)
     # NVIDIA 驱动下限同样只对 CUDA 栈成立;昇腾要核的是 CANN 版本,登记表里没有这一列。
     if cuda and hw.get("driver_version") and row.get("min_driver") and not version_gte(
             hw["driver_version"], row["min_driver"]):
@@ -384,7 +486,9 @@ def assess(row, hw, preference):
     # 说成「KV 超了」——一句看着精确的错话。
     memory_k = max_context["memory_k"]
     if wanted_context and memory_k is not None and wanted_context > memory_k:
-        kv_wanted = kv_gib(row, wanted_context) or 0.0
+        # 这里的 KV 换算也要用本次生效的精度,否则失败信息里的 GiB 与
+        # memory.kv_gib 会按两个不同的字节数算出来。
+        kv_wanted = kv_gib(row, wanted_context, dtype_bytes) or 0.0
         failures.append("需求上下文 %gK 超出这张卡在此档的 KV 上限 %dK:"
                         "该上下文要 %.0fGiB 的 KV cache,而扣除权重 %.0fGiB 与 %.0f%% 运行时余量后"
                         "只剩 %.0fGiB 给 KV(这是 KV 超了,不是权重放不下)"
@@ -439,6 +543,12 @@ def assess(row, hw, preference):
             "replicas": replicas,
             "kv_verified": kv_known,
             "kv_note": kv_note,
+            # KV 精度:请求值、实际用的字节数、是否真的按它生效、说明。
+            # 不生效时不减半,并且这里必须非空——静默忽略是最容易犯的错。
+            "kv_cache_dtype": dtype_requested,
+            "kv_cache_dtype_bytes": dtype_bytes,
+            "kv_cache_dtype_effective": dtype_effective,
+            "kv_cache_dtype_note": dtype_note,
             # 反算的上下文上限。算不出时 value 必须是 None + note 说明原因,不许编一个数。
             "max_context_k": max_k,
             "max_context_note": max_context["note"],

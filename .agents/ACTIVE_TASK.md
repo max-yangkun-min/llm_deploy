@@ -1,6 +1,23 @@
 # Active task pointer
 
-Status: 大模型部署管理台已完成十一阶段,下一步工作已收敛到 `docs/ROADMAP.md`(单一真源)。
+Status: 大模型部署管理台已完成十二阶段,下一步工作已收敛到 `docs/ROADMAP.md`(单一真源)。
+阶段十二(2026-09-18,对应 R4)=**KV cache 精度作为输入项**。KV 此前恒按 2 字节核算,
+`--kv-cache-dtype fp8` 能减半却不是一个可选项。新增 `kv_cache_dtype_check(hw)`:取值
+`auto`/`float16`/`bfloat16`/`fp8`/`fp8_e4m3`/`fp8_e5m2`(默认 `auto`),生效则按 1 字节、
+否则**不减半**并说明原因。门槛依据 vLLM 源码 `platforms/cuda.py` 的
+`supports_fp8() = has_device_capability(89)`,判定分三档:算力已核实且 < 8.9 **判失败**
+(现场实测 A100 sm_80 / A40 sm_86 开 fp8 KV 启动即 `NotImplementedError`,只给警告然后照样按
+1 字节算出「放得下」等于推荐一个跑不起来的方案);算力未登记只给警告并保守按 2 字节;
+非 CUDA 生态(昇腾)**不判失败**但必须写明不生效——那里的 KV 精度由 `--quantization ascend`
+的专有量化决定,`--kv-cache-dtype` 不是那套栈的参数,判失败会把「参数开不了」和「生态选错」
+混成一件事。`server.build_hardware()` 对未知取值当场 400,不静默回落。R3 的反算与正算
+**同口径**:请求 fp8 时 `max_context_k` 一并按 1 字节重算。界面:推荐页新增 KV 精度下拉
+(选项由后端返回、带官方出处)、计划卡与台账各加一行/一列、Markdown 导出一列,非 CUDA 卡在
+下拉旁直接提示不生效。**回归基线**:默认 `auto` 必须与改动前逐字一致——对拍 8 个用例
+(含昇腾与 `llama31-405b-bf16` 的结构缺失分支)的 `memory`/`failures`/`warnings` 0 差异。
+实测:4090 上 KV 3.0→1.5 GiB、最长上下文 46K→93K;8×A100 要 fp8 → 19 个方案全被拦;
+昇腾不生效 + 说明。自检 120→135 项;反向验证两个方向都当场报红(字节数改回 2 → 3 条 FAIL;
+不生效仍返回 1 字节 → 「不生效时数字必须是 2 字节口径」FAIL)。六视图 0 控制台报错。
 阶段十一(2026-09-18,对应 R3)=**上下文上限反算**。上下文此前只是输入:填 `context_k`
 正算 KV,于是「放不下」与「权重本身就装不下」共用同一句,回答不出「这些卡最多能开多长」。
 新增 `recommend.max_context_for(row, hw)`(唯一实现,`assess()` 直接调用),把同一条 KV

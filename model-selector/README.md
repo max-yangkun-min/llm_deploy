@@ -131,6 +131,14 @@ KV 按模型真实的 attention 结构分三种口径算(MLA / 混合线性注�
 见 `deploy-portal/DEVELOPMENT.md` 5.8。`2 字节` / `1.10` / `0.92` 是工程假设,
 不是实测值,界面上逐条标注。结构拿不到的档会留空并注明「只按权重下界核算」,不套公式顶数。
 
+**上面的 `2 字节` 是可变的**:请求带 `kv_cache_dtype` 时按该精度核算(默认 `auto` = 2 字节,
+`fp8` / `fp8_e4m3` / `fp8_e5m2` = 1 字节)。能不能真的减半要过算力门槛:门槛取 vLLM
+源码 `platforms/cuda.py` 的 `supports_fp8() = has_device_capability(89)`,算力已核实且低于
+8.9 时**判失败**(现场实测 A100 sm_80 与 A40 sm_86 开 fp8 KV 启动即 `NotImplementedError`),
+算力未登记时只给警告并保守按 2 字节。**不生效的情形一律不减半**,说明里写清原因。
+反算上限与此同口径,所以 `fp8` 下 `max_context_k` 也会一起变长。取值与依据见
+`.codex-specs/kv-cache-dtype/spec.md`。
+
 ## 非 CUDA 生态(华为昇腾)
 
 硬件 JSON 里可以写 `"ecosystem": "cann"` 表示昇腾。此时:
@@ -145,6 +153,9 @@ KV 按模型真实的 attention 结构分三种口径算(MLA / 混合线性注�
 - **KV cache 只按权重下界核算。** `--quantization ascend` 的 KV 量化是华为专有实现,
   没有可核实的公开公式,因此不套 CUDA 的 2 字节口径,结果里 `kv_gib` 为 `null`
   并带说明。这条是刻意的:套一个错的公式比留空更危险。
+- **`--kv-cache-dtype` 在昇腾不生效,但不算失败。** 该参数不属于 CANN 那套栈,响应里
+  `kv_cache_dtype.effective = false` + 说明;不判失败是因为那会把「参数开不了」和
+  「生态选错了」混成一件事。同样不减半。
 - **部署档目录里没有昇腾的档。** `models.csv` 没有 `ecosystem` 列,现有条目都是 CUDA 栈
   (vLLM + CUDA 镜像 + NVIDIA 驱动下限)。推荐结果里会明说这一点,同名模型的 CUDA 方案
   会单独标为「不能直接搬过来」。

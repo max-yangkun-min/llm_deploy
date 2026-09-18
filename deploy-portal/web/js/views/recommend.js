@@ -4,6 +4,14 @@ import { api, esc, num, state, toast, copyText, download, verificationBlock, doc
 const STORAGE_KEY = 'deploy-portal.hardware';
 const WORKLOADS = ['agent', 'coding', 'reasoning', 'general', 'english'];
 const PLAN_CHOICES = [3, 4, 5];
+// 只列这三个:auto(默认)、官方文档与 FlashAttention 后端都明确支持的 fp8_e4m3、
+// 以及官方文档列出但后端支持面更窄的 fp8_e5m2。取值与字节数由后端返回的
+// kv_cache_dtype.options 决定,这里只负责展示,避免两处各写一份。
+const KV_DTYPE_FALLBACK = [
+  { value: 'auto', label: 'auto(模型默认精度,2 字节/元素)', bytes_per_element: 2 },
+  { value: 'fp8_e4m3', label: 'fp8_e4m3(1 字节/元素,需 sm_89+)', bytes_per_element: 1 },
+  { value: 'fp8_e5m2', label: 'fp8_e5m2(1 字节/元素,需 sm_89+)', bytes_per_element: 1 },
+];
 
 const DEFAULTS = {
   gpu_id: '',
@@ -13,6 +21,7 @@ const DEFAULTS = {
   host_ram_gib: 512,
   disk_free_gib: 1000,
   context_k: 32,
+  kv_cache_dtype: 'auto',
   workload: 'agent,coding,reasoning',
   require_multimodal: false,
   require_permissive_license: false,
@@ -124,6 +133,15 @@ function ecosystemNoteHtml(gpu) {
     '所以驱动输入框已停用;CANN 版本与镜像要求按下方部署方法文档核对。</p>';
 }
 
+/** 换卡时给 KV 精度这个控件一句实话:它在你选的生态里到底算不算数。 */
+function kvDtypeHintHtml(gpu) {
+  if (!gpu || isCuda(gpu)) return '';
+  return '<p class="muted small" style="margin:6px 0 0">该参数在 ' +
+    esc(String(gpu.ecosystem || '').toUpperCase()) +
+    ' 生态不生效:KV 精度由 --quantization ascend 的专有量化决定,不是 --kv-cache-dtype。' +
+    '选了也会在结果里如实说明,不会静默按 fp8 减半。</p>';
+}
+
 /** 换卡时同步「哪些控件对这个生态有效」,不留一个改了没反应的空控件。 */
 function syncEcosystemUi(container) {
   const select = container.querySelector('#gpu_id');
@@ -133,6 +151,37 @@ function syncEcosystemUi(container) {
   if (driverInput) driverInput.disabled = !isCuda(gpu);
   const host = container.querySelector('#ecosystem-note');
   if (host) host.innerHTML = ecosystemNoteHtml(gpu);
+  const dtypeNote = container.querySelector('#kv-dtype-note');
+  if (dtypeNote) dtypeNote.innerHTML = kvDtypeHintHtml(gpu);
+}
+
+/** KV 精度下拉:选项以后端返回的 options 为准(它带官方文档出处)。 */
+function kvDtypeOptions(selected) {
+  const options = (state.kvDtypeOptions && state.kvDtypeOptions.length)
+    ? state.kvDtypeOptions : KV_DTYPE_FALLBACK;
+  const has = options.some((item) => item.value === selected);
+  return { options, selected: has ? selected : (options[0] || {}).value };
+}
+
+function kvDtypeOptionsHtml(selected) {
+  const picked = kvDtypeOptions(selected);
+  return picked.options.map((item) =>
+    '<option value="' + esc(item.value) + '"' + (item.value === picked.selected ? ' selected' : '') + '>' +
+    esc(item.label || item.value) + '</option>').join('');
+}
+
+/** 这次核算按什么 KV 精度算的。不生效时必须说清原因,不能让人以为改了没反应。 */
+function kvDtypeBlockHtml(block) {
+  if (!block) return '';
+  const bytes = block.bytes_per_element === undefined ? '—' : esc(block.bytes_per_element);
+  const flag = block.effective
+    ? '<span class="badge info">按 ' + esc(block.requested) + ' 生效</span>'
+    : '<span class="badge warn">未按 ' + esc(block.requested) + ' 生效(仍按 ' + bytes + ' 字节/元素)</span>';
+  const source = block.source
+    ? '<a class="small" href="' + esc(block.source) + '" target="_blank" rel="noreferrer">官方口径</a>'
+    : '';
+  return '<p class="small" style="margin:8px 0 0">KV 精度:' + flag + ' · ' + bytes + ' 字节/元素 ' + source +
+    (block.note ? '<br><span class="muted small">' + esc(block.note) + '</span>' : '') + '</p>';
 }
 
 function formHtml(hardware) {
@@ -161,6 +210,10 @@ function formHtml(hardware) {
         <label class="field"><span>节点数</span><input type="number" min="1" id="nodes" value="${esc(hardware.nodes)}"></label>
         <label class="field"><span>驱动版本(NVIDIA)</span><input type="text" id="driver_version" value="${esc(hardware.driver_version)}"${isCuda(selectedGpu) ? '' : ' disabled'}></label>
         <label class="field"><span>需要的上下文 K</span><input type="number" min="1" id="context_k" value="${esc(hardware.context_k)}"></label>
+        <label class="field"><span>KV cache 精度(--kv-cache-dtype)</span>
+          <select id="kv_cache_dtype">${kvDtypeOptionsHtml(hardware.kv_cache_dtype)}</select>
+        </label>
+        <div id="kv-dtype-note">${kvDtypeHintHtml(selectedGpu)}</div>
         <label class="field"><span>主存 GiB</span><input type="number" id="host_ram_gib" value="${esc(hardware.host_ram_gib)}"></label>
         <label class="field"><span>可用磁盘 GiB</span><input type="number" id="disk_free_gib" value="${esc(hardware.disk_free_gib)}"></label>
       </div>
@@ -207,6 +260,7 @@ function readForm(root) {
     host_ram_gib: Number(value('host_ram_gib')),
     disk_free_gib: Number(value('disk_free_gib')),
     context_k: Number(value('context_k')),
+    kv_cache_dtype: value('kv_cache_dtype'),
     workload: Array.from(merged).join(','),
     require_multimodal: checked('require_multimodal'),
     require_permissive_license: checked('require_permissive_license'),
@@ -263,8 +317,20 @@ function memoryHtml(memory) {
       <dt>显存占用</dt><dd>${usedPct} 已用(按并行组 ${esc(memory.tp)} 张卡共 ${esc(memory.engaged_vram_gib)} GiB)</dd>
       <dt>空闲显存</dt><dd>${esc(memory.waste_gib)} GiB${memory.replicas > 1 ? '(当前卡数可放 ' + esc(memory.replicas) + ' 个副本)' : ''}</dd>
       <dt>最长上下文</dt><dd>${maxContext}</dd>
+      <dt>KV 精度</dt><dd>${kvRow(memory)}</dd>
     </dl>
     ${memory.kv_basis ? '<p class="muted small" style="margin:0">KV 口径:' + esc(memory.kv_basis) + '</p>' : ''}`;
+}
+
+/** 计划卡里的 KV 精度:不生效时要把原因直接写在这一行上。 */
+function kvRow(memory) {
+  const name = memory.kv_cache_dtype || 'auto';
+  const bytes = memory.kv_cache_dtype_bytes === undefined ? '—' : esc(memory.kv_cache_dtype_bytes);
+  const head = memory.kv_cache_dtype_effective
+    ? esc(name) + ' <span class="badge info">' + bytes + ' 字节/元素</span>'
+    : esc(name) + ' <span class="badge warn">未生效,按 ' + bytes + ' 字节/元素算</span>';
+  return head + (memory.kv_cache_dtype_note
+    ? '<br><span class="muted small">' + esc(memory.kv_cache_dtype_note) + '</span>' : '');
 }
 
 function rankCard(item, index, gpu) {
@@ -415,6 +481,7 @@ function renderResult(target, data) {
     ${gpu ? gpuSpecHtml(gpu) : ''}
     ${data.ecosystem_note ? '<p class="muted small" style="margin:8px 0 0">' + esc(data.ecosystem_note) + '</p>' : ''}
     ${data.stack_note ? '<p class="small" style="margin:8px 0 0;color:var(--warn,#a60)">' + esc(data.stack_note) + '</p>' : ''}
+    ${kvDtypeBlockHtml(data.kv_cache_dtype)}
     <p class="muted small" style="margin:8px 0 0">${esc(data.scoring_note || '')}</p>
   </div>`);
 
@@ -472,8 +539,14 @@ function toMarkdown(data) {
     ' · 核算上下文:' + data.hardware.context_k + 'K · 偏好:' + data.preference, '');
   if (data.ecosystem_note) lines.push('> ' + data.ecosystem_note, '');
   lines.push('## 匹配到的部署方案', '');
-  lines.push('| 排名 | 模型 | 量化 | 布局 | 实测权重GiB | KV GiB | 合计GiB | 单卡GiB | 占用率 | 最长上下文K | 得分 |');
-  lines.push('|---:|---|---|---|---:|---:|---:|---:|---:|---:|---:|');
+  const dtypeLine = data.kv_cache_dtype || {};
+  lines.push('- KV cache 精度:' + (dtypeLine.requested || 'auto') +
+    '(' + esc(String(dtypeLine.bytes_per_element)) + ' 字节/元素,' +
+    (dtypeLine.effective ? '生效' : '未生效') + ')');
+  if (dtypeLine.note) lines.push('  > ' + dtypeLine.note);
+  lines.push('');
+  lines.push('| 排名 | 模型 | 量化 | 布局 | 实测权重GiB | KV GiB | 合计GiB | 单卡GiB | 占用率 | 最长上下文K | KV精度 | 得分 |');
+  lines.push('|---:|---|---|---|---:|---:|---:|---:|---:|---:|---|---:|');
   data.plans.forEach((item, index) => {
     const p = item.profile;
     const m = item.memory || {};
@@ -481,6 +554,7 @@ function toMarkdown(data) {
       ' | ' + p.recommended_layout + ' | ' + m.weight_gib + ' | ' + (m.kv_gib === null ? '无法核实' : m.kv_gib) +
       ' | ' + m.needed_gib + ' | ' + m.per_card_gib + ' | ' + Math.round((m.utilization || 0) * 100) + '%' +
       ' | ' + (m.max_context_k === null || m.max_context_k === undefined ? '无法反算' : m.max_context_k) +
+      ' | ' + (m.kv_cache_dtype_effective ? '' : '未生效:') + (m.kv_cache_dtype || 'auto') +
       ' | ' + item.score + ' |');
   });
   lines.push('', '## 风险提示', '');
@@ -522,6 +596,10 @@ export async function render(container) {
           top: Number(container.querySelector('#top').value) || 5,
         }),
       });
+      // 下拉的选项以后端(带官方文档出处)为准,前端不再自己维护一份口径。
+      if (data.kv_cache_dtype && data.kv_cache_dtype.options) {
+        state.kvDtypeOptions = data.kv_cache_dtype.options;
+      }
       renderResult(result, data);
     } catch (error) {
       result.innerHTML = '<div class="card"><h2>计算失败</h2><p class="muted">' + esc(error.message) + '</p></div>';

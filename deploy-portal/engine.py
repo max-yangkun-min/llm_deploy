@@ -363,6 +363,25 @@ def hardware_totals(hw):
     }
 
 
+def kv_cache_dtype_block(hw):
+    """这次推荐按什么 KV 精度核算的(请求值 / 实际字节数 / 是否生效 / 说明 + 可选值)。"""
+    name = core.kv_cache_dtype_name(hw)
+    byte_count, effective, note = core.kv_cache_dtype_check(hw)
+    return {
+        "requested": name,
+        "bytes_per_element": byte_count,
+        "effective": effective,
+        "note": note,
+        "default": core.KV_CACHE_DEFAULT,
+        "fp8_min_compute": core.KV_CACHE_FP8_MIN_COMPUTE,
+        "source": core.KV_CACHE_FP8_SOURCE,
+        "options": [
+            {"value": value, "label": info["label"], "bytes_per_element": info["bytes"]}
+            for value, info in core.KV_CACHE_DTYPES.items()
+        ],
+    }
+
+
 def recommend(hw, preference="balanced", top=5, include_estimates=True):
     """真实匹配:只按实测权重 + 算出的 KV cache + 选定 GPU 的显存核算。
 
@@ -419,6 +438,9 @@ def recommend(hw, preference="balanced", top=5, include_estimates=True):
         "ecosystem_note": ECOSYSTEM_NOTES.get(ecosystem, ""),
         "profile_catalog_ecosystem": PROFILE_CATALOG_ECOSYSTEM,
         "stack_note": catalog_ecosystem_note(ecosystem),
+        # KV 精度的口径放在响应顶层:它是「这次核算按什么算的」,与被选中/被拒的
+        # 具体档无关。不生效时(昇腾、算力不足、算力未登记)note 必须非空。
+        "kv_cache_dtype": kv_cache_dtype_block(hw),
         "official_matrix": ascend_official(hw) if ecosystem == "cann" else None,
         "totals": hardware_totals(hw),
         "plans": distinct[:limit],

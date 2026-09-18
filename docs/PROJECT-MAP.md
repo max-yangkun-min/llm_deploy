@@ -153,7 +153,7 @@ python deploy-portal/tools/sync_gpus.py --offline  # 沿用上次结果重建结
 python deploy-portal/tools/apply_truth.py --check  # 核对登记值 vs 实测值
 python deploy-portal/tools/sync_docs.py --check    # 只验证文档链接可达性
 python deploy-portal/tools/sync_hf.py --repos-only # 刷新 28 个关注仓库
-python deploy-portal/tools/smoke_test.py           # 冒烟测试(120 项)
+python deploy-portal/tools/smoke_test.py           # 冒烟测试(135 项)
 python tools/ci.py                                 # 全部门禁
 ```
 

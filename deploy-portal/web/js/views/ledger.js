@@ -31,15 +31,27 @@ function checkTable(rows) {
         ? '<span class="badge info">受该档标称上下文限制</span>'
         : '<span class="badge info">显存反算上限</span>');
   };
+  // KV 精度与「最长上下文」成对出现:反算值是按什么字节数算出来的,必须一眼看到,
+  // 否则 fp8 请求没生效(或生效了)这件事在台账里就消失了。
+  const kvDtype = (row) => {
+    const memory = row.memory || {};
+    const name = memory.kv_cache_dtype || 'auto';
+    if (memory.kv_cache_dtype_effective) {
+      return esc(name) + ' <span class="muted small">' + esc(memory.kv_cache_dtype_bytes) + ' 字节/元素</span>';
+    }
+    return '<span class="badge warn">' + esc(name) + ' 未生效</span>' +
+      '<br><span class="muted small">按 ' + esc(memory.kv_cache_dtype_bytes) + ' 字节/元素核算</span>';
+  };
   return `
   ${caveat}
   <div class="table-wrap"><table>
-    <thead><tr><th>部署档</th><th>结果</th><th>最长上下文</th><th>缺口 / 风险</th></tr></thead>
+    <thead><tr><th>部署档</th><th>结果</th><th>最长上下文</th><th>KV 精度</th><th>缺口 / 风险</th></tr></thead>
     <tbody>${rows.map((row) => `
       <tr>
         <td>${esc(row.profile.model_name)}<br><span class="muted small">${esc(row.profile.profile)}</span></td>
         <td>${verdict(row)}</td>
         <td class="small">${longestContext(row)}</td>
+        <td class="small">${kvDtype(row)}</td>
         <td>
           ${row.failures.length ? '<ul class="fail-list">' + row.failures.map((text) => '<li>' + esc(text) + '</li>').join('') + '</ul>' : ''}
           ${row.warnings.length ? '<ul class="warn-list">' + row.warnings.map((text) => '<li>' + esc(text) + '</li>').join('') + '</ul>' : ''}
