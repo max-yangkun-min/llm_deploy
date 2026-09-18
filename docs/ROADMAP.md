@@ -340,6 +340,10 @@ max-model-len / MLP Weight Prefetch / Doc`。
   昇腾在下拉旁直接提示该参数在此生态不生效。证据
   `output/playwright/27-kv-dtype-fp8-blocked-a100.png`、
   `28-kv-dtype-fp8-effective-4090.png`。
+- `python tools/ci.py` 离线 = 通过 11 · 失败 0 · 跳过 1(沙箱读不到 WSL,shell 语法报 SKIP);
+  `--online` = 通过 16 · 失败 0 · 跳过 0(厂商页 15/15、权威文档 66/66、昇腾矩阵与 31 份教程
+  sha256 未漂移)。
+- 云端 Actions:运行 #13(`92b3f6b`)成功。
 - 规范:`.codex-specs/kv-cache-dtype/`。
 
 ---

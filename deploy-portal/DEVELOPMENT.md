@@ -792,6 +792,8 @@ sha256、推荐条数落在 3-5、结果内模型不重复、每条方案都带�
 | `python tools/ci.py` | 沙箱内:通过 11 · 失败 0 · 跳过 1(读不到 WSL → shell 语法 SKIP,不算通过) |
 | 反向验证 | 两个方向都当场报红:fp8 字节数改回 2 → 3 条 FAIL;不生效分支仍返回 1 字节 → 「不生效时数字必须是 2 字节口径」FAIL |
 | 六视图浏览器复核 | 0 控制台报错;证据 `output/playwright/27-kv-dtype-fp8-blocked-a100.png`、`28-kv-dtype-fp8-effective-4090.png` |
+| `python tools/ci.py --online` | 通过 16 · 失败 0 · 跳过 0(厂商页 15/15;权威文档 66/66;昇腾官方矩阵与 31 份教程 sha256 未漂移) |
+| 云端 Actions | 运行 #13(`92b3f6b`)**success**;联网核实不在云端跑,仍由 `llm-ci-weekly` 按周触发 |
 ### 5.10 未完成事项(Backlog)
 
 > 本节原先是一份手写清单。问题是同一批待办同时出现在三处(`ACTIVE_TASK.md`、

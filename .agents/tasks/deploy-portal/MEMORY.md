@@ -752,6 +752,9 @@ been accepted on real hardware yet** (`models/` still only holds
   2 bytes" red. Six views: 0 console errors. Evidence
   `output/playwright/27-kv-dtype-fp8-blocked-a100.png`,
   `28-kv-dtype-fp8-effective-4090.png`. Spec `.codex-specs/kv-cache-dtype/`.
+- Verified: `tools/ci.py` offline 11 pass / 0 fail / 1 skip (WSL blocked); `--online`
+  16 pass / 0 fail / 0 skip (vendor pages 15/15, 66/66 docs, ascend matrix sha256 stable).
+  Cloud Actions run #13 on `92b3f6b`: success.
 - Process note: I hit the documented hunk-ordering trap **twice** this round - the
   `@@` blocks in one patch must be sorted by their position in the file, and I had
   put the `KV_CACHE_DTYPES` edit before a later edit but the third block before the
